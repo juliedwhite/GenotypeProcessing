@@ -18,11 +18,7 @@
 # -Phases using SHAPEIT2
 
 # REQUIREMENTS #
-# You must have R installed on your machine to run this script.
 # You must have plink 1.9 in the same directory as your genotype files and this script, and it should be called 'plink'.
-# Using this version of the script requires that you have rpy2 installed on your machine. If you have Anaconda, then you
-#   can install rpy2 using: conda install -c r rpy2
-#   Otherwise, install using directions at https://rpy2.readthedocs.io/en/version_2.8.x/index.html
 
 # Getting the needed modules.
 import os
@@ -33,7 +29,8 @@ to_do = input('What would you like to do?\n'
               'New FID, New IID.\n'
               '3) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
               '4) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
-              '5) Nothing\n'
+              '5) Remove SNPs that are not in 1000 Genomes Phase 3\n'
+              '6) Nothing\n'
               'Please enter a number (i.e. 2): ')
 
 if to_do == '1':
@@ -104,7 +101,33 @@ elif to_do == '4':
               + '_SexUpdated')
 
 elif to_do == '5':
+    # Remove SNPs not in 1000 Genomes.
+    # Match the position in 1000 genomes with the position in our genotype file, on a chromosome by chromosome basis.
+
+    import pandas as pd
+
+    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+    bim_file = pd.read_csv(geno_name + '.bim', sep="\t", header=None)
+    # Columns of bim_file: chr, rsid, cm, bp, allele1, allele2
+    # Columns of legend: id, position, a0, a1, type, AFR, AMR, EAS, EUR, SAS, ALL
+
+    file_save_names = ['chr%d_position_file' % x for x in range(1, 23)]
+    legend_file_names = ['1000GP_Phase3_chr%d.legend' % x for x in range(1, 23)]
+
+    for i in range(0, len(file_save_names)):
+        current_legend_file = pd.read_csv(legend_file_names[i], sep=" ", header=0)
+        print('Successfully read in chr' + str(i + 1) + ' legend file')
+        file_save_names[i] = pd.merge(left=bim_file.loc[bim_file[0] == i + 1], right=current_legend_file, how='inner',
+                                      left_on=3, right_on='position')
+        file_save_names[i][1].to_csv('chr' + str(i + 1) + '_PositionsMatch1000G.txt', sep="\t", header=False,
+                                     index=False)
+        print('chr' + str(i + 1) + ' complete')
+
+elif to_do == '6':
     print("You go, couch potato")
 
 else:
     print("Please enter a number 1-5.")
+
+
+
