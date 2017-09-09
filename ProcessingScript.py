@@ -114,14 +114,26 @@ elif to_do == '5':
     file_save_names = ['chr%d_position_file' % x for x in range(1, 23)]
     legend_file_names = ['1000GP_Phase3_chr%d.legend' % x for x in range(1, 23)]
 
+# Write lists of SNPs that are in 1000 Genomes
     for i in range(0, len(file_save_names)):
         current_legend_file = pd.read_csv(legend_file_names[i], sep=" ", header=0)
         print('Successfully read in chr' + str(i + 1) + ' legend file')
         file_save_names[i] = pd.merge(left=bim_file.loc[bim_file[0] == i + 1], right=current_legend_file, how='inner',
                                       left_on=3, right_on='position')
-        file_save_names[i][1].to_csv('chr' + str(i + 1) + '_PositionsMatch1000G.txt', sep="\t", header=False,
-                                     index=False)
         print('chr' + str(i + 1) + ' complete')
+
+# Create new plink files only with these SNPs.
+    all_chr_files = [file_save_names[0], file_save_names[1], file_save_names[2], file_save_names[3], file_save_names[4],
+                 file_save_names[5], file_save_names[6], file_save_names[7], file_save_names[8], file_save_names[9],
+                 file_save_names[10], file_save_names[11], file_save_names[12], file_save_names[13], file_save_names[14],
+                 file_save_names[15], file_save_names[16], file_save_names[17], file_save_names[18], file_save_names[19],
+                 file_save_names[20], file_save_names[21]]
+    all_snps_in_1000g = pd.concat(all_chr_files)
+    print(all_snps_in_1000g.head(3))
+    unique_snps_in_1000g = all_snps_in_1000g.drop_duplicates(subset = 1, keep = 'first', inplace = False)
+    unique_snps_in_1000g[1].to_csv('SNPs_in_1000G.txt', sep = '\t', header = False, index = False)
+    os.system('plink --bfile ' + geno_name + ' --extract SNPs_in_1000G.txt --make-bed --out ' + geno_name
+              + '_SNPsIn1000G')
 
 elif to_do == '6':
     print("You go, couch potato")
