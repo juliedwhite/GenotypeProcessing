@@ -117,18 +117,31 @@ elif to_do == '5':
 
     snps_by_chr = ['chr%d_snps' % x for x in range(1, 23)]
     legend_file_names = ['1000GP_Phase3_chr%d.legend' % x for x in range(1, 23)]
-    maf_snps_by_chr = ['chr%d_maf_snps' % x for x in range(1, 23)]
+    maf_AT_filter = ['chr%d_maf_AT_filter' % x for x in range(1, 23)]
+    maf_TA_filter = ['chr%d_maf_AT_filter' % x for x in range(1, 23)]
+    maf_GC_filter = ['chr%d_maf_AT_filter' % x for x in range(1, 23)]
+    maf_CG_filter = ['chr%d_maf_AT_filter' % x for x in range(1, 23)]
+    maf_per_chr_filter = ['chr%d_maf_filter' % x for x in range(1,23)]
+
 
     # Match the position in 1000 genomes with the position in our genotype file, on a chromosome by chromosome basis.
-    # Sort the matched SNPs and keep only those which have a MAF of <= 40%
+    # Removes all A/T G/C SNPs with MAF > 40% in the reference data set
     for i in range(0, len(snps_by_chr)):
         current_legend_file = pd.read_csv(legend_file_names[i], sep=" ", header=0)
         print('Successfully read in chr' + str(i + 1) + ' legend file')
         snps_by_chr[i] = pd.merge(left=bim_file.loc[bim_file[0] == i + 1], right=current_legend_file, how='inner',
                                       left_on=3, right_on='position')
         print('chr' + str(i + 1) + ' overlap with 1000G complete')
-        maf_snps_by_chr[i] = snps_by_chr[i].loc[(snps_by_chr[i]['ALL'] <= 0.4) | (snps_by_chr[i]['ALL'] >= 0.6)]
-        print('Filtered by maf for chr ' + str(i + 1))
+        maf_AT_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['a0'] == 'A') & (snps_by_chr[i]['a1'] == 'T')) &
+                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
+        maf_TA_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['a0'] == 'T') & (snps_by_chr[i]['a1'] == 'A')) &
+                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
+        maf_GC_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['a0'] == 'G') & (snps_by_chr[i]['a1'] == 'C')) &
+                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
+        maf_CG_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['a0'] == 'C') & (snps_by_chr[i]['a1'] == 'G')) &
+                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
+        maf_per_chr_filter[i] = pd.concat([maf_AT_filter[i], maf_TA_filter[i], maf_GC_filter[i], maf_CG_filter[i]])
+        print('Filtered out A/T G/C SNPs with MAF > 40% in chr' + str(i + 1))
 
     # Chromosome X
     # Plink codes the pseudoautosomal region as 23, for now I won't include the non-pseudoautosomal regions since they
@@ -138,29 +151,55 @@ elif to_do == '5':
     chrX_PAR1 = pd.merge(left=bim_file.loc[bim_file[0] == 23], right = current_legend_file, how='inner', left_on=3,
                            right_on='position')
     print('chrX pseudoautosomal region 1 overlap with 1000G done')
-    maf_snps_chrX_PAR1 = chrx_PAR1.loc[(chrX_PAR1['ALL'] <= 0.4) | (chrX_PAR1['ALL'] >= 0.6)]
-    print('Filtered by maf for chrX pseudoautosomal region 1')
+    chrX_PAR1_AT_filter = chrX_PAR1.loc[((chrX_PAR1['a0'] == 'A') & (chrX_PAR1['a1']=='T')) & ((chrX_PAR1['ALL'] >= 0.4) &
+                                         (chrX_PAR1['ALL'] <= 0.6))]
+    chrX_PAR1_TA_filter = chrX_PAR1.loc[((chrX_PAR1['a0'] == 'T') & (chrX_PAR1['a1'] == 'A')) & ((chrX_PAR1['ALL'] >= 0.4)&
+                                                                     (chrX_PAR1['ALL'] <= 0.6))]
+    chrX_PAR1_GC_filter = chrX_PAR1.loc[((chrX_PAR1['a0'] == 'G') & (chrX_PAR1['a1'] == 'C')) & ((chrX_PAR1['ALL'] >= 0.4) &
+                                                                     (chrX_PAR1['ALL'] <= 0.6))]
+    chrX_PAR1_CG_filter = chrX_PAR1.loc[((chrX_PAR1['a0'] == 'C') & (chrX_PAR1['a1'] == 'G')) & ((chrX_PAR1['ALL'] >= 0.4) &
+                                                                     (chrX_PAR1['ALL'] <= 0.6))]
+    chrX_PAR1_maf_filter = pd.concat([chrX_PAR1_AT_filter, chrX_PAR1_TA_filter, chrX_PAR1_GC_filter, chrX_PAR1_CG_filter])
+    print('Filtered out A/T G/C SNPs by MAF > 40% for chrX pseudoautosomal region 1')
+
 
     current_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR2.legend', sep=" ", header=0)
     print('Successfully read in chrX pseudoautosomal region 2 legend file')
     chrX_PAR2 = pd.merge(left=bim_file.loc[bim_file[0] == 23], right=current_legend_file, how='inner', left_on=3,
                          right_on='position')
     print('chrX pseudoautosomal region 2 overlap with 1000G done')
-    maf_snps_chrX_PAR2 = chrX_PAR2.loc[(chrX_PAR2['ALL'] <= 0.4) | (chrX_PAR2['ALL'] >= 0.6)]
-    print('Filtered by maf for chrX pseudoautosomal region 2')
+    chrX_PAR2_AT_filter = chrX_PAR2.loc[((chrX_PAR2['a0'] == 'A') & (chrX_PAR2['a1'] == 'T')) & ((chrX_PAR2['ALL'] >= 0.4) &
+                                                                     (chrX_PAR2['ALL'] <= 0.6))]
+    chrX_PAR2_TA_filter = chrX_PAR2.loc[((chrX_PAR2['a0'] == 'T') & (chrX_PAR2['a1'] == 'A')) & ((chrX_PAR2['ALL'] >= 0.4) &
+                                                                     (chrX_PAR2['ALL'] <= 0.6))]
+    chrX_PAR2_GC_filter = chrX_PAR2.loc[((chrX_PAR2['a0'] == 'G') & (chrX_PAR2['a1'] == 'C')) & ((chrX_PAR2['ALL'] >= 0.4) &
+                                                                     (chrX_PAR2['ALL'] <= 0.6))]
+    chrX_PAR2_CG_filter = chrX_PAR2.loc[((chrX_PAR2['a0'] == 'C') & (chrX_PAR2['a1'] == 'G')) & ((chrX_PAR2['ALL'] >= 0.4) &
+                                                                     (chrX_PAR2['ALL'] <= 0.6))]
+    chrX_PAR2_maf_filter = pd.concat([chrX_PAR2_AT_filter, chrX_PAR2_TA_filter, chrX_PAR2_GC_filter, chrX_PAR2_CG_filter])
+    print('Filtered out A/T G/C SNPs by MAF > 40% for chrX pseudoautosomal region 2')
 
-    # Remove SNPs not in 1000 Genomes and create new plink file
-    all_chr_snp_files = [maf_snps_by_chr[0], maf_snps_by_chr[1], maf_snps_by_chr[2], maf_snps_by_chr[3], maf_snps_by_chr[4],
-                 maf_snps_by_chr[5], maf_snps_by_chr[6], maf_snps_by_chr[7], maf_snps_by_chr[8], maf_snps_by_chr[9],
-                 maf_snps_by_chr[10], maf_snps_by_chr[11], maf_snps_by_chr[12], maf_snps_by_chr[13], maf_snps_by_chr[14],
-                 maf_snps_by_chr[15], maf_snps_by_chr[16], maf_snps_by_chr[17], maf_snps_by_chr[18], maf_snps_by_chr[19],
-                 maf_snps_by_chr[20], maf_snps_by_chr[21], maf_snps_chrX_PAR1, maf_snps_chrX_PAR2]
-    snps_to_keep = pd.concat(all_chr_snp_files)
-    print(snps_to_keep.head(3))
+    # Remove A/T G/C SNPs with MAF > 40% from list of snps in our dataset with matches in 1000 Genomes. 
+    overlap_with_1000G = pd.concat([snps_by_chr[0], snps_by_chr[1], snps_by_chr[2], snps_by_chr[3], snps_by_chr[4],
+                 snps_by_chr[5], snps_by_chr[6], snps_by_chr[7], snps_by_chr[8], snps_by_chr[9],
+                 snps_by_chr[10], snps_by_chr[11], snps_by_chr[12], snps_by_chr[13], snps_by_chr[14],
+                 snps_by_chr[15], snps_by_chr[16], snps_by_chr[17], snps_by_chr[18], snps_by_chr[19],
+                 snps_by_chr[20], snps_by_chr[21], chrX_PAR1, chrX_PAR2])
+    overlap_with_1000G.to_csv('Overlap_with_1000G.txt', sep = '\t', header = True, index = False)
+    palindromic_MAF_filter = pd.concat([maf_per_chr_filter[0], maf_per_chr_filter[1], maf_per_chr_filter[2], maf_per_chr_filter[3],
+                                  maf_per_chr_filter[4],maf_per_chr_filter[5], maf_per_chr_filter[6], maf_per_chr_filter[7],
+                                  maf_per_chr_filter[8], maf_per_chr_filter[9], maf_per_chr_filter[10], maf_per_chr_filter[11],
+                                  maf_per_chr_filter[12], maf_per_chr_filter[13], maf_per_chr_filter[14], maf_per_chr_filter[15],
+                                  maf_per_chr_filter[16], maf_per_chr_filter[17], maf_per_chr_filter[18], maf_per_chr_filter[19],
+                                  maf_per_chr_filter[20], maf_per_chr_filter[21], chrX_PAR1_maf_filter, chrX_PAR2_maf_filter],)
+    palindromic_MAF_filter.to_csv('palindromic_MAF_filter.txt', sep = '\t', header = True, index = False)
+    common_snps = pd.merge(left = overlap_with_1000G, right = palindromic_MAF_filter, how = 'inner')
+    snps_to_keep = overlap_with_1000G[~overlap_with_1000G.id.isin(common_snps.id)]
     unique_snps_to_keep = snps_to_keep.drop_duplicates(subset = 1, keep = 'first', inplace = False)
+    unique_snps_to_keep.to_csv('Info_on_SNPs_to_keep.txt', sep='\t', header=False, index=False)
     unique_snps_to_keep[1].to_csv('SNPs_to_keep.txt', sep = '\t', header = False, index = False)
     os.system('plink --bfile ' + geno_name + '_MAF0.05 --extract SNPs_to_keep.txt --make-bed --out ' + geno_name
-              + '_MAF0.05_FilteredSNPs')
+              + '_MAF0.05_FilteredPalindromicSNPs')
 
 elif to_do == '6':
     print("You go, couch potato")
