@@ -109,9 +109,10 @@ elif to_do == '5':
     # Remove SNPs that are not in 1000 G Phase 3
     # This is where I got the reference files: https://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3.html
     import pandas as pd
+    import numpy as np
 
     bim_file = pd.read_csv(geno_name + '_MAF0.05.bim', sep="\t", header=None, usecols = [0,1,3,4,5],
-                           names=['chr', 'dataset_id', 'position', 'dataset_a0', 'dataset_a1'])
+                           names=['chr', 'dataset_id', 'position', 'dataset_A1', 'dataset_A2'])
 
     snps_by_chr = ['chr%d_snps' % x for x in range(1, 23)]
     legend_file_names = ['1000GP_Phase3_chr%d.legend' % x for x in range(1, 23)]
@@ -124,58 +125,73 @@ elif to_do == '5':
     # Match the position in 1000 genomes with the position in our genotype file, on a chromosome by chromosome basis.
     # Removes all A/T G/C SNPs with MAF > 40% in the reference data set
     for i in range(0, len(snps_by_chr)):
-        current_legend_file = pd.read_csv(legend_file_names[i], sep=" ", skiprows=0, header=None,
-                                          names=['reference_id', 'position', 'reference_a0', 'reference_a1', 'type', 'AFR',
-                                                 'AMR', 'EAS', 'EUR', 'SAS', 'ALL'])
+        current_legend_file = pd.read_csv(legend_file_names[i], sep=" ", header = 0,
+                                          dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str,
+                                                 'AFR': float, 'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float,
+                                                 'ALL': float})
+        current_legend_file.rename(columns={'id': 'reference_id', 'a0': 'REF', 'a1': 'ALT', 'TYPE': 'type'}, inplace=True)
         print('Successfully read in chr' + str(i + 1) + ' legend file')
+        current_legend_file['reference_MAF'] = np.where(current_legend_file['ALL'] <= 0.5, current_legend_file['ALL'],
+                                                        1 - current_legend_file['ALL'])
+        current_legend_file = current_legend_file[current_legend_file.type == 'Biallelic_SNP']
+
         snps_by_chr[i] = pd.merge(left=bim_file.loc[bim_file['chr'] == i + 1], right=current_legend_file, how='inner', on='position')
         print('chr' + str(i + 1) + ' overlap with 1000G complete')
-        maf_AT_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['reference_a0'] == 'A') & (snps_by_chr[i]['reference_a1'] == 'T')) &
-                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
-        maf_TA_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['reference_a0'] == 'T') & (snps_by_chr[i]['reference_a1'] == 'A')) &
-                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
-        maf_GC_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['reference_a0'] == 'G') & (snps_by_chr[i]['reference_a1'] == 'C')) &
-                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
-        maf_CG_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['reference_a0'] == 'C') & (snps_by_chr[i]['reference_a1'] == 'G')) &
-                                              ((snps_by_chr[i]['ALL'] >= 0.4) & (snps_by_chr[i]['ALL'] <= 0.6))]
+        maf_AT_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['REF'] == 'A') & (snps_by_chr[i]['ALT'] == 'T')) &
+                                              (snps_by_chr[i]['reference_MAF'] >= 0.4)]
+        maf_TA_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['REF'] == 'T') & (snps_by_chr[i]['ALT'] == 'A')) &
+                                              (snps_by_chr[i]['reference_MAF'] >= 0.4)]
+        maf_GC_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['REF'] == 'G') & (snps_by_chr[i]['ALT'] == 'C')) &
+                                              (snps_by_chr[i]['reference_MAF'] >= 0.4)]
+        maf_CG_filter[i] = snps_by_chr[i].loc[((snps_by_chr[i]['REF'] == 'C') & (snps_by_chr[i]['ALT'] == 'G')) &
+                                              (snps_by_chr[i]['reference_MAF'] >= 0.4)]
         maf_per_chr_filter[i] = pd.concat([maf_AT_filter[i], maf_TA_filter[i], maf_GC_filter[i], maf_CG_filter[i]])
         print('Filtered out A/T G/C SNPs with MAF > 40% in chr' + str(i + 1))
 
     # Chromosome X
     # Plink codes the pseudoautosomal region as 23, for now I won't include the non-pseudoautosomal regions since they
     #   need to be treated differently.
-    current_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR1.legend', sep = " ", skiprows=0, header=None,
-                                      names=['reference_id', 'position', 'reference_a0',
-                                             'reference_a1', 'type', 'AFR', 'AMR', 'EAS', 'EUR', 'SAS', 'ALL'])
-
+    current_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR1.legend', sep = " ",
+                                      dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str, 'AFR': float,
+                                             'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
     print('Successfully read in chrX pseudoautosomal region 1 legend file')
+    current_legend_file.rename(
+        columns={'id': 'reference_id', 'a0': 'REF', 'a1': 'ALT', 'TYPE': 'type'}, inplace=True)
+    current_legend_file['reference_MAF'] = np.where(current_legend_file['ALL'] <= 0.5, current_legend_file['ALL'],
+                                                    1 - current_legend_file['ALL'])
+    current_legend_file = current_legend_file[current_legend_file.type == 'Biallelic_SNP']
     chrX_PAR1 = pd.merge(left=bim_file.loc[bim_file['chr'] == 23], right = current_legend_file, how='inner', on='position')
     print('chrX pseudoautosomal region 1 overlap with 1000G done')
-    chrX_PAR1_AT_filter = chrX_PAR1.loc[((chrX_PAR1['reference_a0'] == 'A') & (chrX_PAR1['reference_a1']=='T')) & ((chrX_PAR1['ALL'] >= 0.4) &
-                                         (chrX_PAR1['ALL'] <= 0.6))]
-    chrX_PAR1_TA_filter = chrX_PAR1.loc[((chrX_PAR1['reference_a0'] == 'T') & (chrX_PAR1['reference_a1'] == 'A')) & ((chrX_PAR1['ALL'] >= 0.4)&
-                                                                     (chrX_PAR1['ALL'] <= 0.6))]
-    chrX_PAR1_GC_filter = chrX_PAR1.loc[((chrX_PAR1['reference_a0'] == 'G') & (chrX_PAR1['reference_a1'] == 'C')) & ((chrX_PAR1['ALL'] >= 0.4) &
-                                                                     (chrX_PAR1['ALL'] <= 0.6))]
-    chrX_PAR1_CG_filter = chrX_PAR1.loc[((chrX_PAR1['reference_a0'] == 'C') & (chrX_PAR1['reference_a1'] == 'G')) & ((chrX_PAR1['ALL'] >= 0.4) &
-                                                                     (chrX_PAR1['ALL'] <= 0.6))]
+
+    chrX_PAR1_AT_filter = chrX_PAR1.loc[
+        ((chrX_PAR1['REF'] == 'A') & (chrX_PAR1['ALT'] == 'T')) & (chrX_PAR1['reference_MAF'] >= 0.4)]
+    chrX_PAR1_TA_filter = chrX_PAR1.loc[
+        ((chrX_PAR1['REF'] == 'T') & (chrX_PAR1['ALT'] == 'A')) & (chrX_PAR1['reference_MAF'] >= 0.4)]
+    chrX_PAR1_GC_filter = chrX_PAR1.loc[
+        ((chrX_PAR1['REF'] == 'G') & (chrX_PAR1['ALT'] == 'C')) & (chrX_PAR1['reference_MAF'] >= 0.4)]
+    chrX_PAR1_CG_filter = chrX_PAR1.loc[
+        ((chrX_PAR1['REF'] == 'C') & (chrX_PAR1['ALT'] == 'G')) & (chrX_PAR1['reference_MAF'] >= 0.4)]
     chrX_PAR1_maf_filter = pd.concat([chrX_PAR1_AT_filter, chrX_PAR1_TA_filter, chrX_PAR1_GC_filter, chrX_PAR1_CG_filter])
     print('Filtered out A/T G/C SNPs by MAF > 40% for chrX pseudoautosomal region 1')
 
-    current_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR2.legend', sep=" ", skiprows=0, header=None,
-                                      names=['reference_id', 'position', 'reference_a0',
-                                             'reference_a1', 'type', 'AFR', 'AMR', 'EAS', 'EUR', 'SAS', 'ALL'])
+    current_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR2.legend', sep=" ", header=0,
+                                      dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str, 'AFR': float,
+                                             'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
+    current_legend_file.rename(columns={'id': 'reference_id', 'a0': 'REF', 'a1': 'ALT', 'TYPE': 'type'}, inplace=True)
     print('Successfully read in chrX pseudoautosomal region 2 legend file')
+    current_legend_file['reference_MAF'] = np.where(current_legend_file['ALL'] <= 0.5, current_legend_file['ALL'],
+                                                    1 - current_legend_file['ALL'])
+    current_legend_file = current_legend_file[current_legend_file.type == 'Biallelic_SNP']
     chrX_PAR2 = pd.merge(left=bim_file.loc[bim_file['chr'] == 23], right=current_legend_file, how='inner', on='position')
     print('chrX pseudoautosomal region 2 overlap with 1000G done')
-    chrX_PAR2_AT_filter = chrX_PAR2.loc[((chrX_PAR2['reference_a0'] == 'A') & (chrX_PAR2['reference_a1'] == 'T')) & ((chrX_PAR2['ALL'] >= 0.4) &
-                                                                     (chrX_PAR2['ALL'] <= 0.6))]
-    chrX_PAR2_TA_filter = chrX_PAR2.loc[((chrX_PAR2['reference_a0'] == 'T') & (chrX_PAR2['reference_a1'] == 'A')) & ((chrX_PAR2['ALL'] >= 0.4) &
-                                                                     (chrX_PAR2['ALL'] <= 0.6))]
-    chrX_PAR2_GC_filter = chrX_PAR2.loc[((chrX_PAR2['reference_a0'] == 'G') & (chrX_PAR2['reference_a1'] == 'C')) & ((chrX_PAR2['ALL'] >= 0.4) &
-                                                                     (chrX_PAR2['ALL'] <= 0.6))]
-    chrX_PAR2_CG_filter = chrX_PAR2.loc[((chrX_PAR2['reference_a0'] == 'C') & (chrX_PAR2['reference_a1'] == 'G')) & ((chrX_PAR2['ALL'] >= 0.4) &
-                                                                     (chrX_PAR2['ALL'] <= 0.6))]
+    chrX_PAR2_AT_filter = chrX_PAR2.loc[
+        ((chrX_PAR2['REF'] == 'A') & (chrX_PAR2['ALT'] == 'T')) & (chrX_PAR2['reference_MAF'] >= 0.4)]
+    chrX_PAR2_TA_filter = chrX_PAR2.loc[
+        ((chrX_PAR2['REF'] == 'T') & (chrX_PAR2['ALT'] == 'A')) & (chrX_PAR2['reference_MAF'] >= 0.4)]
+    chrX_PAR2_GC_filter = chrX_PAR2.loc[
+        ((chrX_PAR2['REF'] == 'G') & (chrX_PAR2['ALT'] == 'C')) & (chrX_PAR2['reference_MAF'] >= 0.4)]
+    chrX_PAR2_CG_filter = chrX_PAR2.loc[
+        ((chrX_PAR2['REF'] == 'C') & (chrX_PAR2['ALT'] == 'G')) & (chrX_PAR2['reference_MAF'] >= 0.4)]
     chrX_PAR2_maf_filter = pd.concat([chrX_PAR2_AT_filter, chrX_PAR2_TA_filter, chrX_PAR2_GC_filter, chrX_PAR2_CG_filter])
     print('Filtered out A/T G/C SNPs by MAF > 40% for chrX pseudoautosomal region 2')
 
@@ -193,11 +209,20 @@ elif to_do == '5':
                                   maf_per_chr_filter[20], maf_per_chr_filter[21], chrX_PAR1_maf_filter, chrX_PAR2_maf_filter])
     common_snps = pd.merge(left = overlap_with_1000G, right = palindromic_MAF_filter, how = 'inner')
     snps_to_keep = overlap_with_1000G[~overlap_with_1000G.reference_id.isin(common_snps.reference_id)]
-    unique_snps_to_keep = snps_to_keep.drop_duplicates(subset = 'dataset_id', keep = 'first', inplace = False)
-    unique_snps_to_keep.to_csv('Info_on_SNPs_to_keep.txt', sep='\t', header=True, index=False)
-    unique_snps_to_keep['dataset_id'].to_csv('SNPs_to_keep.txt', sep = '\t', header = False, index = False)
-    os.system('plink --bfile ' + geno_name + '_MAF0.05 --extract SNPs_to_keep.txt --make-bed --out ' + geno_name
-              + '_MAF0.05_FilteredPalindromicSNPs')
+    snps_to_keep = snps_to_keep.drop_duplicates(subset = 'dataset_id', keep = 'first', inplace = False)
+    snps_to_keep.to_csv('SNPs_to_keep_info.txt', sep='\t', header=True, index=False)
+    snps_to_keep['dataset_id'].to_csv('SNPs_to_keep.txt', sep = '\t', header = False, index = False)
+    snps_to_keep['ChangeAlleleOrder'] = np.where((snps_to_keep['dataset_A1'] == snps_to_keep['REF']) &
+                                                 (snps_to_keep['dataset_A2'] == snps_to_keep['ALT']),
+                                                 'Change', 'KeepForNow')
+    SNPsToChange = snps_to_keep[snps_to_keep['ChangeAlleleOrder'] == 'Change']
+    SNPsToChange[['dataset_id', 'ALT']].to_csv('ForceA1Alleles.txt', sep='\t', header=False, index=False)
+    os.system(
+        'plink --bfile ' + geno_name + '_MAF0.05 --extract SNPs_to_keep.txt --reference-allele ForceA1Alleles.txt --freq --make-bed --out '
+        + geno_name + '_MAF0.05_FilteredSNPs_ChangeA1Test')
+    snps_to_keep.to_csv('Info_on_SNPs_to_keep.txt', sep='\t', header=True, index=False)
+
+    #Need to check strand as well.
 
 elif to_do == '6':
     print("You go, couch potato")
