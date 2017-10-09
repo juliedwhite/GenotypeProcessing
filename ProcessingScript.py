@@ -121,8 +121,8 @@ elif to_do == '5':
     harmonized_geno_names = [geno_name + '_chr%d_harmonized' % x for x in range(1,23)]
     AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,23)]
     final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,23)]
+    final_snp_list_names = ['chr%d_SNPsKept.txt' % x for x in range(1,23)]
     AF_checked_names = [geno_name + '_chr%dharmonized_AFChecked' % x for x in range(1,23)]
-
 
     for i in range(0, len(vcf_file_names)):
         os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
@@ -210,19 +210,21 @@ elif to_do == '5':
                                    'SAS_Match_Diff', 'SAS_FlipMatch_Diff'],axis=1, inplace = True)
 
         merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']] = \
-            merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric)
+            merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric, errors = 'coerce')
 
         merged_file['AF_Decision'] = np.where((merged_file['AFR_Diff'] > 0.2) & (merged_file['AMR_Diff'] > 0.2) &
                                               (merged_file['EAS_Diff'] > 0.2) & (merged_file['EUR_Diff'] > 0.2) &
                                               (merged_file['SAS_Diff'] > 0.2), 'Remove', 'Keep')
 
-        AF_diff_removed_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Remove']
-        AF_diff_removed_by_chr[i]['SNP'].to_csv(AF_diff_removed_by_chr[i] + '.txt', sep='\t', header=False, index=False)
+        merged_file.drop_duplicates(subset=['SNP'], keep = False, inplace=True)
 
-        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --exclude ' + AF_diff_removed_by_chr[i] +
-                  'recode vcf-iid bgz --make-bed --out ' + harmonized_geno_names[i] + '_AFChecked')
+        AF_diff_removed_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Remove']
 
         final_snp_lists_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Keep']
+        final_snp_lists_by_chr[i]['SNP'].to_csv(final_snp_list_names[i], sep='\t', header=False, index=False)
+
+        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --extract ' + final_snp_list_names[i] +
+                  ' --recode vcf-iid bgz --make-bed --out ' + harmonized_geno_names[i] + '_AFChecked')
 
         print('Finished with chr' + str(i + 1))
 
@@ -317,20 +319,24 @@ elif to_do == '5':
                              'EAS_Match_Diff', 'EAS_FlipMatch_Diff', 'EUR_Match_Diff', 'EUR_FlipMatch_Diff',
                              'SAS_Match_Diff', 'SAS_FlipMatch_Diff'], axis=1, inplace=True)
 
+    merged_file = merged_file[~np.isnan(merged_file['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff'])]
+
     merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']] = \
-        merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric)
+        merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric, errors = 'coerce')
 
     merged_file['AF_Decision'] = np.where((merged_file['AFR_Diff'] > 0.2) & (merged_file['AMR_Diff'] > 0.2) &
                                           (merged_file['EAS_Diff'] > 0.2) & (merged_file['EUR_Diff'] > 0.2) &
                                           (merged_file['SAS_Diff'] > 0.2), 'Remove', 'Keep')
 
-    ChrX_SNPs_Removed = merged_file[merged_file['AF_Decision'] == 'Remove']
-    ChrX_SNPs_Removed[['SNP']].to_csv('chrX_SNPsRemoved_AFDiff.txt', sep='\t', header=False, index=False)
+    merged_file.drop_duplicates(subset=['SNP'], keep=False, inplace=True)
 
-    os.system('plink --bfile ' + geno_name + '_chrX_harmonized --exclude chrX_SNPsRemoved_AFDiff.txt --recode vcf-iid bgz '
-                                             '--make-bed --out ' + geno_name + '_chrX_harmonized_AFChecked')
+    ChrX_SNPs_Removed = merged_file[merged_file['AF_Decision'] == 'Remove']
 
     ChrX_SNPs_Kept = merged_file[merged_file['AF_Decision'] == 'Keep']
+    ChrX_SNPs_Kept['SNP'].to_csv('chrX_SNPsKept_List.txt', sep='\t', header=False, index=False)
+
+    os.system('plink --bfile ' + geno_name + '_chrX_harmonized --extract chrX_SNPsKept_List.txt --recode vcf-iid bgz '
+                                             '--make-bed --out ' + geno_name + '_chrX_harmonized_AFChecked')
 
     All_SNPs_Removed = pd.concat(AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
                                  AF_diff_removed_by_chr[3], AF_diff_removed_by_chr[4], AF_diff_removed_by_chr[5],
