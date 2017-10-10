@@ -122,7 +122,7 @@ elif to_do == '5':
     AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,23)]
     final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,23)]
     final_snp_list_names = ['chr%d_SNPsKept.txt' % x for x in range(1,23)]
-    AF_checked_names = [geno_name + '_chr%dharmonized_AFChecked' % x for x in range(1,23)]
+    AF_checked_names = [geno_name + '_chr%d_harmonized_AFChecked' % x for x in range(1,23)]
 
     for i in range(0, len(vcf_file_names)):
         os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
@@ -229,11 +229,14 @@ elif to_do == '5':
         print('Finished with chr' + str(i + 1))
 
 # Now for chromosome X
+    os.system('plink --bfile ' + geno_name + ' --chr X --make-bed --out ' + geno_name + '_chrX')
+    bim_file = pd.read_csv(geno_name + '_chrX.bim', sep='\t', header=None)
+    bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
+    bim_file.to_csv(geno_name + '_chrX.bim', sep='\t', header=False, index=False, na_rep='NA')
     os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
-              '--input ' + geno_name +
-              '--ref ALL.chrX.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz'
+              '--input ' + geno_name + '_chrX'
+              ' --ref ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz '
               '--refType VCF '
-              '--chrFilter 23 '
               '--hweFilter 0.01 '
               '--mafFilter 0.05 '
               '--update-id '
@@ -269,7 +272,7 @@ elif to_do == '5':
                                      'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
     PAR2_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
 
-    legend_file = pd.concat(['PAR1_legend_file', 'PAR2_legend_file'])
+    legend_file = PAR1_legend_file.append(PAR2_legend_file, ignore_index=True)
 
     merged_file = pd.merge(left=freq_file_with_position, right=legend_file, how='inner', on='position')
 
@@ -319,8 +322,6 @@ elif to_do == '5':
                              'EAS_Match_Diff', 'EAS_FlipMatch_Diff', 'EUR_Match_Diff', 'EUR_FlipMatch_Diff',
                              'SAS_Match_Diff', 'SAS_FlipMatch_Diff'], axis=1, inplace=True)
 
-    merged_file = merged_file[~np.isnan(merged_file['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff'])]
-
     merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']] = \
         merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric, errors = 'coerce')
 
@@ -359,19 +360,41 @@ elif to_do == '5':
 
     All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header = True, index = False)
 
-    os.system('plink --vcf ' + vcf_file_names[i] + '.vcf.gz --double-id --biallelic-only --vcf-require-gt --make-bed --out '
-              + vcf_file_names[i])
-    os.system('plink --vcf All.chrX.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --double-id '
-              '--biallelic-only --vcf-require-gt --make-bed --out All.chrX.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes')
+    for i in range(0, len(vcf_file_names)):
+        os.system('plink --vcf ' + vcf_file_names[i] + '.vcf.gz --double-id --biallelic-only strict --vcf-require-gt '
+                                                       '--make-bed --out chr' + str(i + 1) + '_1000G_Phase3')
+        os.system('grep "\." chr' + str(i + 1) + '_1000G_Phase3.bim >> BadlyNamedSNPs.txt')
 
-    merge_list = AF_checked_names + vcf_file_names
-    merge_list.extend([geno_name + '__chrX_harmonized_AFChecked', 'All.chrX.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes'])
+    os.system('plink --vcf ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz --double-id '
+              '--biallelic-only strict --vcf-require-gt --make-bed --out chr23_1000G_Phase3')
 
-    write_merge_list = open("MergeList.txt", "w")
-    print >> write_merge_list, "\n".join(str(i) for i in merge_list)
-    write_merge_list.close()
+    os.system('grep "\." chr23_1000G_Phase3.bim >> BadlyNamedSNPs.txt')
 
-    os.system('plink --bmerge ' + harmonized_geno_names[0] + '_AFChecked --merge-list MergeList.txt --make-bed --out ' + geno_name + '_1000G' )
+    BadlyNamedSNPs = pd.read_csv('BadlyNamedSNPs.txt', sep="\t", header=None, usecols=[0, 1, 3], names = ['CHR', 'LABEL', 'BP1'])
+    BadlyNamedSNPs['BP2'] = BadlyNamedSNPs['BP1']
+    BadlyNamedSNPs = BadlyNamedSNPs[['CHR', 'BP1', 'BP2', 'LABEL']]
+    BadlyNamedSNPs.drop_duplicates(keep='first', inplace=True)
+    BadlyNamedSNPs.to_csv('BadlyNamedSNPs.txt', sep='\t', header=False, index=False)
+
+    from pandas import *
+    ChrWithBadNames = BadlyNamedSNPs['CHR'].tolist()
+    ChrWithBadNames = list(set(ChrWithBadNames))
+
+    for i in ChrWithBadNames:
+        os.system('plink --bfile chr' + str(i) + '_1000G_Phase3 --exclude BadlyNamedSNPs.txt --make-bed --out chr'
+                  + str(i) + '_1000G_Phase3')
+    os.system('rm *~')
+
+    chr_1000G_Phase3_Names = ['chr%d_1000G_Phase3' % x for x in range(1,24)]
+    merge_list = AF_checked_names + chr_1000G_Phase3_Names
+    merge_list.extend([geno_name + '_chrX_harmonized_AFChecked'])
+
+    import csv
+    with open("MergeList.txt", "w") as f:
+        wr = csv.writer(f, delimiter="\n")
+        wr.writerow(merge_list)
+
+    os.system('plink --merge-list MergeList.txt --make-bed --out ' + geno_name + '_1000G' )
 
 elif to_do == '6':
     print("You go, couch potato")
