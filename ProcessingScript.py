@@ -30,8 +30,9 @@ to_do = input('What would you like to do?\n'
               'New FID, New IID.\n'
               '3) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
               '4) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
-              '5) Merge with 1000 Genomes Phase 3\n'
-              '6) Nothing\n'
+              '5) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
+              '6) Merge your data with 1000G\n'
+              '7) Nothing\n'
               'Please enter a number (i.e. 2): ')
 
 if to_do == '1':
@@ -107,59 +108,99 @@ elif to_do == '5':
     # Removes SNPs with MAF < 5%
     # Update IDs to match the reference
     # Updates the reference allele to match 1000G
-    # Outputs new files per chromosome.
+    # Outputs new files per chromosome, in vcf and plink bed/bim/fam format.
 
     import pandas as pd
     import numpy as np
 
     geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
 
-    vcf_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes' % x for x in range(1,23)]
-    freq_file_names = [geno_name + '_chr%d_harmonized.frq' % x for x in range(1,23)]
-    bim_file_names = [geno_name + '_chr%d_harmonized.bim' % x for x in range(1,23)]
+    ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in range(1,23)]
+    ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
+    harmonized_geno_names = [geno_name + '_chr%d_harmonized' % x for x in range(1, 24)]
+    freq_file_names = [geno_name + '_chr%d_harmonized.frq' % x for x in range(1,24)]
     legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1,23)]
-    harmonized_geno_names = [geno_name + '_chr%d_harmonized' % x for x in range(1,23)]
-    AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,23)]
-    final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,23)]
-    final_snp_list_names = ['chr%d_SNPsKept.txt' % x for x in range(1,23)]
-    AF_checked_names = [geno_name + '_chr%d_harmonized_AFChecked' % x for x in range(1,23)]
+    AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,24)]
+    final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,24)]
+    AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1,24)]
 
-    for i in range(0, len(vcf_file_names)):
-        os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
-                  '--input ' + geno_name +
-                  ' --ref ' + vcf_file_names[i] + '.vcf.gz'
-                  ' --refType VCF '
-                  '--chrFilter ' + str(i + 1) +
-                  ' --hweFilter 0.01 '
-                  '--mafFilter 0.05 '
-                  '--update-id '
-                  '--debug '
-                  '--mafAlign 0 '
-                  '--update-reference-allele '
-                  '--outputType PLINK_BED '
-                  '--output ' + harmonized_geno_names[i])
+    # Harmonize for each chromosome
+    for i in range(0, len(ref_file_names)):
+        if i < 22:
+            os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
+                      '--input ' + geno_name +
+                      ' --ref ' + ref_file_names[i] +
+                      ' --refType VCF '
+                      '--chrFilter ' + str(i + 1) +
+                      ' --hweFilter 0.01 '
+                      '--mafFilter 0.05 '
+                      '--update-id '
+                      '--debug '
+                      '--mafAlign 0 '
+                      '--update-reference-allele '
+                      '--outputType PLINK_BED '
+                      '--output ' + harmonized_geno_names[i])
 
-    # Since we are going to use a global reference population, removes all SNPs with an AF difference > 0.2
-    #  between study dataset and all superpopulation allele frequencies. IF within 0.2 of any superpopulation frequency,
-    #  keep variant. Frequency file is expected to be a Plink frequency file with the same number of variants as the bim file.
+        elif i == 22:
+            # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and convert the 23 to X before harmonizing
+            os.system('plink --bfile ' + geno_name + ' --chr X --make-bed --out ' + geno_name + '_chr23')
+            bim_file = pd.read_csv(geno_name + '_chr23.bim', sep='\t', header=None)
+            bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
+            bim_file.to_csv(geno_name + '_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
 
+            os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
+                      '--input ' + geno_name + '_chr23'
+                      ' --ref ' + ref_file_names[i] +
+                      ' --refType VCF '
+                      '--hweFilter 0.01 '
+                      '--mafFilter 0.05 '
+                      '--update-id '
+                      '--debug '
+                      '--mafAlign 0 '
+                      '--update-reference-allele '
+                      '--outputType PLINK_BED '
+                      '--output ' + harmonize_geno_names[i])
+        else:
+            print("Something is wrong with the number/name of reference files")
+
+    # Now for each that was just harmonized, remove all SNPs with an allele (AF) difference > 0.2 since we are going to use a global reference population
+    # between study dataset and all superpopulation allele frequencies. IF within 0.2 of any superpopulation frequency,
+    # keep variant. Frequency file is expected to be a Plink frequency file with the same number of variants as the bim file.
+    for i in range(0, len(harmonized_geno_names)):
         os.system('plink --bfile ' + harmonized_geno_names[i] + ' --freq --out ' + harmonized_geno_names[i])
-
         freq_file = pd.read_csv(freq_file_names[i], sep='\s+', header = 0, usecols = [0,1,2,3,4],
                                 dtype = {'CHR': int, 'SNP': str, 'A1': str, 'A2': str, 'MAF':float})
         freq_file.rename(columns={'A1': 'dataset_a1', 'A2': 'dataset_a2', 'MAF': 'dataset_a1_frq'}, inplace=True)
         freq_file['dataset_a2_frq'] = 1-freq_file['dataset_a1_frq']
 
-        bim_file = pd.read_csv(bim_file_names[i], sep='\s+', header=None, usecols=[0, 1, 3],
+        bim_file = pd.read_csv(harmonized_geno_names[i] + '.bim', sep='\s+', header=None, usecols=[0, 1, 3],
                                names=['CHR', 'SNP', 'position'])
 
         freq_file_with_position = pd.merge(left = freq_file, right = bim_file, how = 'inner', on=['CHR','SNP'])
 
-        legend_file = pd.read_csv(legend_file_names[i], compression="gzip", sep=" ", header = 0,
-                                  dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str, 'AFR': float,
-                                         'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
+        if i < 22:
+            legend_file = pd.read_csv(legend_file_names[i], compression="gzip", sep=" ", header = 0,
+                                      dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str, 'AFR': float,
+                                             'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
+            legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
+        elif i == 22:
+            PAR1_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR1.legend.gz', compression="gzip", sep=" ", header=0,
+                                           dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str,
+                                                  'AFR': float,
+                                                  'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
+            PAR1_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'},
+                                    inplace=True)
 
-        legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
+            PAR2_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR2.legend.gz', compression="gzip", sep=" ", header=0,
+                                           dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str,
+                                                  'AFR': float,
+                                                  'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
+            PAR2_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'},
+                                    inplace=True)
+
+            legend_file = PAR1_legend_file.append(PAR2_legend_file, ignore_index=True)
+        else:
+            print("Something is wrong with number/name of legend file names")
 
         merged_file = pd.merge(left=freq_file_with_position, right=legend_file, how='inner', on='position')
 
@@ -168,7 +209,6 @@ elif to_do == '5':
         #The AF columns in the legend file are the allele frequencies of the a1 allele in that file.
         #Need to match based on A1 alleles (hopefully this has already been done in the harmonization step, then
         # calculate the allele frequency difference.
-
         merged_file['AFR_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
                                                  (merged_file['dataset_a2'] == merged_file['reference_a0']),
                                                  abs(merged_file['dataset_a1_frq'] - merged_file['AFR']),'')
@@ -176,28 +216,28 @@ elif to_do == '5':
                                                  (merged_file['dataset_a2'] == merged_file['reference_a0']),
                                                  abs(merged_file['dataset_a1_frq'] - merged_file['AMR']), '')
         merged_file['EAS_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                  (merged_file['dataset_a2'] == merged_file['reference_a0']),
+                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
                                                  abs(merged_file['dataset_a1_frq'] - merged_file['EAS']), '')
         merged_file['EUR_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                  (merged_file['dataset_a2'] == merged_file['reference_a0']),
+                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
                                                  abs(merged_file['dataset_a1_frq'] - merged_file['EUR']), '')
         merged_file['SAS_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                  (merged_file['dataset_a2'] == merged_file['reference_a0']),
+                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
                                                  abs(merged_file['dataset_a1_frq'] - merged_file['SAS']), '')
         merged_file['AFR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                      (merged_file['dataset_a2'] == merged_file['reference_a1']),
+                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
                                                      abs(merged_file['dataset_a2_frq'] - merged_file['AFR']), '')
         merged_file['AMR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                      (merged_file['dataset_a2'] == merged_file['reference_a1']),
+                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
                                                      abs(merged_file['dataset_a2_frq'] - merged_file['AMR']), '')
         merged_file['EAS_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                      (merged_file['dataset_a2'] == merged_file['reference_a1']),
+                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
                                                      abs(merged_file['dataset_a2_frq'] - merged_file['EAS']), '')
         merged_file['EUR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                      (merged_file['dataset_a2'] == merged_file['reference_a1']),
+                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
                                                      abs(merged_file['dataset_a2_frq'] - merged_file['EUR']), '')
         merged_file['SAS_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                      (merged_file['dataset_a2'] == merged_file['reference_a1']),
+                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
                                                      abs(merged_file['dataset_a2_frq'] - merged_file['SAS']), '')
         merged_file['AFR_Diff'] = merged_file['AFR_Match_Diff']+merged_file['AFR_FlipMatch_Diff']
         merged_file['AMR_Diff'] = merged_file['AMR_Match_Diff']+merged_file['AMR_FlipMatch_Diff']
@@ -221,186 +261,187 @@ elif to_do == '5':
         AF_diff_removed_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Remove']
 
         final_snp_lists_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Keep']
-        final_snp_lists_by_chr[i]['SNP'].to_csv(final_snp_list_names[i], sep='\t', header=False, index=False)
+        final_snp_lists_by_chr[i]['SNP'].to_csv(final_snp_lists_by_chr[i] + '.txt', sep='\t', header=False, index=False)
 
-        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --extract ' + final_snp_list_names[i] +
-                  ' --recode vcf-iid bgz --make-bed --out ' + harmonized_geno_names[i] + '_AFChecked')
+        # Make both bed and vcf files for each chromosomes. Need bed file for merging, and need vcf file for phasing
+        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --extract ' + final_snp_lists_by_chr[i] +
+                  '.txt --recode vcf-iid bgz --make-bed --out ' + AF_checked_names[i])
 
         print('Finished with chr' + str(i + 1))
 
-# Now for chromosome X
-    os.system('plink --bfile ' + geno_name + ' --chr X --make-bed --out ' + geno_name + '_chrX')
-    bim_file = pd.read_csv(geno_name + '_chrX.bim', sep='\t', header=None)
-    bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
-    bim_file.to_csv(geno_name + '_chrX.bim', sep='\t', header=False, index=False, na_rep='NA')
-    os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
-              '--input ' + geno_name + '_chrX'
-              ' --ref ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz '
-              '--refType VCF '
-              '--hweFilter 0.01 '
-              '--mafFilter 0.05 '
-              '--update-id '
-              '--debug '
-              '--mafAlign 0 '
-              '--update-reference-allele '
-              '--outputType PLINK_BED '
-              '--output ' + geno_name + '_chrX_harmonized')
-
-    # Since we are going to use a global reference population, removes all SNPs with an AF difference > 0.2
-    #  between study dataset and all superpopulation allele frequencies. IF within 0.2 of any superpopulation frequency,
-    #  keep variant. Frequency file is expected to be a Plink frequency file with the same number of variants as the bim file.
-
-    os.system('plink --bfile ' + geno_name + '_chrX_harmonized --freq --out ' + geno_name + '_chrX_harmonized')
-
-    freq_file = pd.read_csv(geno_name + '_chrX_harmonized.frq', sep='\s+', header=0, usecols=[0, 1, 2, 3, 4],
-                            dtype={'CHR': int, 'SNP': str, 'A1': str, 'A2': str, 'MAF': float})
-    freq_file.rename(columns={'A1': 'dataset_a1', 'A2': 'dataset_a2', 'MAF': 'dataset_a1_frq'}, inplace=True)
-    freq_file['dataset_a2_frq'] = 1 - freq_file['dataset_a1_frq']
-
-    bim_file = pd.read_csv(geno_name + '_chrX_harmonized.bim', sep='\s+', header=None, usecols=[0, 1, 3],
-                           names=['CHR', 'SNP', 'position'])
-
-    freq_file_with_position = pd.merge(left=freq_file, right=bim_file, how='inner', on=['CHR', 'SNP'])
-
-    PAR1_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR1.legend.gz', compression="gzip", sep=" ", header=0,
-                              dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str, 'AFR': float,
-                                     'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
-    PAR1_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
-
-    PAR2_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR2.legend.gz', compression="gzip", sep=" ", header=0,
-                              dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str, 'AFR': float,
-                                     'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
-    PAR2_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
-
-    legend_file = PAR1_legend_file.append(PAR2_legend_file, ignore_index=True)
-
-    merged_file = pd.merge(left=freq_file_with_position, right=legend_file, how='inner', on='position')
-
-    # The MAF column in the frq file is the allele frequency of the A1 allele (which is usually minor, but
-    # possibly not in my case because I just updated the reference to match 1000G.
-    # The AF columns in the legend file are the allele frequencies of the a1 allele in that file.
-    # Need to match based on A1 alleles (hopefully this has already been done in the harmonization step, then
-    # calculate the allele frequency difference.
-
-    merged_file['AFR_Match_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a1']) &
-                                             (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                             abs(merged_file['dataset_a1_frq'] - merged_file['AFR']), '')
-    merged_file['AMR_Match_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a1']) &
-                                             (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                             abs(merged_file['dataset_a1_frq'] - merged_file['AMR']), '')
-    merged_file['EAS_Match_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a1']) &
-                                             (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                             abs(merged_file['dataset_a1_frq'] - merged_file['EAS']), '')
-    merged_file['EUR_Match_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a1']) &
-                                             (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                             abs(merged_file['dataset_a1_frq'] - merged_file['EUR']), '')
-    merged_file['SAS_Match_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a1']) &
-                                             (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                             abs(merged_file['dataset_a1_frq'] - merged_file['SAS']), '')
-    merged_file['AFR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                 abs(merged_file['dataset_a2_frq'] - merged_file['AFR']), '')
-    merged_file['AMR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                 abs(merged_file['dataset_a2_frq'] - merged_file['AMR']), '')
-    merged_file['EAS_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                 abs(merged_file['dataset_a2_frq'] - merged_file['EAS']), '')
-    merged_file['EUR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                 abs(merged_file['dataset_a2_frq'] - merged_file['EUR']), '')
-    merged_file['SAS_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                 abs(merged_file['dataset_a2_frq'] - merged_file['SAS']), '')
-    merged_file['AFR_Diff'] = merged_file['AFR_Match_Diff'] + merged_file['AFR_FlipMatch_Diff']
-    merged_file['AMR_Diff'] = merged_file['AMR_Match_Diff'] + merged_file['AMR_FlipMatch_Diff']
-    merged_file['EAS_Diff'] = merged_file['EAS_Match_Diff'] + merged_file['EAS_FlipMatch_Diff']
-    merged_file['EUR_Diff'] = merged_file['EUR_Match_Diff'] + merged_file['EUR_FlipMatch_Diff']
-    merged_file['SAS_Diff'] = merged_file['SAS_Match_Diff'] + merged_file['SAS_FlipMatch_Diff']
-
-    merged_file.drop(labels=['AFR_Match_Diff', 'AFR_FlipMatch_Diff', 'AMR_Match_Diff', 'AMR_FlipMatch_Diff',
-                             'EAS_Match_Diff', 'EAS_FlipMatch_Diff', 'EUR_Match_Diff', 'EUR_FlipMatch_Diff',
-                             'SAS_Match_Diff', 'SAS_FlipMatch_Diff'], axis=1, inplace=True)
-
-    merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']] = \
-        merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric, errors = 'coerce')
-
-    merged_file['AF_Decision'] = np.where((merged_file['AFR_Diff'] > 0.2) & (merged_file['AMR_Diff'] > 0.2) &
-                                          (merged_file['EAS_Diff'] > 0.2) & (merged_file['EUR_Diff'] > 0.2) &
-                                          (merged_file['SAS_Diff'] > 0.2), 'Remove', 'Keep')
-
-    merged_file.drop_duplicates(subset=['SNP'], keep=False, inplace=True)
-
-    ChrX_SNPs_Removed = merged_file[merged_file['AF_Decision'] == 'Remove']
-
-    ChrX_SNPs_Kept = merged_file[merged_file['AF_Decision'] == 'Keep']
-    ChrX_SNPs_Kept['SNP'].to_csv('chrX_SNPsKept_List.txt', sep='\t', header=False, index=False)
-
-    os.system('plink --bfile ' + geno_name + '_chrX_harmonized --extract chrX_SNPsKept_List.txt --recode vcf-iid bgz '
-                                             '--make-bed --out ' + geno_name + '_chrX_harmonized_AFChecked')
-
-    All_SNPs_Removed = pd.concat(AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
-                                 AF_diff_removed_by_chr[3], AF_diff_removed_by_chr[4], AF_diff_removed_by_chr[5],
-                                 AF_diff_removed_by_chr[6], AF_diff_removed_by_chr[7], AF_diff_removed_by_chr[8],
-                                 AF_diff_removed_by_chr[9], AF_diff_removed_by_chr[10], AF_diff_removed_by_chr[11],
-                                 AF_diff_removed_by_chr[12], AF_diff_removed_by_chr[13], AF_diff_removed_by_chr[14],
-                                 AF_diff_removed_by_chr[15], AF_diff_removed_by_chr[16], AF_diff_removed_by_chr[17],
-                                 AF_diff_removed_by_chrp[18], AF_diff_removed_by_chr[19], AF_diff_removed_by_chr[20],
-                                 AF_diff_removed_by_chr[21], ChrX_SNPs_Removed)
+    # Write a list of all SNPs removed and all SNPs kept just for reference purposes.
+    All_SNPs_Removed = pd.concat([AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
+                                  AF_diff_removed_by_chr[3], AF_diff_removed_by_chr[4], AF_diff_removed_by_chr[5],
+                                  AF_diff_removed_by_chr[6], AF_diff_removed_by_chr[7], AF_diff_removed_by_chr[8],
+                                  AF_diff_removed_by_chr[9], AF_diff_removed_by_chr[10], AF_diff_removed_by_chr[11],
+                                  AF_diff_removed_by_chr[12], AF_diff_removed_by_chr[13], AF_diff_removed_by_chr[14],
+                                  AF_diff_removed_by_chr[15], AF_diff_removed_by_chr[16], AF_diff_removed_by_chr[17],
+                                  AF_diff_removed_by_chr[18], AF_diff_removed_by_chr[19], AF_diff_removed_by_chr[20],
+                                  AF_diff_removed_by_chr[21], AF_diff_removed_by_chr[22]])
     All_SNPs_Removed.to_csv('SNPs_Removed_AFDiff.txt', sep='\t', header = True, index = False)
 
-    All_SNPs_Kept = pd.concat(final_snp_lists_by_chr[0], final_snp_lists_by_chr[1], final_snp_lists_by_chr[2],
-                              final_snp_lists_by_chr[3], final_snp_lists_by_chr[4], final_snp_lists_by_chr[5],
-                              final_snp_lists_by_chr[6], final_snp_lists_by_chr[7], final_snp_lists_by_chr[8],
-                              final_snp_lists_by_chr[9], final_snp_lists_by_chr[10], final_snp_lists_by_chr[11],
-                              final_snp_lists_by_chr[12], final_snp_lists_by_chr[13], final_snp_lists_by_chr[14],
-                              final_snp_lists_by_chr[15], final_snp_lists_by_chr[16], final_snp_lists_by_chr[17],
-                              final_snp_lists_by_chr[18], final_snp_lists_by_chr[19], final_snp_lists_by_chr[20],
-                              final_snp_lists_by_chr[21], ChrX_SNPs_Kept)
-
+    All_SNPs_Kept = pd.concat([final_snp_lists_by_chr[0], final_snp_lists_by_chr[1], final_snp_lists_by_chr[2],
+                               final_snp_lists_by_chr[3], final_snp_lists_by_chr[4], final_snp_lists_by_chr[5],
+                               final_snp_lists_by_chr[6], final_snp_lists_by_chr[7], final_snp_lists_by_chr[8],
+                               final_snp_lists_by_chr[9], final_snp_lists_by_chr[10], final_snp_lists_by_chr[11],
+                               final_snp_lists_by_chr[12], final_snp_lists_by_chr[13], final_snp_lists_by_chr[14],
+                               final_snp_lists_by_chr[15], final_snp_lists_by_chr[16], final_snp_lists_by_chr[17],
+                               final_snp_lists_by_chr[18], final_snp_lists_by_chr[19], final_snp_lists_by_chr[20],
+                               final_snp_lists_by_chr[21], final_snp_lists_by_chr[22]])
     All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header = True, index = False)
 
-    for i in range(0, len(vcf_file_names)):
-        os.system('plink --vcf ' + vcf_file_names[i] + '.vcf.gz --double-id --biallelic-only strict --vcf-require-gt '
-                                                       '--make-bed --out chr' + str(i + 1) + '_1000G_Phase3')
-        os.system('grep "\." chr' + str(i + 1) + '_1000G_Phase3.bim >> BadlyNamedSNPs.txt')
-
-    os.system('plink --vcf ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz --double-id '
-              '--biallelic-only strict --vcf-require-gt --make-bed --out chr23_1000G_Phase3')
-
-    os.system('grep "\." chr23_1000G_Phase3.bim >> BadlyNamedSNPs.txt')
-
-    BadlyNamedSNPs = pd.read_csv('BadlyNamedSNPs.txt', sep="\t", header=None, usecols=[0, 1, 3], names = ['CHR', 'LABEL', 'BP1'])
-    BadlyNamedSNPs['BP2'] = BadlyNamedSNPs['BP1']
-    BadlyNamedSNPs = BadlyNamedSNPs[['CHR', 'BP1', 'BP2', 'LABEL']]
-    BadlyNamedSNPs.drop_duplicates(keep='first', inplace=True)
-    BadlyNamedSNPs.to_csv('BadlyNamedSNPs.txt', sep='\t', header=False, index=False)
-
-    from pandas import *
-    ChrWithBadNames = BadlyNamedSNPs['CHR'].tolist()
-    ChrWithBadNames = list(set(ChrWithBadNames))
-
-    for i in ChrWithBadNames:
-        os.system('plink --bfile chr' + str(i) + '_1000G_Phase3 --exclude BadlyNamedSNPs.txt --make-bed --out chr'
-                  + str(i) + '_1000G_Phase3')
-    os.system('rm *~')
-
-    chr_1000G_Phase3_Names = ['chr%d_1000G_Phase3' % x for x in range(1,24)]
-    merge_list = AF_checked_names + chr_1000G_Phase3_Names
-    merge_list.extend([geno_name + '_chrX_harmonized_AFChecked'])
+elif to_do == '6':
+    #Merges the 1000G with house dataset
 
     import csv
-    with open("MergeList.txt", "w") as f:
+    import pandas as pd
+    import numpy as np
+
+    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+
+    ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
+                      range(1, 23)]
+    ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
+    AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1, 24)]
+    chr_1000G_Phase3_names = ['chr%d_1000G_Phase3' % x for x in range(1, 24)]
+    unique_rsid_per_chr = ['chr%d_unique_rsid' % x for x in range(1, 24)]
+
+    with open("HouseMergeList.txt", "w") as f:
         wr = csv.writer(f, delimiter="\n")
-        wr.writerow(merge_list)
+        wr.writerow(AF_checked_names)
+    os.system('plink --merge-list HouseMergeList.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
 
-    os.system('plink --merge-list MergeList.txt --make-bed --out ' + geno_name + '_1000G' )
+    #Merge 1000G chr data into one plink formatted file
+    for i in range(0, len(ref_file_names)):
+        os.system('plink --vcf ' + ref_file_names[i] + ' --double-id --biallelic-only strict --vcf-require-gt '
+                                                       '--make-bed --out ' + chr_1000G_Phase3_names[i])
+        unique_rsid_per_chr = pd.read_csv(chr_1000G_Phase3_names[i]+'.bim', sep='\t', header=None)
+        unique_rsid_per_chr.drop_duplicates(subset=1,keep=False,inplace=True)
+        unique_rsid_per_chr[1].to_csv(chr_1000G_Phase3_names[i]+'_UniqueRsids.txt', sep='\t', header=False,index=False)
+        os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --extract '
+                  + chr_1000G_Phase3_names[i] + '_UniqueRsids.txt --make-bed --out ' + chr_1000G_Phase3_names[i])
+    os.system('rm *~')
 
-elif to_do == '6':
+    with open("1000GMergeList.txt", "w") as f:
+        wr = csv.writer(f, delimiter = "\n")
+        wr.writerow(chr_1000G_Phase3_names)
+    os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+
+    #Perform initial merge of house data and 1000G
+    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G')
+
+    #Read in log file to see if anything went wrong (something probably went wrong)
+    logfile = pd.DataFrame()
+    with open(geno_name + '_1000G.log', 'r') as f:
+        for line in f:
+            logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+
+    #Check to see if the logfile has warnings or if there are triallelic snps that need to be flipped (missnp)
+    if logfile.any()[0] == 'Warning:':
+        rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
+        rsid_warnings[1].dropna(how='any').to_csv(geno_name + '_1000G_MergeWarnings.txt', sep='\t', header=False,
+                                                  index=False)
+
+    if os.path.getsize(geno_name + '_1000G_MergeWarnings.txt') > 0:
+        if os.path.exists(geno_name + '_1000G-merge.missnp'):
+            #If merge warnings and missnps exist, exclude warning snps from both 1000G and house dataset, flip snps in house dataset
+            os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_MergeWarnings.txt --geno 0.01 '
+                                                                                 '--make-bed --out 1000G_Phase3')
+            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                      '_1000G_MergeWarnings.txt --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
+                      + geno_name + '_HarmonizedTo1000G')
+            os.system('rm *~')
+        else: #If only mergewarnings exists, exclude warning snps from both 100)G and house dataset.
+            os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_MergeWarnings.txt --geno 0.01 '
+                                                                                 '--make-bed --out 1000G_Phase3')
+            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                      '_1000G_MergeWarnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+            os.system('rm *~')
+    elif os.path.exists(geno_name + '_1000G-merge.missnp') and os.path.getsize(geno_name + '_1000G_MergeWarnings.txt') == 0:
+        #If only the missnps exist, flip them in the house dataset.
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
+                  + geno_name + '_HarmonizedTo1000G')
+        os.system('rm *~')
+    elif os.path.exists(geno_name + '_1000G.bim'):
+        merged_correctly = ['yes']
+        print("Successfully merged house dataset with 1000G, though you should double check. I can't predict every error.")
+    else:
+        merged_correctly = ['no']
+
+    #If the merge did not happen correctly the first time, re-merge:
+    if merged_correctly != ['yes']:
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge2')
+
+        # Read in log file to see if anything went wrong
+        logfile = pd.DataFrame()
+        with open(geno_name + '_1000G_merge2.log', 'r') as f:
+            for line in f:
+                logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+
+        # Check to see if the logfile has warnings or if there are triallelic snps that need to be flipped (missnp)
+        if logfile.any()[0] == 'Warning:':
+            rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
+            rsid_warnings[1].dropna(how='any').to_csv(geno_name + '_1000G_merge2_warnings.txt', sep='\t', header=False,
+                                                      index=False)
+
+        if os.path.getsize(geno_name + '_1000G_merge2_warnings.txt') > 0:
+            if os.path.exists(geno_name + '_1000G_merge2-merge.missnp'):
+                #If merge warnings and missnps still exist, exclude from both 1000G and house dataset.
+                missnp = pd.read_csv(geno_name + '_1000G_merge2-merge.missnp', sep = '\t', header=None)
+                warnings_missnp = pd.concat([rsid_warnings, missnp], axis=0)
+                warnings_missnp[1].dropna(how='any').to_csv(geno_name + '_1000G_warnings_missnp.txt', sep='\t', header=False, index=False)
+                os.system('plink --bfile 1000G_Phase3 --exclude ' + geno_name + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+                os.system('plink --bfile ' +geno_name + '_HarmonizedTo1000G --exclude ' + geno_name + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+                os.system('rm *~')
+            else:  # If only merge warnings still exist, exclude from both 1000G and house dataset.
+                os.system(
+                    'plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_merge2_warnings.txt --geno 0.01 '
+                                                                               '--make-bed --out 1000G_Phase3')
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                          '_1000G_merge2_warnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+                os.system('rm *~')
+        elif os.path.exists(geno_name + '_1000G_merge2-merge.missnp') and os.path.getsize(
+                        geno_name + '_1000G_merge2_warnings.txt') == 0:
+            # If only the missnps still exist, remove them in the both datasets.
+            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                      '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+            os.system('plink --bfile 1000G_Phase3 --exclude ' + geno_name + '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out 1000G_Phase3')
+            os.system('rm *~')
+        elif os.path.exists(geno_name + '_1000G_merge2.bim'):
+            merged_correctly = ['yes']
+            print("Successfully merged house dataset with 1000G, though you should double check. I can't predict every error.")
+        else:
+            merged_correctly = ['no']
+
+    # If the merge did not happen correctly the second time, re-merge:
+    if merged_correctly != ['yes']:
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge3')
+
+        # Read in log file to see if anything went wrong
+        logfile = pd.DataFrame()
+        with open(geno_name + '_1000G_merge3.log', 'r') as f:
+            for line in f:
+                logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+
+        # Check to see if the logfile still has warnings, if so, the user will need to identify them and take care of them manually
+        if not os.path.exists(geno_name + '_1000G_merge3.bim'):
+            if logfile.any()[0] == 'Warning:':
+                print("I'm sorry, the logfile still has warnings, even after removing snps that threw errors in the "
+                      "first two tries, you'll have to manually deal with these using the merge3 log file.")
+            if os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
+                print("I'm sorry, there are still snps with 3+ variants present, even after flipping some and removing "
+                      "the ones that the flip didn't solve you'll have to deal with these manually using the merge3 log file")
+        if os.path.exists(geno_name + '_1000G_merge3.bim'):
+            merged_correctly = ['yes']
+
+    if merged_correctly != ['yes']:
+        print("I'm sorry, for some reason I can't merge your dataset with 1000G, you'll have to identify the errors and do it on your own.")
+
+elif to_do == '7':
     print("You go, couch potato")
 
 else:
-    print("Please enter a number 1-6.")
+    print("Please enter a number 1-7.")
 
 
 
