@@ -2,24 +2,32 @@
 # Date 9.5.17
 
 # WHAT THIS DOES #
-# -Run IBD matrix through plink
-# -Update family and individual IDs
-# -Update maternal and paternal IDs
-# -Update sex
-# -Using 1000 Genomes as a reference (this part based off Perl script by W. Rayner, 2015, wrayner@well.ox.ac.uk)
-#   -Removes SNPs with MAF < 5% in study dataset
-#   -Removes SNPs not in 1000 Genomes
-#   -Removes all A/T G/C SNPs with MAF > 40% in the reference data set
-#   -Removes all SNPs with an AF difference >0.2, between reference and dataset frequency file, frequency file is
-#       expected to be a plink frequency file with the same number of SNPs as the bim file
-#   -Removes duplicates that may be introduced with the position update
-#   -Removes indels
-# -Merges your data with 1000 Genomes
-# -Runs ADMIXTURE with k = 3...9
-# -Phases using SHAPEIT2
+# 1) Run IBD matrix through plink
+# 2) Update family and individual IDs
+# 3) Update maternal and paternal IDs
+# 4) Update sex
+# 5) Using 1000 Genomes as a reference (this part based off Perl script by W. Rayner, 2015, wrayner@well.ox.ac.uk)
+    #   -Removes SNPs with MAF < 5% in study dataset
+    #   -Removes SNPs not in 1000 Genomes
+    #   -Removes all A/T G/C SNPs with MAF > 40% in the reference data set
+    #   -Removes all SNPs with an AF difference >0.2, between reference and dataset frequency file, frequency file is
+    #       expected to be a plink frequency file with the same number of SNPs as the bim file
+    #   -Removes duplicates that may be introduced with the position update
+    #   -Removes indels
+# 6) Merges your data with 1000 Genomes
+# 7) Prepares files for ADMIXTURE with k = 3...9
+# 8) Prepares files for phasing using SHAPEIT2
+# 9) Prepares files for imputation using the Sanger Imputation Server
 
 # REQUIREMENTS #
-# You must have plink 1.9 in the same directory as your genotype files and this script, and it should be called 'plink'.
+# You must have plink 1.9 (https://www.cog-genomics.org/plink2) in the same directory as your genotype files and this script,
+#   and it should be called 'plink' Alternatively, you could put plink in your PATH.
+# You must have downloaded GenotypeHarmonizer (https://github.com/molgenis/systemsgenetics/wiki/Genotype-Harmonizer-Download)
+#   and either have it in the same directory as your genotype files and this script. Or, put it in your PATH
+# You must have downloaded the 1000G Phase 3 legend files from http://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3/.
+#   These can be anywhere you want, you'll tell me the path later
+# You must have downloaded the 1000G Phase 3 VCF files from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/.
+#   These can be anywhere you want, you'll tell me the path later
 
 # Getting the needed modules.
 import os
@@ -114,12 +122,15 @@ elif to_do == '5':
     import numpy as np
 
     geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+    vcf_path = input('Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
+    legend_path = input('Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
 
     ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in range(1,23)]
     ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
     harmonized_geno_names = [geno_name + '_chr%d_harmonized' % x for x in range(1, 24)]
     freq_file_names = [geno_name + '_chr%d_harmonized.frq' % x for x in range(1,24)]
     legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1,23)]
+    legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend'])
     AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,24)]
     final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,24)]
     AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1,24)]
@@ -129,8 +140,8 @@ elif to_do == '5':
         if i < 22:
             os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
                       '--input ' + geno_name +
-                      ' --ref ' + ref_file_names[i] +
-                      ' --refType VCF '
+                      ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
+                      '" --refType VCF '
                       '--chrFilter ' + str(i + 1) +
                       ' --hweFilter 0.01 '
                       '--mafFilter 0.05 '
@@ -150,8 +161,8 @@ elif to_do == '5':
 
             os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
                       '--input ' + geno_name + '_chr23'
-                      ' --ref ' + ref_file_names[i] +
-                      ' --refType VCF '
+                      ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
+                      '" --refType VCF '
                       '--hweFilter 0.01 '
                       '--mafFilter 0.05 '
                       '--update-id '
@@ -178,29 +189,11 @@ elif to_do == '5':
 
         freq_file_with_position = pd.merge(left = freq_file, right = bim_file, how = 'inner', on=['CHR','SNP'])
 
-        if i < 22:
-            legend_file = pd.read_csv(legend_file_names[i], compression="gzip", sep=" ", header = 0,
-                                      dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str, 'AFR': float,
-                                             'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
-            legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
-        elif i == 22:
-            PAR1_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR1.legend.gz', compression="gzip", sep=" ", header=0,
-                                           dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str,
-                                                  'AFR': float,
-                                                  'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
-            PAR1_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'},
-                                    inplace=True)
 
-            PAR2_legend_file = pd.read_csv('1000GP_Phase3_chrX_PAR2.legend.gz', compression="gzip", sep=" ", header=0,
-                                           dtype={'id': str, 'position': int, 'a0': str, 'a1': str, 'TYPE': str,
-                                                  'AFR': float,
-                                                  'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
-            PAR2_legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'},
-                                    inplace=True)
-
-            legend_file = PAR1_legend_file.append(PAR2_legend_file, ignore_index=True)
-        else:
-            print("Something is wrong with number/name of legend file names")
+        legend_file = pd.read_csv(os.path.join(legend_path,legend_file_names[i]), compression="gzip", sep=" ", header = 0,
+                                  dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str, 'AFR': float,
+                                         'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
+        legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
 
         merged_file = pd.merge(left=freq_file_with_position, right=legend_file, how='inner', on='position')
 
@@ -308,6 +301,7 @@ elif to_do == '6':
     import numpy as np
 
     geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+    vcf_path = input('Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
 
     ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
                       range(1, 23)]
@@ -336,9 +330,10 @@ elif to_do == '6':
     house_snps_kept.to_csv('SNPs_Kept_List.txt', sep='\t', header=False, index=False)
 
     for i in range(0, len(ref_file_names)):
-        os.system('plink --vcf ' + ref_file_names[i] + ' --double-id --biallelic-only strict --vcf-require-gt '
-                                                       '--extract SNPs_Kept_List.txt --make-bed '
-                                                       '--out ' + chr_1000G_Phase3_names[i])
+        os.system('plink --vcf "' + os.path.join(vcf_path,ref_file_names[i]) + '" --double-id --biallelic-only strict '
+                                                                              '--vcf-require-gt --extract SNPs_Kept_List.txt '
+                                                                              '--make-bed '
+                                                                              '--out ' + chr_1000G_Phase3_names[i])
     os.system('rm *~')
 
     with open("1000GMergeList.txt", "w") as f:
