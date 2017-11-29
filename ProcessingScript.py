@@ -40,7 +40,8 @@ to_do = input('What would you like to do?\n'
               '4) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
               '5) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
               '6) Merge your data with 1000G\n'
-              '7) Nothing\n'
+              '7) Prepares files for ADMIXTURE with k = 3...9\n'
+              '8) Nothing\n'
               'Please enter a number (i.e. 2): ')
 
 if to_do == '1':
@@ -485,10 +486,59 @@ elif to_do == '6':
             print("House dataset and 1000G merged correctly on 3rd try. Though you should double-check, I can't predict every error.")
 
 elif to_do == '7':
+    #Prepares files for an admixture run k = 3...9
+    admixture_proceed_check = input("Some cautions/notes before you perform this step:\n"
+                                    "1) If you'd like to compare your population to 1000G, then you should perform step "
+                                    "6 before this step. If not, then go right ahead\n"
+                                    "2) This will perform admixture runs from k = 3 - 9. If you'd like other admixture "
+                                    "runs performed, then you should change this code to reflect that. Or, submit a "
+                                    "request to change the code and I'll get around to it.\n"
+                                    "3) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
+                                    "4) This will write the files that you need, but you are responsible for the memory, node, and "
+                                    "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
+                                    "on the cluster and submitting them to admixture \n"
+                                    "5) You will need the admixture program either on your path or in the same folder where "
+                                    "you will submit this job.\n"
+                                    "6) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running.\n"
+                                    "7) Are you okay with all of this? (y/n): ")
+    if admixture_proceed_check in ('y', 'Y', 'Yes', 'yes'):
+        geno_name = input('Please enter the name of the genotype files that you would like to perform admixture on (without bed/bim/fam extension: ')
+        allocation_name = input('Please enter the name of your cluster allocation: ')
+        os.system('plink --bfile ' + geno_name + ' --indep-pairwise 50 10 0.1 --out ' + geno_name)
+        os.system('plink --bfile ' + geno_name + ' --extract ' + geno_name + '.prune.in --make-bed --out ' + geno_name + '_LDpruned')
+        with open (geno_name + '_Admixture_k3to6.pbs', 'a') as file:
+            file.write('#PBS -l walltime=150:00:00\n'
+                       '#PBS -l nodes=1:ppn=8\n'
+                       '#PBS -l pmem=8gb\n'
+                       '#PBS -A ' + allocation_name + '\n'
+                       '#PBS -j oe\n'
+                       'cd $PBS_O_WORKDIR\n'
+                       'for K in {3..6}; do ./admixture --cv ' + geno_name + '.bed $K | tee ' + geno_name + '.log${K}.out; done')
+
+        with open(geno_name + '_Admixture_k7to9.pbs', 'a') as file:
+            file.write('#PBS -l walltime=150:00:00\n'
+                       '#PBS -l nodes=1:ppn=8\n'
+                       '#PBS -l pmem=8gb\n'
+                       '#PBS -A ' + allocation_name + '\n'
+                       '#PBS -j oe\n'
+                       'cd $PBS_O_WORKDIR\n'
+                       'for K in {7..9}; do ./admixture --cv ' + geno_name + '.bed $K | tee ' + geno_name + '.log${K}.out; done')
+        print("Transfer " + geno_name + "_LDpruned bed/bim/fam files, " + geno_name + "_Admixture_k3to6.pbs, and "
+              + geno_name + "_Admixture_7to9.pbs files to the cluster.\n"
+              "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs")
+        print("When you get your results, you should evaluate them to see which makes sense given your study population and which has the lowest CV value.")
+
+    elif admixture_proceed_check in ('n', 'N', 'No', 'no'):
+        print("Okay, we will not perform admixture at this time.")
+
+    else:
+        print("Please answer 'yes' or 'no.'")
+
+elif to_do == '8':
     print("You go, couch potato")
 
 else:
-    print("Please enter a number 1-7.")
+    print("Please enter a number 1-8.")
 
 
 
