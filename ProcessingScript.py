@@ -337,8 +337,8 @@ elif to_do == '6':
 
         os.chdir('Harmonized_To_1000G')
 
-        geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
-        vcf_path = input('Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
+        geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+        vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
         ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
                           range(1, 23)]
@@ -464,7 +464,7 @@ elif to_do == '6':
             shutil.copy2(geno_name + '_1000G.fam', orig_wd)
             shutil.copy2(geno_name + '_1000G.log', orig_wd)
         else:
-            print("\u--1b[36;1m The house dataset did not merge properly with 1000G, but not because of SNP merge warnings or SNPs "
+            print("\u001b[36;1m The house dataset did not merge properly with 1000G, but not because of SNP merge warnings or SNPs "
                   "that needed to be flipped. I'm sorry, you'll have to perform the merge on your own.\u001b[0m")
 
         if os.path.exists(geno_name + '_1000G_merge2.log'):
@@ -545,58 +545,79 @@ elif to_do == '6':
 
 elif to_do == '7':
     #Prepares files for an admixture run k = 3...9
-    admixture_proceed_check = input("Some cautions/notes before you perform this step:\n"
+
+    admixture_proceed_check = input("\u001b[35;1m Some cautions/notes before you perform this step:\n"
                                     "1) If you'd like to compare your population to 1000G, then you should perform step "
-                                    "6 before this step. If not, then go right ahead\n"
-                                    "2) This will perform admixture runs from k = 3 - 9. If you'd like other admixture "
+                                    "5 & 6 before this step. If not, then go right ahead\n"
+                                    "2) This will prepare files to run admixture from k = 3 - 9. If you'd like other admixture "
                                     "runs performed, then you should change this code to reflect that. Or, submit a "
                                     "request to change the code and I'll get around to it.\n"
                                     "3) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
                                     "4) This will write the files that you need, but you are responsible for the memory, node, and "
                                     "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
                                     "on the cluster and submitting them to admixture \n"
-                                    "5) You will need the admixture program either on your path or in the same folder where "
+                                    "5) On the cluster, You will need the admixture program either on your path or in the same folder where "
                                     "you will submit this job.\n"
                                     "6) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running.\n"
-                                    "7) Are you okay with all of this? (y/n): ")
-    if admixture_proceed_check in ('y', 'Y', 'Yes', 'yes'):
-        geno_name = input('Please enter the name of the genotype files that you would like to perform admixture on (without bed/bim/fam extension: ')
-        allocation_name = input('Please enter the name of your cluster allocation: ')
+                                    "7) Are you okay with all of this? (y/n): \u001b[0m").lower()
+    if admixture_proceed_check in ('y', 'yes'):
+        geno_name = input('\u001b[35;1m Please enter the name of the genotype files that you would like to perform '
+                          'admixture on (aka the name of the file merged with 1000G from #6 (without bed/bim/fam extension: \u001b[0m')
+        if not os.path.exists('Admixture'):
+            os.makedirs('Admixture')
+
+        shutil.copy2(geno_name + '.bed', 'Admixture')
+        shutil.copy2(geno_name + '.bim', 'Admixture')
+        shutil.copy2(geno_name + '.fam', 'Admixture')
+
+        for file in glob.glob(r'plink*'):
+            print(file)
+            shutil.copy2(file, 'Admixture')
+
+        os.chdir('Admixture')
+
+        allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
         os.system('plink --bfile ' + geno_name + ' --indep-pairwise 50 10 0.1 --out ' + geno_name)
-        os.system('plink --bfile ' + geno_name + ' --extract ' + geno_name + '.prune.in --make-bed --out ' + geno_name + '_LDpruned')
-        with open (geno_name + '_Admixture_k3to6.pbs', 'a') as file:
+        os.system('plink --bfile ' + geno_name + ' --extract ' + geno_name + '.prune.in --make-bed --out ' + geno_name + '_LDPruned')
+        with open (geno_name + '_Admixture_k3to6.pbs', 'w') as file:
             file.write('#PBS -l walltime=150:00:00\n'
                        '#PBS -l nodes=1:ppn=8\n'
                        '#PBS -l pmem=8gb\n'
                        '#PBS -A ' + allocation_name + '\n'
                        '#PBS -j oe\n'
                        'cd $PBS_O_WORKDIR\n'
-                       'for K in {3..6}; do ./admixture --cv ' + geno_name + '.bed $K | tee ' + geno_name + '.log${K}.out; done')
+                       'for K in {3..6}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
 
-        with open(geno_name + '_Admixture_k7to9.pbs', 'a') as file:
+        with open(geno_name + '_Admixture_k7to9.pbs', 'w') as file:
             file.write('#PBS -l walltime=150:00:00\n'
                        '#PBS -l nodes=1:ppn=8\n'
                        '#PBS -l pmem=8gb\n'
                        '#PBS -A ' + allocation_name + '\n'
                        '#PBS -j oe\n'
                        'cd $PBS_O_WORKDIR\n'
-                       'for K in {7..9}; do ./admixture --cv ' + geno_name + '.bed $K | tee ' + geno_name + '.log${K}.out; done')
-        print("Transfer " + geno_name + "_LDpruned bed/bim/fam files, " + geno_name + "_Admixture_k3to6.pbs, and "
+                       'for K in {7..9}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
+
+        print("\u001b[36;1m Transfer " + geno_name + "_LDPruned bed/bim/fam files, " + geno_name + "_Admixture_k3to6.pbs, and "
               + geno_name + "_Admixture_7to9.pbs files to the cluster.\n"
-              "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs")
-        print("When you get your results, you should evaluate them to see which makes sense given your study population and which has the lowest CV value.")
+              "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs\n"
+              "When you get your results, you should evaluate them to see which makes sense given your study population and which has the lowest CV value\u001b[0m")
+        os.system('rm ' + geno_name + '.bed')
+        os.system('rm ' + geno_name + '.bim')
+        os.system('rm ' + geno_name + '.fam')
+        os.system('rm ' + geno_name + '.log')
+        os.system('rm ' + geno_name + '.nosex')
 
-    elif admixture_proceed_check in ('n', 'N', 'No', 'no'):
-        print("Okay, we will not perform admixture at this time.")
+    elif admixture_proceed_check in ('n', 'no'):
+        print("\u001b[36;1m Okay, we will not perform admixture at this time.\u001b[0m")
 
     else:
-        print("Please answer 'yes' or 'no.'")
+        print("\u001b[36;1m Please answer yes or no\u001b[0m")
 
 elif to_do == '8':
-    print("You go, couch potato")
+    print("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
-    print("Please enter a number 1-8.")
+    print("\u001b[36;1m Please enter a number 1-8.\u001b[0m")
 
 
 
