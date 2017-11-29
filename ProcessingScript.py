@@ -31,8 +31,10 @@
 
 # Getting the needed modules.
 import os
+import shutil
+import glob
 
-to_do = input('What would you like to do?\n'
+to_do = input('\u001b[34;1m What would you like to do?\n'
               '1) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
               '2) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
@@ -42,10 +44,9 @@ to_do = input('What would you like to do?\n'
               '6) Merge your data with 1000G\n'
               '7) Prepares files for ADMIXTURE with k = 3...9\n'
               '8) Nothing\n'
-              'Please enter a number (i.e. 2): ')
+              'Please enter a number (i.e. 2): \u001b[0m')
 
 if to_do == '1':
-
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -57,17 +58,27 @@ if to_do == '1':
     #   -Third-degree relative = 0.125
     #   -Fourth-degree relative = 0.0625
     #   -Fifth-degree relative = 0.03125
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
-    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
-    print("Your IBD results in a tab delimited file will have the name " + geno_name + ".tab.genome. You should use "
-                                                                                       "this file to investigate your "
-                                                                                       "relatives and possibly update "
-                                                                                       "the FID and IIDs in your file.")
+    os.makedirs('IBS_Calculations')
+    shutil.copy2(geno_name + '.bed', 'IBS_Calculations')
+    shutil.copy2(geno_name + '.bim', 'IBS_Calculations')
+    shutil.copy2(geno_name + '.fam', 'IBS_Calculations')
+
+    for file in glob.glob(r'plink*'):
+        print(file)
+        shutil.copy2(file, 'IBS_Calculations')
+
+    os.chdir('IBS_Calculations')
+
     os.system('plink --bfile ' + geno_name + ' --indep 50 5 2 --out ' + geno_name)
     os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name + '.prune.out --genome --min 0.2 --out ' + geno_name)
     os.system('sed -r "s/\s+/\t/g" ' + geno_name + '.genome > ' + geno_name + '.tab.genome')
         # Comment out this line if you prefer whitespace delimited files
-    print("Analysis finished")
+
+    print("\u001b[36;1m Analysis finished. Your IBD results in a tab delimited file will have the name "
+          + geno_name + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate "
+                        "your relatives and possibly update the FID and IIDs in your file. \u001b[0m")
     # Now your job is to use the .tab.genome file to investigate relatives and possibly update FID/IID and parents.
 
 elif to_do == '2':
