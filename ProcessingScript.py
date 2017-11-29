@@ -131,11 +131,11 @@ elif to_do == '5':
     vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
     legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
-    harmonizer_exists = input('\u001b[35;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m')
-    if harmonizer_exists in ('y', 'Y', 'Yes', 'yes', 'YES'):
+    harmonizer_exists = input('\u001b[35;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m').lower()
+    if harmonizer_exists in ('y', 'yes'):
         harmonizer_path = input('\u001b[35;1m Please enter the pathname of where the Genotype Harmonizer folder is '
                                 '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): \u001b[0m')
-    elif harmonizer_exists in ('n', 'N', 'No', 'no', 'NO'):
+    elif harmonizer_exists in ('n', 'no'):
         print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
         urllib.request.urlretrieve('http://www.molgenis.org/downloads/GenotypeHarmonizer/GenotypeHarmonizer-1.4.20-dist.zip', 'GenotypeHarmonizer-1.4.20.zip')
         zip_ref = zipfile.ZipFile('GenotypeHarmonizer-1.4.20.zip', 'r')
@@ -171,7 +171,7 @@ elif to_do == '5':
     # Harmonize for each chromosome
     for i in range(0, len(ref_file_names)):
         if i < 22:
-            os.system('java -Xmx1g -jar ' + harmonizer_path + 'GenotypeHarmonizer.jar $* '
+            os.system('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* '
                       '--input ' + geno_name +
                       ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
                       '" --refType VCF '
@@ -192,7 +192,7 @@ elif to_do == '5':
             bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
             bim_file.to_csv(geno_name + '_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
 
-            os.system('java -Xmx1g -jar ' + harmonizer_path + 'GenotypeHarmonizer.jar $* '
+            os.system('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* '
                       '--input ' + geno_name + '_chr23'
                       ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
                       '" --refType VCF '
@@ -326,195 +326,222 @@ elif to_do == '5':
     All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header = True, index = False)
 
 elif to_do == '6':
-    #Merges the 1000G with house dataset
+    #Merges house dataset with 1000G
+    orig_wd = os.getcwd()
 
-    import csv
-    import pandas as pd
-    import numpy as np
+    merge_proceed = input("\u001b[35;1m You must run #5 BEFORE this step. Are you sure you want to proceed? (y/n): \u001b[0m").lower()
+    if merge_proceed in ("y", "yes"):
+        import csv
+        import pandas as pd
+        import numpy as np
 
-    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
-    vcf_path = input('Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
+        os.chdir('Harmonized_To_1000G')
 
-    ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
-                      range(1, 23)]
-    ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
-    AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1, 24)]
-    chr_1000G_Phase3_names = ['chr%d_1000G_Phase3' % x for x in range(1, 24)]
-    unique_rsid_per_chr = ['chr%d_unique_rsid' % x for x in range(1, 24)]
+        geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+        vcf_path = input('Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
 
-    with open("HouseMergeList.txt", "w") as f:
-        wr = csv.writer(f, delimiter="\n")
-        wr.writerow(AF_checked_names)
-    os.system('plink --merge-list HouseMergeList.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+        ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
+                          range(1, 23)]
+        ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
+        AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1, 24)]
+        chr_1000G_Phase3_names = ['chr%d_1000G_Phase3' % x for x in range(1, 24)]
+        unique_rsid_per_chr = ['chr%d_unique_rsid' % x for x in range(1, 24)]
 
-    if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
-        for i in range(0,len(AF_checked_names)):
-            os.system('rm ' + AF_checked_names[i] + '.bed')
-            os.system('rm ' + AF_checked_names[i] + '.bim')
-            os.system('rm ' + AF_checked_names[i] + '.fam')
-            os.system('rm ' + AF_checked_names[i] + '.log')
-            os.system('rm ' + AF_checked_names[i] + '.nosex')
-            os.system('rm ' + AF_checked_names[i] + '.hh')
-    
-    #Merge 1000G chr data into one plink formatted file, need to convert from vcf files - but only taking the snps that are in the house dataset
-    house_snps_kept = pd.read_csv('SNPs_Kept.txt', header=0, sep='\t')
-    house_snps_kept = house_snps_kept.loc[:, ['SNP']]
-    house_snps_kept.to_csv('SNPs_Kept_List.txt', sep='\t', header=False, index=False)
+        with open("HouseMergeList.txt", "w") as f:
+            wr = csv.writer(f, delimiter="\n")
+            wr.writerow(AF_checked_names)
+        os.system('plink --merge-list HouseMergeList.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
 
-    for i in range(0, len(ref_file_names)):
-        os.system('plink --vcf "' + os.path.join(vcf_path,ref_file_names[i]) + '" --double-id --biallelic-only strict '
-                                                                              '--vcf-require-gt --extract SNPs_Kept_List.txt '
-                                                                              '--make-bed '
-                                                                              '--out ' + chr_1000G_Phase3_names[i])
-    os.system('rm *~')
+        if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
+            for i in range(0,len(AF_checked_names)):
+                os.system('rm ' + AF_checked_names[i] + '.bed')
+                os.system('rm ' + AF_checked_names[i] + '.bim')
+                os.system('rm ' + AF_checked_names[i] + '.fam')
+                os.system('rm ' + AF_checked_names[i] + '.log')
+                os.system('rm ' + AF_checked_names[i] + '.nosex')
+                os.system('rm ' + AF_checked_names[i] + '.hh')
 
-    with open("1000GMergeList.txt", "w") as f:
-        wr = csv.writer(f, delimiter = "\n")
-        wr.writerow(chr_1000G_Phase3_names)
-    os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+        #Merge 1000G chr data into one plink formatted file, need to convert from vcf files - but only taking the snps that are in the house dataset
+        house_snps_kept = pd.read_csv('SNPs_Kept.txt', header=0, sep='\t')
+        house_snps_kept = house_snps_kept.loc[:, ['SNP']]
+        house_snps_kept.to_csv('SNPs_Kept_List.txt', sep='\t', header=False, index=False)
 
-    logfile=pd.DataFrame()
-    with open('1000G_Phase3.log', 'r') as f:
-        for line in f:
-            logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
-
-    if logfile[0].str.contains('Warning:').any():
-        rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
-        rsid_warnings[1].dropna(how='any').to_csv('1000G_MergeWarnings.txt', sep='\t', header=False, index=False)
-
-    if os.path.exists('1000G_MergeWarnings.txt'):
-        if os.path.exists('1000G_Phase3-merge.missnp'):
-            # If merge warnings and missnps exist, exclude both from 1000G completely (there are plenty of other snps)
-            missnp = pd.read_csv('1000G_Phase3-merge.missnp', sep='\t', header=None)
-            warnings_missnp = pd.concat([rsid_warnings, missnp], axis=0)
-            warnings_missnp[1].dropna(how='any').to_csv('1000G_warnings_missnp.txt', sep='\t',
-                                                        header=False, index=False)
-            for i in range(0,len(chr_1000G_Phase3_names)):
-                os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --exclude 1000G_warnings_missnp.txt --geno 0.01 --make-bed --out '+ chr_1000G_Phase3_names[i])
-            os.system('rm *~')
-            os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
-        else:  # If only merge warnings exist, exclude from 1000G completely
-            for i in range(0,len(chr_1000G_Phase3_names)):
-                os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --exclude 1000G_MergeWarnings.txt --geno 0.01 --make-bed --out '+ chr_1000G_Phase3_names[i])
-            os.system('rm *~')
-            os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
-    elif os.path.exists('1000G_Phase3-merge.missnp') and os.path.getsize('1000G_MergeWarnings.txt') == 0:
-        # If only the missnps still exist, remove them in 1000G.
-        for i in range(0, len(chr_1000G_Phase3_names)):
-            os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --exclude 1000G_Phase3-merge.missnp --geno 0.01 --make-bed --out ' + chr_1000G_Phase3_names[i])
+        for i in range(0, len(ref_file_names)):
+            os.system('plink --vcf "' + os.path.join(vcf_path,ref_file_names[i]) + '" --double-id --biallelic-only strict '
+                                                                                  '--vcf-require-gt --extract SNPs_Kept_List.txt '
+                                                                                  '--make-bed '
+                                                                                  '--out ' + chr_1000G_Phase3_names[i])
         os.system('rm *~')
+
+        with open("1000GMergeList.txt", "w") as f:
+            wr = csv.writer(f, delimiter = "\n")
+            wr.writerow(chr_1000G_Phase3_names)
         os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
-    elif os.path.exists('1000G_Phase3.bim'):
-        print("Successfully merged 1000G")
-        for i in range(0,len(chr_1000G_Phase3_names)):
-            os.system('rm ' + chr_1000G_Phase3_names[i] + '.*')
-    else:
-        print("Unable to merge 1000G chromosome files.")
 
-    #Perform initial merge of house data and 1000G
-    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G')
+        logfile=pd.DataFrame()
+        with open('1000G_Phase3.log', 'r') as f:
+            for line in f:
+                logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
 
-    #Read in log file to see if anything went wrong
-    logfile = pd.DataFrame()
-    with open(geno_name + '_1000G.log', 'r') as f:
-        for line in f:
-            logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+        if logfile[0].str.contains('Warning:').any():
+            rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
+            rsid_warnings[1].dropna(how='any').to_csv('1000G_MergeWarnings.txt', sep='\t', header=False, index=False)
 
-    #Check to see if the logfile has warnings or if there are triallelic snps that need to be flipped (missnp)
-    if logfile[0].str.contains('Warning:').any():
-        rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
-        rsid_warnings[1].dropna(how='any').to_csv(geno_name + '_1000G_MergeWarnings.txt', sep='\t', header=False,
-                                                  index=False)
+        if os.path.exists('1000G_MergeWarnings.txt'):
+            if os.path.exists('1000G_Phase3-merge.missnp'):
+                # If merge warnings and missnps exist, exclude both from 1000G completely (there are plenty of other snps)
+                missnp = pd.read_csv('1000G_Phase3-merge.missnp', sep='\t', header=None)
+                warnings_missnp = pd.concat([rsid_warnings, missnp], axis=0)
+                warnings_missnp[1].dropna(how='any').to_csv('1000G_warnings_missnp.txt', sep='\t',
+                                                            header=False, index=False)
+                for i in range(0,len(chr_1000G_Phase3_names)):
+                    os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --exclude 1000G_warnings_missnp.txt --geno 0.01 --make-bed --out '+ chr_1000G_Phase3_names[i])
+                os.system('rm *~')
+                os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+                print("\u001b[36;1m Successfully merged 1000G \u001b[0m")
+            else:  # If only merge warnings exist, exclude from 1000G completely
+                for i in range(0,len(chr_1000G_Phase3_names)):
+                    os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --exclude 1000G_MergeWarnings.txt --geno 0.01 --make-bed --out '+ chr_1000G_Phase3_names[i])
+                os.system('rm *~')
+                os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+                print("\u001b[36;1m Successfully merged 1000G \u001b[0m")
+        elif os.path.exists('1000G_Phase3-merge.missnp') and os.path.getsize('1000G_MergeWarnings.txt') == 0:
+            # If only the missnps still exist, remove them in 1000G.
+            for i in range(0, len(chr_1000G_Phase3_names)):
+                os.system('plink --bfile ' + chr_1000G_Phase3_names[i] + ' --exclude 1000G_Phase3-merge.missnp --geno 0.01 --make-bed --out ' + chr_1000G_Phase3_names[i])
+            os.system('rm *~')
+            os.system('plink --merge-list 1000GMergeList.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+            print("\u001b[36;1m Successfully merged 1000G \u001b[0m")
+        elif os.path.exists('1000G_Phase3.bim'):
+            print("\u001b[36;1m Successfully merged 1000G \u001b[0m")
+            for i in range(0,len(chr_1000G_Phase3_names)):
+                os.system('rm ' + chr_1000G_Phase3_names[i] + '.*')
+        else:
+            print("\u001b[36;1m Unable to merge 1000G chromosome files.\u001b[0m")
 
-    if os.path.exists(geno_name + '_1000G_MergeWarnings.txt'):
-        if os.path.exists(geno_name + '_1000G-merge.missnp'):
-            #If merge warnings and missnps exist, exclude warning snps from both 1000G and house dataset, flip snps in house dataset
-            os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_MergeWarnings.txt --geno 0.01 '
-                                                                                 '--make-bed --out 1000G_Phase3')
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                      '_1000G_MergeWarnings.txt --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
+        #Perform initial merge of house data and 1000G
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G')
+
+        #Read in log file to see if anything went wrong
+        logfile = pd.DataFrame()
+        with open(geno_name + '_1000G.log', 'r') as f:
+            for line in f:
+                logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+
+        #Check to see if the logfile has warnings or if there are triallelic snps that need to be flipped (missnp)
+        if logfile[0].str.contains('Warning:').any():
+            rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
+            rsid_warnings[1].dropna(how='any').to_csv(geno_name + '_1000G_MergeWarnings.txt', sep='\t', header=False,
+                                                      index=False)
+
+        if os.path.exists(geno_name + '_1000G_MergeWarnings.txt'):
+            if os.path.exists(geno_name + '_1000G-merge.missnp'):
+                #If merge warnings and missnps exist, exclude warning snps from both 1000G and house dataset, flip snps in house dataset
+                os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_MergeWarnings.txt --geno 0.01 '
+                                                                                     '--make-bed --out 1000G_Phase3')
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                          '_1000G_MergeWarnings.txt --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
+                          + geno_name + '_HarmonizedTo1000G')
+                os.system('rm *~')
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge2')
+            else: #If only mergewarnings exists, exclude warning snps from both 1000G and house dataset.
+                os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_MergeWarnings.txt --geno 0.01 '
+                                                                                     '--make-bed --out 1000G_Phase3')
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                          '_1000G_MergeWarnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+                os.system('rm *~')
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge2')
+        elif os.path.exists(geno_name + '_1000G-merge.missnp') and not os.path.exists(geno_name + '_1000G_MergeWarnings.txt'):
+            #If only the missnps exist, flip them in the house dataset.
+            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
                       + geno_name + '_HarmonizedTo1000G')
             os.system('rm *~')
             os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge2')
-        else: #If only mergewarnings exists, exclude warning snps from both 100)G and house dataset.
-            os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_MergeWarnings.txt --geno 0.01 '
-                                                                                 '--make-bed --out 1000G_Phase3')
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                      '_1000G_MergeWarnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
-            os.system('rm *~')
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge2')
-    elif os.path.exists(geno_name + '_1000G-merge.missnp') and not os.path.exists(geno_name + '_1000G_MergeWarnings.txt'):
-        #If only the missnps exist, flip them in the house dataset.
-        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
-                  + geno_name + '_HarmonizedTo1000G')
-        os.system('rm *~')
-        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed --out ' + geno_name + '_1000G_merge2')
-    elif os.path.exists(geno_name + '_1000G.bim'):
-        print("Successfully merged house dataset with 1000G, though you should double check. I can't predict every error.")
-    else:
-        print("The house dataset did not merge properly with 1000G, but I'm not sure why. I'm sorry.")
-
-    if os.path.exists(geno_name + '_1000G_merge2.log'):
-        logfile = pd.DataFrame()
-        with open(geno_name + '_1000G_merge2.log', 'r') as f:
-            for line in f:
-                logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
-
-        # Check to see if the logfile has warnings or if there are triallelic snps that need to be flipped (missnp)
-        if logfile[0].str.contains('Warning:').any():
-            rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
-            rsid_warnings[1].dropna(how='any').to_csv(geno_name + '_1000G_merge2_warnings.txt', sep='\t', header=False,
-                                                      index=False)
-
-        if os.path.exists(geno_name + '_1000G_merge2_warnings.txt'):
-            if os.path.exists(geno_name + '_1000G_merge2-merge.missnp'):
-                #If merge warnings and missnps still exist, exclude from both 1000G and house dataset.
-                missnp = pd.read_csv(geno_name + '_1000G_merge2-merge.missnp', sep = '\t', header=None)
-                warnings_missnp = pd.concat([rsid_warnings, missnp], axis=0)
-                warnings_missnp[1].dropna(how='any').to_csv(geno_name + '_1000G_warnings_missnp.txt', sep='\t', header=False, index=False)
-                os.system('plink --bfile 1000G_Phase3 --exclude ' + geno_name + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out 1000G_Phase3')
-                os.system('plink --bfile ' +geno_name + '_HarmonizedTo1000G --exclude ' + geno_name + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out 1000G_Phase3')
-                os.system('rm *~')
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
-                                                         '--make-bed --out ' + geno_name + '_1000G_merge3')
-            else:  # If only merge warnings still exist, exclude from both 1000G and house dataset.
-                os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_merge2_warnings.txt '
-                                                                                     '--geno 0.01 --make-bed '
-                                                                                     '--out 1000G_Phase3')
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                          '_1000G_merge2_warnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
-                os.system('rm *~')
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
-                                                         '--make-bed --out ' + geno_name + '_1000G_merge3')
-        elif os.path.exists(geno_name + '_1000G_merge2-merge.missnp') and not os.path.exists(geno_name + '_1000G_merge2_warnings.txt'):
-            # If only the missnps still exist, remove them in the both datasets.
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                      '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
-            os.system('plink --bfile 1000G_Phase3 --exclude ' + geno_name + '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out 1000G_Phase3')
-            os.system('rm *~')
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed '
-                                                     '--out ' + geno_name + '_1000G_merge3')
-        elif os.path.exists(geno_name + '_1000G_merge2.bim'):
-            print("Successfully merged house dataset with 1000G on 2nd try, though you should double check. I can't predict every error.")
+        elif os.path.exists(geno_name + '_1000G.bim'):
+            print("\u001b[36;1m Successfully merged house dataset with 1000G on the first try, though you should double check. I can't predict every error.\u001b[0m")
+            shutil.copy2(geno_name + '_1000G.bed', orig_wd)
+            shutil.copy2(geno_name + '_1000G.bim', orig_wd)
+            shutil.copy2(geno_name + '_1000G.fam', orig_wd)
+            shutil.copy2(geno_name + '_1000G.log', orig_wd)
         else:
-            print("House dataset and 1000G did not successfully merge 2nd time, but I'm not sure why. I'm sorry!")
+            print("\u--1b[36;1m The house dataset did not merge properly with 1000G, but not because of SNP merge warnings or SNPs "
+                  "that needed to be flipped. I'm sorry, you'll have to perform the merge on your own.\u001b[0m")
 
-    if os.path.exists(geno_name + '_1000G_merge3.log'):
-        logfile = pd.DataFrame()
-        with open(geno_name + '_1000G_merge3.log', 'r') as f:
-            for line in f:
-                logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+        if os.path.exists(geno_name + '_1000G_merge2.log'):
+            logfile = pd.DataFrame()
+            with open(geno_name + '_1000G_merge2.log', 'r') as f:
+                for line in f:
+                    logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
 
-        # Check to see if the logfile still has warnings, if so, the user will need to identify them and take care of them manually
-        if not os.path.exists(geno_name + '_1000G_merge3.bim'):
+            # Check to see if the logfile has warnings or if there are triallelic snps that need to be flipped (missnp)
             if logfile[0].str.contains('Warning:').any():
-                print("I'm sorry, the logfile still has warnings, even after removing snps that threw errors in the "
-                      "first two tries, you'll have to manually deal with these using the merge3 log file.")
-            if os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
-                print("I'm sorry, there are still snps with 3+ variants present, even after flipping some and removing "
-                      "the ones that the flip didn't solve you'll have to deal with these manually using the merge3 log file")
-        if os.path.exists(geno_name + '_1000G_merge3.bim'):
-            print("House dataset and 1000G merged correctly on 3rd try. Though you should double-check, I can't predict every error.")
+                rsid_warnings = logfile.loc[logfile[0] == 'Warning:', 6].str.split("'", expand=True)
+                rsid_warnings[1].dropna(how='any').to_csv(geno_name + '_1000G_merge2_warnings.txt', sep='\t', header=False,
+                                                          index=False)
+
+            if os.path.exists(geno_name + '_1000G_merge2_warnings.txt'):
+                if os.path.exists(geno_name + '_1000G_merge2-merge.missnp'):
+                    #If merge warnings and missnps still exist, exclude from both 1000G and house dataset.
+                    missnp = pd.read_csv(geno_name + '_1000G_merge2-merge.missnp', sep = '\t', header=None)
+                    warnings_missnp = pd.concat([rsid_warnings, missnp], axis=0)
+                    warnings_missnp[1].dropna(how='any').to_csv(geno_name + '_1000G_warnings_missnp.txt', sep='\t', header=False, index=False)
+                    os.system('plink --bfile 1000G_Phase3 --exclude ' + geno_name + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+                    os.system('plink --bfile ' +geno_name + '_HarmonizedTo1000G --exclude ' + geno_name + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out 1000G_Phase3')
+                    os.system('rm *~')
+                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                                                             '--make-bed --out ' + geno_name + '_1000G_merge3')
+                else:  # If only merge warnings still exist, exclude from both 1000G and house dataset.
+                    os.system('plink --bfile 1000G_Phase3' + ' --exclude ' + geno_name + '_1000G_merge2_warnings.txt '
+                                                                                         '--geno 0.01 --make-bed '
+                                                                                         '--out 1000G_Phase3')
+                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                              '_1000G_merge2_warnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+                    os.system('rm *~')
+                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                                                             '--make-bed --out ' + geno_name + '_1000G_merge3')
+            elif os.path.exists(geno_name + '_1000G_merge2-merge.missnp') and not os.path.exists(geno_name + '_1000G_merge2_warnings.txt'):
+                # If only the missnps still exist, remove them in the both datasets.
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                          '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+                os.system('plink --bfile 1000G_Phase3 --exclude ' + geno_name + '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out 1000G_Phase3')
+                os.system('rm *~')
+                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed '
+                                                         '--out ' + geno_name + '_1000G_merge3')
+            elif os.path.exists(geno_name + '_1000G_merge2.bim'):
+                print("\u001b[36;1m Successfully merged house dataset with 1000G on 2nd try, though you should double check. I can't predict every error.\u001b[0m")
+                shutil.copy2(geno_name + '_1000G_merge2.bed', orig_wd)
+                shutil.copy2(geno_name + '_1000G_merge2.bim', orig_wd)
+                shutil.copy2(geno_name + '_1000G_merge2.fam', orig_wd)
+                shutil.copy2(geno_name + '_1000G_merge2.log', orig_wd)
+            else:
+                print("\u001b[36;1m House dataset and 1000G did not successfully merge 2nd time, though not because of "
+                      "merge warnings or SNPs that needed to be flipped. You'll have to perform the merge on your own. I'm sorry!\u001b[0m")
+
+        if os.path.exists(geno_name + '_1000G_merge3.log'):
+            logfile = pd.DataFrame()
+            with open(geno_name + '_1000G_merge3.log', 'r') as f:
+                for line in f:
+                    logfile = pd.concat([logfile, pd.DataFrame([tuple(line.strip().split(" "))])], ignore_index=True)
+
+            # Check to see if the logfile still has warnings, if so, the user will need to identify them and take care of them manually
+            if not os.path.exists(geno_name + '_1000G_merge3.bim'):
+                if logfile[0].str.contains('Warning:').any():
+                    print("\u001b[36;1m I'm sorry, the logfile still has warnings, even after removing snps that threw errors in the "
+                          "first two tries. You'll have to manually deal with these using the merge3 log file.\u001b[0m")
+                if os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
+                    print("\u001b[36;1m I'm sorry, there are still snps with 3+ variants present, even after flipping some and removing "
+                          "the ones that the flip didn't solve. You'll have to deal with these manually using the merge3 log file \u001b[0m")
+            if os.path.exists(geno_name + '_1000G_merge3.bim'):
+                print("\u001b[36;1m House dataset and 1000G merged correctly on 3rd try. Though you should double-check, I can't predict every error.\u001b[0m")
+                shutil.copy2(geno_name + '_1000G_merge3.bed', orig_wd)
+                shutil.copy2(geno_name + '_1000G_merge3.bim', orig_wd)
+                shutil.copy2(geno_name + '_1000G_merge3.fam', orig_wd)
+                shutil.copy2(geno_name + '_1000G_merge3.log', orig_wd)
+
+    elif merge_proceed in ('n', 'no'):
+        print("\u001b[35;1m Please run #5 first \u001b[0m")
+    else:
+        print('\u001b[35;1m Please answer yes or no. \u001b[0m')
 
 elif to_do == '7':
     #Prepares files for an admixture run k = 3...9
