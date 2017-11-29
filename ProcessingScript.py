@@ -2,11 +2,11 @@
 # Date 9.5.17
 
 # WHAT THIS DOES #
-# 1) Run IBD matrix through plink
-# 2) Update family and individual IDs
-# 3) Update maternal and paternal IDs
-# 4) Update sex
-# 5) Clean dataset of people and SNPs with missing call rate > 1%.
+# 1) Clean dataset of people and SNPs with missing call rate > 1%.
+# 2) Run IBD matrix through plink
+# 3) Update family and individual IDs
+# 4) Update maternal and paternal IDs
+# 5) Update sex
 # 6) Using 1000 Genomes as a reference (this part based off Perl script by W. Rayner, 2015, wrayner@well.ox.ac.uk)
     #   -Removes SNPs with MAF < 5% in study dataset
     #   -Removes SNPs not in 1000 Genomes
@@ -16,9 +16,9 @@
     #   -Removes duplicates that may be introduced with the position update
     #   -Removes indels
 # 7) Merges your data with 1000 Genomes
-# 8) Prepares files for ADMIXTURE with k = 3...9
-# 9) Prepares files for phasing using SHAPEIT2
-# 10) Prepares files for imputation using the Sanger Imputation Server
+# 8) Prepares files for ADMIXTURE with k = 3...9. Relatedness matters
+# 9) Prepares files for phasing using SHAPEIT2. Relatedness matters
+# 10) Prepares files for imputation using the Sanger Imputation Server. Relatedness matters.
 
 # REQUIREMENTS #
 # You must have plink 1.9 (https://www.cog-genomics.org/plink2) in the same directory as your genotype files and this script,
@@ -34,20 +34,30 @@ import shutil
 import glob
 
 to_do = input('\u001b[34;1m What would you like to do?\n'
-              '1) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-              '2) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+              '1) Clean dataset of people and SNPs with missing call rate > 1%\n'
+              '2) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+              '3) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
-              '3) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-              '4) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
-              '5) Clean dataset of people and SNPs with missing call rate > 1%\n'
-              '5) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
-              '6) Merge your data with 1000G\n'
-              '7) Prepare files for ADMIXTURE with k = 3...9\n'
-              '8) Prepare files for phasing using SHAPEIT\n'
-              '9) Nothing\n'
+              '4) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+              '5) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
+              '6) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
+              '7) Merge your data with 1000G\n'
+              '8) Prepare files for ADMIXTURE with k = 3...9\n'
+              '9) Prepare files for phasing using SHAPEIT\n'
+              '10) Nothing\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
 if to_do == '1':
+    #Excludes SNPs and people with missing call rates > 1%
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+
+    # Exclude SNPs with missing call rates > 1%
+    os.system('plink --bfile ' + geno_name + ' --geno 0.01 --make-bed --out ' + geno_name + '_geno0.01')
+
+    # Exclude people with missing call rates >1%
+    os.system('plink --bfile ' + geno_name + ' --mind 0.01 --make-bed --out ' + geno_name + '_mind0.01')
+
+if to_do == '2':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -59,7 +69,7 @@ if to_do == '1':
     #   -Third-degree relative = 0.125
     #   -Fourth-degree relative = 0.0625
     #   -Fifth-degree relative = 0.03125
-    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype files produced from 1 (without bed/bim/fam extension: \u001b[0m')
 
     if not os.path.exists('IBS_Calculations'):
         os.makedirs('IBS_Calculations')
@@ -71,59 +81,52 @@ if to_do == '1':
 
     print("\u001b[36;1m Analysis finished. Your IBD results in a tab delimited file will have the name "
           + geno_name + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate "
-                        "your relatives and possibly update the FID and IIDs in your file. \u001b[0m")
+                        "your relatives and possibly update the FID and IIDs in your file.\n"
+                        "If you are planning on using these data for future analyses like admixture or phasing/imputation, "
+                        "you should make set lists of people who are unrelated in each set. These lists should have "
+                        "Family ID / Individual ID pairs, one person per line (tab or space delimited).  \u001b[0m")
     # Now your job is to use the .tab.genome file to investigate relatives and possibly update FID/IID and parents.
 
-elif to_do == '2':
+elif to_do == '3':
     # File for updating FID should have four fields
     #  1) Old FID
     #  2) Old IID
     #  3) New FID
     #  4) New IID
 
-    geno_name = input('\u001b[35;1m Please enter the name of your genotype files (without bed/bim/fam extension): \u001b[0m')
+    geno_name = input('\u001b[35;1m Please enter the name of your genotype files that you would like to change (without bed/bim/fam extension): \u001b[0m')
     update_fid_filename = input('\u001b[35;1m Please enter the name of your text file for updating FID or IID (with file extension): \u001b[0m')
     os.system('plink --bfile ' + geno_name + ' --update-ids ' + update_fid_filename + ' --make-bed --out ' + geno_name +
             '_FIDUpdated')
     print("\u001b[36;1m Finished. Your genotype files with the FID updated will have the name " + geno_name + "_FIDUpdated \u001b[0m")
 
-elif to_do == '3':
+elif to_do == '4':
     # File for updating parents should have four fields:
     #   1) FID
     #   2) IID
     #   3) New paternal IID
     #   4) New maternal IID
 
-    geno_name = input('\u001b[35;1m Please enter the name of your genotype files (without bed/bim/fam extension). Remember, if you '
+    geno_name = input('\u001b[35;1m Please enter the name of your genotype files that you would like to change (without bed/bim/fam extension). Remember, if you '
                       'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it.: \u001b[0m')
     update_parents_filename = input('\u001b[35;1m Please enter the name of your text file for updating parents (with file extension): \u001b[0m')
     os.system('plink --bfile ' + geno_name + ' --update-parents ' + update_parents_filename + ' --make-bed --out ' +
               geno_name + '_ParentsUpdated')
     print("\u001b[36;1m Finished. Your genotype files with parents updated will have the name " + geno_name + "_ParentsUpdated \u001b[0m")
 
-elif to_do == '4':
+elif to_do == '5':
     # File for updating sex should have:
     #   1) FID
     #   2) IID
     #   3) Sex (1 = M, 2 = F, 0 = missing)
 
-    geno_name = input('\u001b[35;1m Please enter the name of your genotype files (without bed/bim/fam extension). Remember, if you '
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype files you would like to change (without bed/bim/fam extension). Remember, if you '
                       'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it. If you just '
                       'updated parents, then your genotype name should have "_ParentsUpdated" at the end of it.: \u001b[0m')
     update_sex_filename = input('\u001b[35;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
     os.system('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out ' + geno_name
               + '_SexUpdated')
     print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
-
-elif to_do == '5':
-    #Excludes SNPs and people with missing call rates > 1%
-    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
-
-    # Exclude SNPs with missing call rates > 1%
-    os.system('plink --bfile ' + geno_name + ' --geno 0.01 --make-bed --out ' + geno_name + '_geno0.01')
-
-    # Exclude people with missing call rates >1%
-    os.system('plink --bfile ' + geno_name + ' --mind 0.01 --make-bed --out ' + geno_name + '_mind0.01')
 
 elif to_do == '6':
     # Removes SNPs not in the reference 1000G Phase 3
@@ -139,7 +142,7 @@ elif to_do == '6':
     import urllib.request
 
     orig_wd = os.getcwd()
-    geno_name = input('\u001b[35;1m Please enter the name of genotype files cleaned for missing call rates (without bed/bim/fam extension: \u001b[0m')
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype file produced after finishing steps 1-5 (without bed/bim/fam extension: \u001b[0m')
     vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
     legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
@@ -362,7 +365,7 @@ elif to_do == '7':
     #Merges house dataset with 1000G
     orig_wd = os.getcwd()
 
-    merge_proceed = input("\u001b[35;1m You must run #5 BEFORE this step. Are you sure you want to proceed? (y/n): \u001b[0m").lower()
+    merge_proceed = input("\u001b[35;1m You must run steps 1-6 BEFORE this step. Are you sure you want to proceed? (y/n): \u001b[0m").lower()
     if merge_proceed in ("y", "yes"):
         import csv
         import pandas as pd
@@ -370,7 +373,7 @@ elif to_do == '7':
 
         os.chdir('Harmonized_To_1000G')
 
-        geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+        geno_name = input('\u001b[35;1m Please enter the name of the genotype files you would like to merge with 1000G (without bed/bim/fam extension: \u001b[0m')
         vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
         ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
@@ -566,21 +569,25 @@ elif to_do == '8':
 
     admixture_proceed_check = input("\u001b[35;1m Some cautions/notes before you perform this step:\n"
                                     "1) If you'd like to compare your population to 1000G, then you should perform step "
-                                    "5 & 6 before this step. If not, then go right ahead\n"
-                                    "2) This will prepare files to run admixture from k = 3 - 9. If you'd like other admixture "
+                                    "6 & 7 before this step. If not, then you should still run steps 1 - 5\n"
+                                    "2) There should not be related individuals when you perform admixture. If you have "
+                                    "related individuals, you should create set lists so that the people in each set are "
+                                    "unrelated using information from step 2.\n"
+                                    "3) This will prepare files to run admixture from k = 3 - 9. If you'd like other admixture "
                                     "runs performed, then you should change this code to reflect that. Or, submit a "
                                     "request to change the code and I'll get around to it.\n"
-                                    "3) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
-                                    "4) This will write the files that you need, but you are responsible for the memory, node, and "
+                                    "4) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
+                                    "5) This will write the files that you need, but you are responsible for the memory, node, and "
                                     "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
                                     "on the cluster and submitting them to admixture \n"
-                                    "5) On the cluster, You will need the admixture program either on your path or in the same folder where "
+                                    "6) On the cluster, You will need the admixture program either on your path or in the same folder where "
                                     "you will submit this job.\n"
-                                    "6) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running.\n"
-                                    "7) Are you okay with all of this? (y/n): \u001b[0m").lower()
+                                    "7) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running.\n"
+                                    "8) Are you okay with all of this? (y/n): \u001b[0m").lower()
     if admixture_proceed_check in ('y', 'yes'):
         geno_name = input('\u001b[35;1m Please enter the name of the genotype files that you would like to perform '
-                          'admixture on (aka the name of the file merged with 1000G from #6 (without bed/bim/fam extension: \u001b[0m')
+                          'admixture on (without bed/bim/fam extension: \u001b[0m')
+
         if not os.path.exists('Admixture'):
             os.makedirs('Admixture')
 
@@ -592,38 +599,47 @@ elif to_do == '8':
             print(file)
             shutil.copy2(file, 'Admixture')
 
-        os.chdir('Admixture')
+        relative_check = input('\u001b[35;1m Do you have relatives in your sample? Perhaps those identified in step 2. (y/n): \u001b[0m').lower()
 
-        allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
-        os.system('plink --bfile ' + geno_name + ' --indep-pairwise 50 10 0.1 --out ' + geno_name)
-        os.system('plink --bfile ' + geno_name + ' --extract ' + geno_name + '.prune.in --make-bed --out ' + geno_name + '_LDPruned')
-        with open (geno_name + '_Admixture_k3to6.pbs', 'w') as file:
-            file.write('#PBS -l walltime=150:00:00\n'
-                       '#PBS -l nodes=1:ppn=8\n'
-                       '#PBS -l pmem=8gb\n'
-                       '#PBS -A ' + allocation_name + '\n'
-                       '#PBS -j oe\n'
-                       'cd $PBS_O_WORKDIR\n'
-                       'for K in {3..6}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
+        if relative_check in ('y', 'yes'):
+            user_set_input = input('\u001b[35;1m Please give me a comma separated list of your set list (sets of unrelated '
+                             'people in your dataset) filenames. I.e. dataset_setA.txt, dataset_setB.txt, etc.')
+            set_list = user_set_input.split(',')
+            for i in range(0,len(set_list)):
+            #FINISH SHIT
 
-        with open(geno_name + '_Admixture_k7to9.pbs', 'w') as file:
-            file.write('#PBS -l walltime=150:00:00\n'
-                       '#PBS -l nodes=1:ppn=8\n'
-                       '#PBS -l pmem=8gb\n'
-                       '#PBS -A ' + allocation_name + '\n'
-                       '#PBS -j oe\n'
-                       'cd $PBS_O_WORKDIR\n'
-                       'for K in {7..9}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
+        elif relative_check in ('n', 'no'):
+            os.chdir('Admixture')
+            allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
+            os.system('plink --bfile ' + geno_name + ' --indep-pairwise 50 10 0.1 --out ' + geno_name)
+            os.system('plink --bfile ' + geno_name + ' --extract ' + geno_name + '.prune.in --make-bed --out ' + geno_name + '_LDPruned')
+            with open (geno_name + '_Admixture_k3to6.pbs', 'w') as file:
+                file.write('#PBS -l walltime=150:00:00\n'
+                           '#PBS -l nodes=1:ppn=8\n'
+                           '#PBS -l pmem=8gb\n'
+                           '#PBS -A ' + allocation_name + '\n'
+                           '#PBS -j oe\n'
+                           'cd $PBS_O_WORKDIR\n'
+                           'for K in {3..6}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
 
-        print("\u001b[36;1m Transfer " + geno_name + "_LDPruned bed/bim/fam files, " + geno_name + "_Admixture_k3to6.pbs, and "
-              + geno_name + "_Admixture_7to9.pbs files to the cluster.\n"
-              "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs\n"
-              "When you get your results, you should evaluate them to see which makes sense given your study population and which has the lowest CV value\u001b[0m")
-        os.system('rm ' + geno_name + '.bed')
-        os.system('rm ' + geno_name + '.bim')
-        os.system('rm ' + geno_name + '.fam')
-        os.system('rm ' + geno_name + '.log')
-        os.system('rm ' + geno_name + '.nosex')
+            with open(geno_name + '_Admixture_k7to9.pbs', 'w') as file:
+                file.write('#PBS -l walltime=150:00:00\n'
+                           '#PBS -l nodes=1:ppn=8\n'
+                           '#PBS -l pmem=8gb\n'
+                           '#PBS -A ' + allocation_name + '\n'
+                           '#PBS -j oe\n'
+                           'cd $PBS_O_WORKDIR\n'
+                           'for K in {7..9}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
+
+            print("\u001b[36;1m Transfer " + geno_name + "_LDPruned bed/bim/fam files, " + geno_name + "_Admixture_k3to6.pbs, and "
+                  + geno_name + "_Admixture_7to9.pbs files to the cluster.\n"
+                  "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs\n"
+                  "When you get your results, you should evaluate them to see which makes sense given your study population and which has the lowest CV value\u001b[0m")
+            os.system('rm ' + geno_name + '.bed')
+            os.system('rm ' + geno_name + '.bim')
+            os.system('rm ' + geno_name + '.fam')
+            os.system('rm ' + geno_name + '.log')
+            os.system('rm ' + geno_name + '.nosex')
 
     elif admixture_proceed_check in ('n', 'no'):
         print("\u001b[36;1m Okay, we will not perform admixture at this time.\u001b[0m")
@@ -634,7 +650,7 @@ elif to_do == '8':
 elif to_do == '9':
     #Prepares files for phasing using shapeit
     phasing_proceed_check = input("\u001b[35;1m Some cautions/notes before you perform this step:\n"
-                                    "1) You must perform step 5 before this step.\n"
+                                    "1) You must perform step 1-5 before this step.\n"
                                     "2) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
                                     "3) This will write the files that you need, but you are responsible for the memory, node, and "
                                     "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
