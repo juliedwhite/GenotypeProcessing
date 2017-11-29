@@ -60,20 +60,12 @@ if to_do == '1':
     #   -Fifth-degree relative = 0.03125
     geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
-    os.makedirs('IBS_Calculations')
-    shutil.copy2(geno_name + '.bed', 'IBS_Calculations')
-    shutil.copy2(geno_name + '.bim', 'IBS_Calculations')
-    shutil.copy2(geno_name + '.fam', 'IBS_Calculations')
+    if not os.path.exists('IBS_Calculations'):
+        os.makedirs('IBS_Calculations')
 
-    for file in glob.glob(r'plink*'):
-        print(file)
-        shutil.copy2(file, 'IBS_Calculations')
-
-    os.chdir('IBS_Calculations')
-
-    os.system('plink --bfile ' + geno_name + ' --indep 50 5 2 --out ' + geno_name)
-    os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name + '.prune.out --genome --min 0.2 --out ' + geno_name)
-    os.system('sed -r "s/\s+/\t/g" ' + geno_name + '.genome > ' + geno_name + '.tab.genome')
+    os.system('plink --bfile ' + geno_name + ' --indep 50 5 2 --out IBS_Calculations/' + geno_name)
+    os.system('plink --bfile ' + geno_name + ' --exclude IBS_Calculations/' + geno_name + '.prune.out --genome --min 0.2 --out IBS_Calculations/' + geno_name)
+    os.system('sed -r "s/\s+/\t/g" IBS_Calculations/' + geno_name + '.genome > IBS_Calculations/' + geno_name + '.tab.genome')
         # Comment out this line if you prefer whitespace delimited files
 
     print("\u001b[36;1m Analysis finished. Your IBD results in a tab delimited file will have the name "
@@ -88,11 +80,11 @@ elif to_do == '2':
     #  3) New FID
     #  4) New IID
 
-    geno_name = input('Please enter the name of your genotype files (without bed/bim/fam extension): ')
-    update_fid_filename = input('Please enter the name of your text file for updating FID or IID (with file extension): ')
-    print("Your genotype files with the FID updated will have the name " + geno_name + "_FIDUpdated")
+    geno_name = input('\u001b[35;1m Please enter the name of your genotype files (without bed/bim/fam extension): \u001b[0m')
+    update_fid_filename = input('\u001b[35;1m Please enter the name of your text file for updating FID or IID (with file extension): \u001b[0m')
     os.system('plink --bfile ' + geno_name + ' --update-ids ' + update_fid_filename + ' --make-bed --out ' + geno_name +
             '_FIDUpdated')
+    print("\u001b[36;1m Finished. Your genotype files with the FID updated will have the name " + geno_name + "_FIDUpdated \u001b[0m")
 
 elif to_do == '3':
     # File for updating parents should have four fields:
@@ -101,12 +93,12 @@ elif to_do == '3':
     #   3) New paternal IID
     #   4) New maternal IID
 
-    geno_name = input('Please enter the name of your genotype files (without bed/bim/fam extension). Remember, if you '
-                      'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it.: ')
-    update_parents_filename = input('Please enter the name of your text file for updating parents (with file extension): ')
-    print("Your genotype files with parents updated will have the name " + geno_name + "_ParentsUpdated")
+    geno_name = input('\u001b[35;1m Please enter the name of your genotype files (without bed/bim/fam extension). Remember, if you '
+                      'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it.: \u001b[0m')
+    update_parents_filename = input('\u001b[35;1m Please enter the name of your text file for updating parents (with file extension): \u001b[0m')
     os.system('plink --bfile ' + geno_name + ' --update-parents ' + update_parents_filename + ' --make-bed --out ' +
               geno_name + '_ParentsUpdated')
+    print("\u001b[36;1m Finished. Your genotype files with parents updated will have the name " + geno_name + "_ParentsUpdated \u001b[0m")
 
 elif to_do == '4':
     # File for updating sex should have:
@@ -114,13 +106,13 @@ elif to_do == '4':
     #   2) IID
     #   3) Sex (1 = M, 2 = F, 0 = missing)
 
-    geno_name = input('Please enter the name of your genotype files (without bed/bim/fam extension). Remember, if you '
+    geno_name = input('\u001b[35;1m Please enter the name of your genotype files (without bed/bim/fam extension). Remember, if you '
                       'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it. If you just '
-                      'updated parents, then your genotype name should have "_ParentsUpdated" at the end of it.: ')
-    update_sex_filename = input('Please enter the name of your text file for updating sex (with file extension): ')
-    print("Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated")
+                      'updated parents, then your genotype name should have "_ParentsUpdated" at the end of it.: \u001b[0m')
+    update_sex_filename = input('\u001b[35;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
     os.system('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out ' + geno_name
               + '_SexUpdated')
+    print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
 
 elif to_do == '5':
     # Removes SNPs not in the reference 1000G Phase 3
@@ -133,9 +125,12 @@ elif to_do == '5':
     import pandas as pd
     import numpy as np
 
-    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
-    vcf_path = input('Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
-    legend_path = input('Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.):')
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+    vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
+    legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
+
+    if not os.path.exists('Harmonize_To_1000G'):
+        os.makedirs('Harmonize_To_1000G')
 
     ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in range(1,23)]
     ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
