@@ -124,18 +124,44 @@ elif to_do == '5':
 
     import pandas as pd
     import numpy as np
+    import zipfile
+    import urllib.request
 
     geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
     vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
     legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
-    if not os.path.exists('Harmonize_To_1000G'):
-        os.makedirs('Harmonize_To_1000G')
+    harmonizer_exists = input('\u001b[35;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m')
+    if harmonizer_exists in ('y', 'Y', 'Yes', 'yes', 'YES'):
+        harmonizer_path = input('\u001b[35;1m Please enter the pathname of where the Genotype Harmonizer folder is '
+                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): \u001b[0m')
+    elif harmonizer_exists in ('n', 'N', 'No', 'no', 'NO'):
+        print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
+        urllib.request.urlretrieve('http://www.molgenis.org/downloads/GenotypeHarmonizer/GenotypeHarmonizer-1.4.20-dist.zip', 'GenotypeHarmonizer-1.4.20.zip')
+        zip_ref = zipfile.ZipFile('GenotypeHarmonizer-1.4.20.zip', 'r')
+        zip_ref.extractall('GenotypeHarmonizer-1.4.20')
+        zip_ref.close()
+        harmonizer_path = '/GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/'
+    else:
+        print('\u001b[36;1m Please write yes or no \u001b[0m')
+
+    if not os.path.exists('Harmonized_To_1000G'):
+        os.makedirs('Harmonized_To_1000G')
+
+    shutil.copy2(geno_name + '.bed', 'Harmonized_To_1000G')
+    shutil.copy2(geno_name + '.bim', 'Harmonized_To_1000G')
+    shutil.copy2(geno_name + '.fam', 'Harmonized_To_1000G')
+
+    for file in glob.glob(r'plink*'):
+        print(file)
+        shutil.copy(file, 'Harmonized_To_1000G')
+
+    os.chdir('Harmonized_To_1000G')
 
     ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in range(1,23)]
     ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
-    harmonized_geno_names = [geno_name + '_chr%d_harmonized' % x for x in range(1, 24)]
-    freq_file_names = [geno_name + '_chr%d_harmonized.frq' % x for x in range(1,24)]
+    harmonized_geno_names = [geno_name + '_chr%d_Harmonized' % x for x in range(1, 24)]
+    freq_file_names = [geno_name + '_chr%d_Harmonized.frq' % x for x in range(1,24)]
     legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1,23)]
     legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend'])
     AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,24)]
@@ -145,7 +171,7 @@ elif to_do == '5':
     # Harmonize for each chromosome
     for i in range(0, len(ref_file_names)):
         if i < 22:
-            os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
+            os.system('java -Xmx1g -jar ' + harmonizer_path + 'GenotypeHarmonizer.jar $* '
                       '--input ' + geno_name +
                       ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
                       '" --refType VCF '
@@ -166,7 +192,7 @@ elif to_do == '5':
             bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
             bim_file.to_csv(geno_name + '_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
 
-            os.system('java -Xmx1g -jar GenotypeHarmonizer.jar $* '
+            os.system('java -Xmx1g -jar ' + harmonizer_path + 'GenotypeHarmonizer.jar $* '
                       '--input ' + geno_name + '_chr23'
                       ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
                       '" --refType VCF '
@@ -177,9 +203,9 @@ elif to_do == '5':
                       '--mafAlign 0 '
                       '--update-reference-allele '
                       '--outputType PLINK_BED '
-                      '--output ' + harmonize_geno_names[i])
+                      '--output ' + harmonized_geno_names[i])
         else:
-            print("Something is wrong with the number/name of reference files")
+            print("\u001b[36;1m Something is wrong with the number/name of reference files \u001b[0m")
 
     # Now for each that was just harmonized, remove all SNPs with an allele (AF) difference > 0.2 since we are going to use a global reference population
     # between study dataset and all superpopulation allele frequencies. IF within 0.2 of any superpopulation frequency,
@@ -195,7 +221,6 @@ elif to_do == '5':
                                names=['CHR', 'SNP', 'position'])
 
         freq_file_with_position = pd.merge(left = freq_file, right = bim_file, how = 'inner', on=['CHR','SNP'])
-
 
         legend_file = pd.read_csv(os.path.join(legend_path,legend_file_names[i]), compression="gzip", sep=" ", header = 0,
                                   dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str, 'AFR': float,
@@ -277,7 +302,7 @@ elif to_do == '5':
             os.system('rm ' + harmonized_geno_names[i] + '.nosex')
             os.system('rm ' + harmonized_geno_names[i] + '.hh')
 
-        print('Finished with chr' + str(i + 1))
+        print('\u001b[36;1m Finished with chr' + str(i + 1) + '\u001b[0m')
 
     # Write a list of all SNPs removed and all SNPs kept just for reference purposes.
     All_SNPs_Removed = pd.concat([AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
