@@ -6,7 +6,8 @@
 # 2) Update family and individual IDs
 # 3) Update maternal and paternal IDs
 # 4) Update sex
-# 5) Using 1000 Genomes as a reference (this part based off Perl script by W. Rayner, 2015, wrayner@well.ox.ac.uk)
+# 5) Clean dataset of people and SNPs with missing call rate > 1%.
+# 6) Using 1000 Genomes as a reference (this part based off Perl script by W. Rayner, 2015, wrayner@well.ox.ac.uk)
     #   -Removes SNPs with MAF < 5% in study dataset
     #   -Removes SNPs not in 1000 Genomes
     #   -Removes all A/T G/C SNPs with MAF > 40% in the reference data set
@@ -14,16 +15,14 @@
     #       expected to be a plink frequency file with the same number of SNPs as the bim file
     #   -Removes duplicates that may be introduced with the position update
     #   -Removes indels
-# 6) Merges your data with 1000 Genomes
-# 7) Prepares files for ADMIXTURE with k = 3...9
-# 8) Prepares files for phasing using SHAPEIT2
-# 9) Prepares files for imputation using the Sanger Imputation Server
+# 7) Merges your data with 1000 Genomes
+# 8) Prepares files for ADMIXTURE with k = 3...9
+# 9) Prepares files for phasing using SHAPEIT2
+# 10) Prepares files for imputation using the Sanger Imputation Server
 
 # REQUIREMENTS #
 # You must have plink 1.9 (https://www.cog-genomics.org/plink2) in the same directory as your genotype files and this script,
 #   and it should be called 'plink' Alternatively, you could put plink in your PATH.
-# You must have downloaded GenotypeHarmonizer (https://github.com/molgenis/systemsgenetics/wiki/Genotype-Harmonizer-Download)
-#   and either have it in the same directory as your genotype files and this script. Or, put it in your PATH
 # You must have downloaded the 1000G Phase 3 legend files from http://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3/.
 #   These can be anywhere you want, you'll tell me the path later
 # You must have downloaded the 1000G Phase 3 VCF files from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/.
@@ -40,10 +39,12 @@ to_do = input('\u001b[34;1m What would you like to do?\n'
               'New FID, New IID.\n'
               '3) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
               '4) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
+              '5) Clean dataset of people and SNPs with missing call rate > 1%\n'
               '5) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
               '6) Merge your data with 1000G\n'
-              '7) Prepares files for ADMIXTURE with k = 3...9\n'
-              '8) Nothing\n'
+              '7) Prepare files for ADMIXTURE with k = 3...9\n'
+              '8) Prepare files for phasing using SHAPEIT\n'
+              '9) Nothing\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
 if to_do == '1':
@@ -115,6 +116,16 @@ elif to_do == '4':
     print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
 
 elif to_do == '5':
+    #Excludes SNPs and people with missing call rates > 1%
+    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+
+    # Exclude SNPs with missing call rates > 1%
+    os.system('plink --bfile ' + geno_name + ' --geno 0.01 --make-bed --out ' + geno_name + '_geno0.01')
+
+    # Exclude people with missing call rates >1%
+    os.system('plink --bfile ' + geno_name + ' --mind 0.01 --make-bed --out ' + geno_name + '_mind0.01')
+
+elif to_do == '6':
     # Removes SNPs not in the reference 1000G Phase 3
     # Removes SNPs with HWE p-value < 0.01
     # Removes SNPs with MAF < 5%
@@ -127,7 +138,8 @@ elif to_do == '5':
     import zipfile
     import urllib.request
 
-    geno_name = input('\u001b[35;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+    orig_wd = os.getcwd()
+    geno_name = input('\u001b[35;1m Please enter the name of genotype files cleaned for missing call rates (without bed/bim/fam extension: \u001b[0m')
     vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
     legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
@@ -325,7 +337,28 @@ elif to_do == '5':
                                final_snp_lists_by_chr[21], final_snp_lists_by_chr[22]])
     All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header = True, index = False)
 
-elif to_do == '6':
+    with open("HouseMergeList.txt", "w") as f:
+        wr = csv.writer(f, delimiter="\n")
+        wr.writerow(AF_checked_names)
+    os.system('plink --merge-list HouseMergeList.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+
+    if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
+        for i in range(0, len(AF_checked_names)):
+            os.system('rm ' + AF_checked_names[i] + '.bed')
+            os.system('rm ' + AF_checked_names[i] + '.bim')
+            os.system('rm ' + AF_checked_names[i] + '.fam')
+            os.system('rm ' + AF_checked_names[i] + '.log')
+            os.system('rm ' + AF_checked_names[i] + '.nosex')
+            os.system('rm ' + AF_checked_names[i] + '.hh')
+    else:
+        print("\u001b[35;1m For some reason the house gentoypes did not merge. You should try it manually \u001b[0m")
+
+    shutil.copy2(geno_name + '_HarmonizedTo1000G.bed', orig_wd)
+    shutil.copy2(geno_name + '_HarmonizedTo1000G.bim', orig_wd)
+    shutil.copy2(geno_name + '_HarmonizedTo1000G.fam', orig_wd)
+    shutil.copy2(geno_name + '_HarmonizedTo1000G.log', orig_wd)
+
+elif to_do == '7':
     #Merges house dataset with 1000G
     orig_wd = os.getcwd()
 
@@ -343,23 +376,8 @@ elif to_do == '6':
         ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
                           range(1, 23)]
         ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
-        AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1, 24)]
         chr_1000G_Phase3_names = ['chr%d_1000G_Phase3' % x for x in range(1, 24)]
         unique_rsid_per_chr = ['chr%d_unique_rsid' % x for x in range(1, 24)]
-
-        with open("HouseMergeList.txt", "w") as f:
-            wr = csv.writer(f, delimiter="\n")
-            wr.writerow(AF_checked_names)
-        os.system('plink --merge-list HouseMergeList.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
-
-        if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
-            for i in range(0,len(AF_checked_names)):
-                os.system('rm ' + AF_checked_names[i] + '.bed')
-                os.system('rm ' + AF_checked_names[i] + '.bim')
-                os.system('rm ' + AF_checked_names[i] + '.fam')
-                os.system('rm ' + AF_checked_names[i] + '.log')
-                os.system('rm ' + AF_checked_names[i] + '.nosex')
-                os.system('rm ' + AF_checked_names[i] + '.hh')
 
         #Merge 1000G chr data into one plink formatted file, need to convert from vcf files - but only taking the snps that are in the house dataset
         house_snps_kept = pd.read_csv('SNPs_Kept.txt', header=0, sep='\t')
@@ -543,7 +561,7 @@ elif to_do == '6':
     else:
         print('\u001b[35;1m Please answer yes or no. \u001b[0m')
 
-elif to_do == '7':
+elif to_do == '8':
     #Prepares files for an admixture run k = 3...9
 
     admixture_proceed_check = input("\u001b[35;1m Some cautions/notes before you perform this step:\n"
@@ -613,11 +631,40 @@ elif to_do == '7':
     else:
         print("\u001b[36;1m Please answer yes or no\u001b[0m")
 
-elif to_do == '8':
+elif to_do == '9':
+    #Prepares files for phasing using shapeit
+    phasing_proceed_check = input("\u001b[35;1m Some cautions/notes before you perform this step:\n"
+                                    "1) You must perform step 5 before this step.\n"
+                                    "2) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
+                                    "3) This will write the files that you need, but you are responsible for the memory, node, and "
+                                    "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
+                                    "on the cluster and submitting them to SHAPEIT \n"
+                                    "5) On the cluster, You will need the SHAPEIT program either on your path or in the same folder where "
+                                    "you will submit this job.\n"
+                                    "6) You will need to transfer the pbs file and genotype bed/bim/fam files to your cluster before running.\n"
+                                    "7) Are you okay with all of this? (y/n): \u001b[0m").lower()
+    if phasing_proceed_check in ('y', 'yes'):
+        geno_name = input('\u001b[35;1m Please enter the name of the genotype files that you would like to phase on '
+                          '(aka the name of the _HarmonizedTo1000G file produced from #5 (without bed/bim/fam extension: \u001b[0m')
+
+        if not os.path.exists('Phasing'):
+            os.makedirs('Phasing')
+
+        shutil.copy2(geno_name + '.bed', 'Phasing')
+        shutil.copy2(geno_name + '.bim', 'Phasing')
+        shutil.copy2(geno_name + '.fam', 'Phasing')
+
+        for file in glob.glob(r'plink*'):
+            print(file)
+            shutil.copy2(file, 'Phasing')
+
+        os.chdir('Phasing')
+
+elif to_do == '10':
     print("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
-    print("\u001b[36;1m Please enter a number 1-8.\u001b[0m")
+    print("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
 
 
 
