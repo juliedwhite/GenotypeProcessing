@@ -34,7 +34,7 @@ import shutil
 import glob
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
-              '1) Clean dataset of people and SNPs with missing call rate > 1%\n'
+              '1) Clean dataset of people and SNPs with missing call rate > 10%\n'
               '2) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
               '3) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
@@ -47,6 +47,7 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '10) Nothing\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
+#Clean dataset by missing call rate
 if to_do == '1':
     #Excludes SNPs and people with missing call rates > 10%
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
@@ -54,6 +55,7 @@ if to_do == '1':
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
     os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out ' + geno_name + '_geno0.1_mind0.1')
 
+#Run IBD
 elif to_do == '2':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
@@ -61,11 +63,13 @@ elif to_do == '2':
     #   from whitespace to tab delimited. This will have .tab.genome appended to your filename.
 
     # Important values of Pi-hat
-    #   -First-degree relative = 0.5
-    #   -Second-degree relative = 0.25
-    #   -Third-degree relative = 0.125
+    #   -First-degree relative = 0.5 (full sibs, parent-offspring)
+    #   -Second-degree relative = 0.25 (half-sibs, uncle/aunt-nephew/niece, grandparent-grandchild)
+    #   -Third-degree relative = 0.125 (cousins, etc.)
     #   -Fourth-degree relative = 0.0625
     #   -Fifth-degree relative = 0.03125
+
+    # A good cutoff to use for Pi_Hat is 0.1875. This represents the halfway point between 2nd and 3rd degree relatives.
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files produced from step 1 (without bed/bim/fam extension: \u001b[0m')
 
     if not os.path.exists('IBS_Calculations'):
@@ -84,6 +88,7 @@ elif to_do == '2':
                         "Family ID / Individual ID pairs, one person per line (tab or space delimited).  \u001b[0m")
     # Now your job is to use the .tab.genome file to investigate relatives and possibly update FID/IID and parents.
 
+#Update FID or IID
 elif to_do == '3':
     # File for updating FID should have four fields
     #  1) Old FID
@@ -97,6 +102,7 @@ elif to_do == '3':
             '_FIDUpdated')
     print("\u001b[36;1m Finished. Your genotype files with the FID updated will have the name " + geno_name + "_FIDUpdated \u001b[0m")
 
+#Update parental IDs
 elif to_do == '4':
     # File for updating parents should have four fields:
     #   1) FID
@@ -111,6 +117,7 @@ elif to_do == '4':
               geno_name + '_ParentsUpdated')
     print("\u001b[36;1m Finished. Your genotype files with parents updated will have the name " + geno_name + "_ParentsUpdated \u001b[0m")
 
+#Update sex
 elif to_do == '5':
     # File for updating sex should have:
     #   1) FID
@@ -125,6 +132,7 @@ elif to_do == '5':
               + '_SexUpdated')
     print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
 
+#Harmonize with 1000G
 elif to_do == '6':
     # Removes SNPs not in the reference 1000G Phase 3
     # Removes SNPs with HWE p-value < 0.01
@@ -358,6 +366,7 @@ elif to_do == '6':
     shutil.copy2(geno_name + '_HarmonizedTo1000G.fam', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G.log', orig_wd)
 
+#Merge with 1000G
 elif to_do == '7':
     #Merges house dataset with 1000G
     orig_wd = os.getcwd()
@@ -561,6 +570,7 @@ elif to_do == '7':
     else:
         print('\u001b[34;1m Please answer yes or no. \u001b[0m')
 
+#prepare for ADMIXTURE
 elif to_do == '8':
     #Prepares files for an admixture run k = 3...9
     #Make sure the reader knows what they're getting into.
@@ -690,10 +700,44 @@ elif to_do == '8':
     else:
         print("\u001b[36;1m Please answer yes or no\u001b[0m")
 
+#Heterozygosity
 elif to_do == '9':
+    #Identifies individuals with extreme heterozygosity values (more than +- 3 SD)
+    #Getting extra required modules
+    import pandas as pd
+    import numpy as np
+
+    #Asking user what genotype files we're using
+    geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
+                      'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
+
+    #Uses plink to calculate the heterozygosity, paying attention to geno and mind.
+    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --het --out ' + geno_name)
+
+    #Read het file into pandas
+    het_file = pd.read_csv(geno_name + '.het', sep='\s+', header=0)
+
+    #Create new column with formula: (N(NM)-O(HOM))/N(NM)
+    het_file['HET'] = (het_file['N(NM)'] - het_file['O(HOM)']) / het_file['N(NM)']
+
+    #Getting standard deviation and average of HET column
+    het_sd = np.std(het_file['HET'])
+    het_avg = np.mean(het_file['HET'])
+
+    #Add label 'keep' to people within 3*SD of the average het value, give 'remove' to everyone else.
+    het_file['HET_Filter'] = np.where((het_file['HET'] > het_avg - 3 * het_sd) & (het_file['HET'] < het_avg + 3 * het_sd), 'Keep', 'Remove')
+    #Write this file so the user has it.
+    het_file.to_csv(geno_name + '.het', sep='\t', header=True, index=False)
+    #Make a list of the people who pass the filter.
+    het_keep = het_file[het_file['HET_Filter'] == 'Keep']
+    #Write this file so that we can use it later to filter people out.
+    het_keep[['FID', 'IID']].to_csv(geno_name + '_KeptAfterHetCheck.txt', sep='\t', header=False, index=False)
+
+
+elif to_do == '10'
     #Prepares files for phasing using shapeit
     phasing_proceed_check = input("\u001b[32;1m Some cautions/notes before you perform this step:\n"
-                                    "1) You must perform step 1-5 before this step.\n"
+                                    "1) You must perform step 1-6 before this step.\n"
                                     "2) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
                                     "3) This will write the files that you need, but you are responsible for the memory, node, and "
                                     "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
@@ -703,6 +747,7 @@ elif to_do == '9':
                                     "6) You will need to transfer the pbs file and genotype bed/bim/fam files to your cluster before running.\n"
                                     "7) Are you okay with all of this? (y/n): \u001b[0m").lower()
     if phasing_proceed_check in ('y', 'yes'):
+
         geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to phase on '
                           '(aka the name of the _HarmonizedTo1000G file produced from #5 (without bed/bim/fam extension: \u001b[0m')
 
@@ -719,6 +764,9 @@ elif to_do == '9':
 
         os.chdir('Phasing')
 
+
+
+#Nothing
 elif to_do == '10':
     print("\u001b[36;1m You go, couch potato\u001b[0m")
 
