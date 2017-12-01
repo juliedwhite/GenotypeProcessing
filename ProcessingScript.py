@@ -68,13 +68,15 @@
 import os
 import shutil
 import glob
-import platform
 import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
-              '1) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
-              '2) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
-              '3) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n')
+              '1) Download Plink\n'
+              '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
+              '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+              '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+              'Please enter a number (i.e. 2): \u001b[0m')
+
 
 '''
 to_do = input('\u001b[31;1m What would you like to do?\n'
@@ -94,8 +96,95 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 '''
 
-#GenoQC: Update sex
 if to_do == '1':
+    import os
+    import platform
+    import zipfile
+    import shutil
+    import urllib.request
+
+    system_check = platform.system()
+    architecture_check = platform.architecture()[0]
+
+    if system_check == "Linux":
+        if architecture_check == '64bit':
+            #Download 64 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_linux_x86_64.zip
+            print("Downloading Linux Plink 1.9 to this directory now.")
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_linux_x86_64.zip',
+                                       'Plink_1.9_Linux64.zip')
+            #Making directory to store program
+            os.makedirs('Plink_1.9_Linux64')
+            #Unpacking to this directory
+            with zipfile.ZipFile("Plink_1.9_Linux64.zip", "r") as zip_ref:
+                zip_ref.extractall("Plink_1.9_Linux64")
+            #Copy plink from archive folder to current working directory.
+            shutil.copy2('Plink_1.9_Linux64/plink',os.getcwd())
+
+        elif architecture_check == '32bit':
+            #Download 32 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_linux_i686.zip
+            print("Downloading Linux Plink 1.9 to this directory now.")
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_linux_i686.zip',
+                                       'Plink_1.9_Linux32.zip')
+            # Making directory to store program
+            os.makedirs('Plink_1.9_Linux32')
+            # Unpacking to this directory
+            with zipfile.ZipFile("Plink_1.9_Linux32.zip", "r") as zip_ref:
+                zip_ref.extractall("Plink_1.9_Linux32")
+            # Copy plink from archive folder to current working directory.
+            shutil.copy2('Plink_1.9_Linux32/plink', os.getcwd())
+
+        else:
+            print("I'm sorry, I could not determine what Linux Plink version to download.")
+
+    elif system_check == "Darwin":
+        #Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_mac.zip
+        print("Downloading Mac Plink 1.9 to this directory now.")
+        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_mac.zip',
+                                   'Plink_1.9_Mac.zip')
+        # Making directory to store program
+        os.makedirs('Plink_1.9_Mac')
+        # Unpacking to this directory
+        with zipfile.ZipFile("Plink_1.9_Mac.zip", "r") as zip_ref:
+            zip_ref.extractall("Plink_1.9_Mac")
+        # Copy plink from archive folder to current working directory.
+        shutil.copy2('Plink_1.9_Mac/plink', os.getcwd())
+
+    elif system_check == "Windows":
+        if architecture_check == '64bit':
+            #Download 64 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_win64.zip
+            print("Downloading Windows Plink 1.9 to this directory now.")
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_win64.zip',
+                                       'Plink_1.9_Win64.zip')
+            # Making directory to store program
+            os.makedirs('Plink_1.9_Win64')
+            # Unpacking to this directory
+            with zipfile.ZipFile("Plink_1.9_Win64.zip", "r") as zip_ref:
+                zip_ref.extractall("Plink_1.9_Win64")
+            # Copy plink from archive folder to current working directory.
+            shutil.copy2('Plink_1.9_Win64/plink.exe', os.getcwd())
+
+        elif architecture_check == '32bit':
+            #Download 32 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_win32.zip
+            print("Downloading Windows Plink 1.9 to this directory now.")
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_win32.zip',
+                                       'Plink_1.9_Win32.zip')
+            # Making directory to store program
+            os.makedirs('Plink_1.9_Win32')
+            # Unpacking to this directory
+            with zipfile.ZipFile("Plink_1.9_Win32.zip", "r") as zip_ref:
+                zip_ref.extractall("Plink_1.9_Win32")
+            # Copy plink from archive folder to current working directory.
+            shutil.copy2('Plink_1.9_Win32/plink.exe', os.getcwd())
+
+        else:
+            print("I'm sorry, I could not determine what Windows Plink version to download.")
+
+    else:
+        print("I'm sorry, I could not determine what operating system you are running. Please download the latest "
+              "version of Plink at https://www.cog-genomics.org/plink2")
+
+#GenoQC: Update sex
+if to_do == '2':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
@@ -109,7 +198,7 @@ if to_do == '1':
     GenoQC.UpdateSex(geno_name, update_parents_filename)
 
 #GenoQC: Clean dataset by missing call rate > 10%
-elif to_do == '2':
+elif to_do == '3':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
@@ -124,7 +213,7 @@ elif to_do == '2':
 # Update FID IID information
 # Update parental IDs
 #Relatives: Run IBD
-elif to_do == '3':
+elif to_do == '4':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files produced from step 1 (without bed/bim/fam extension: \u001b[0m')
 
