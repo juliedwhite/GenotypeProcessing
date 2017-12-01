@@ -2,7 +2,6 @@
 # Date 9.5.17
 
 # WHAT THIS DOES #
-# 1) Clean dataset of people and SNPs with missing call rate > 1%.
 # 2) Run IBD matrix through plink
 # 3) Update family and individual IDs
 # 4) Update maternal and paternal IDs
@@ -28,6 +27,43 @@
 # You must have downloaded the 1000G Phase 3 VCF files from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/.
 #   These can be anywhere you want, you'll tell me the path later
 
+#GenoQC
+# Update sex
+# Missing call rate
+
+#Relatives
+# Run IBD to identify relatives
+# Update FID IID information
+# Update parental IDs
+
+#Admixture Steps:
+# Missing call rate
+# Run IBD to identify relatives
+# Update FID IID information
+# Update parental IDs
+# Harmonize with 1000G Phase 3
+# Merge with 1000G
+# Prepare for ADMIXTURE with k = 3..9
+# If on PSU cluster, can submit.
+
+#Imputation steps:
+# Must be on hg19, user should check this.
+# Missing call rate
+# Heterozygosity check (MAF threshold, HWE p-value)
+# Set haploid genotypes (male chr X) as missing
+# Check for gender mismatches
+# Harmonize with 1000G Phase3
+# Prephasing check
+# Phasing file preparation
+# If on PSU cluster, can submit phasing to shapeit.
+# Imputation file preparation.
+#   -Convert to single VCF, not one file per chromosome
+#   -Check validity of VCF
+#   -Records sorted by genomic position
+#   -Chromosome names should be 1, 2, 3, etc… not chr1, chr2, chr3, etc… Some programs will represent X as 23, Y as 24, etc…. Please remove or replace these names.
+#   -Give sample file (samples.txt) with Sample Name then M or F.
+# User submits to Sanger Imputation Server (https://imputation.sanger.ac.uk/?instructions=1)
+
 # Getting the needed modules.
 import os
 import shutil
@@ -35,6 +71,11 @@ import glob
 import platform
 import sys
 
+to_do = input('\u001b[31;1m What would you like to do?\n'
+              '1) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
+              '2) Produce a new dataset of people and SNPs with missing call rate < 10%\n')
+
+'''
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Clean dataset of people and SNPs with missing call rate > 10%\n'
               '2) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
@@ -45,14 +86,29 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '6) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
               '7) Merge your data with 1000G\n'
               '8) Prepare files for ADMIXTURE with k = 3...9\n'
-              '9) Prepare files for phasing using SHAPEIT\n'
+              '9) Heterozygosity check\n'
               '10) Prephasing check\n'
               '11) Phasing\n'
               '12) Nothing\n'
               'Please enter a number (i.e. 2): \u001b[0m')
+'''
+
+#Update sex
+if to_do == '1':
+    #Get name of genotype file
+    geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+
+    #Get name of file to be used for updating sex
+    update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
+
+    #Import module where this command is
+    import GenoQC
+
+    #Call UpdateSex command using geno name and update sex filename as input
+    GenoQC.UpdateSex(geno_name, update_parents_filename)
 
 #Clean dataset by missing call rate > 10%
-if to_do == '1':
+elif to_do == '2':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
