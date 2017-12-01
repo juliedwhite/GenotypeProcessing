@@ -46,16 +46,21 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '7) Merge your data with 1000G\n'
               '8) Prepare files for ADMIXTURE with k = 3...9\n'
               '9) Prepare files for phasing using SHAPEIT\n'
-              '10) Nothing\n'
+              '10) Prephasing check\n'
+              '11) Phasing\n'
+              '12) Nothing\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
-#Clean dataset by missing call rate
+#Clean dataset by missing call rate > 10%
 if to_do == '1':
-    #Excludes SNPs and people with missing call rates > 10%
+    #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
-    # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
-    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out ' + geno_name + '_geno0.1_mind0.1')
+    #Import module where this command is
+    import GenoQC
+
+    #Call specific command using geno_name as input.
+    GenoQC.MissingCallRate(geno_name)
 
 #Run IBD
 elif to_do == '2':
@@ -801,8 +806,8 @@ elif to_do == '10':
         sys.exit("\u001b[35;1m I have detected that you are not running Linux, Mac, or Windows. Exiting now. \u001b[0m")
 
 #Phasing ##### Unfinished.
-'''
 elif to_do == '11':
+    '''
     #Prepares files for phasing using shapeit
     phasing_proceed_check = input("\u001b[32;1m Some cautions/notes before you perform this step:\n"
                                     "1) You must perform step 1-6 before this step.\n"
@@ -831,7 +836,7 @@ elif to_do == '11':
             shutil.copy2(file, 'Phasing')
 
         os.chdir('Phasing')
-'''
+    '''
 #Nothing
 elif to_do == '12':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
