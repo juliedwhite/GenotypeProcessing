@@ -65,27 +65,25 @@
 # User submits to Sanger Imputation Server (https://imputation.sanger.ac.uk/?instructions=1)
 
 # Getting the needed modules.
-import os
-import shutil
-import glob
-import sys
+#import os
+#import shutil
+#import glob
+#import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Download Plink\n'
               '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
               '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
               '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+              '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+              'New FID, New IID.\n'
+              '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
 
 '''
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Clean dataset of people and SNPs with missing call rate > 10%\n'
-              '2) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-              '3) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
-              'New FID, New IID.\n'
-              '4) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-              '5) Update sex. You need a file with FID, IID, Sex (M = 1, F = 2, Unknown = 0)\n'
               '6) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
               '7) Merge your data with 1000G\n'
               '8) Prepare files for ADMIXTURE with k = 3...9\n'
@@ -95,7 +93,7 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '12) Nothing\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 '''
-
+#Download Plink
 if to_do == '1':
     import os
     import platform
@@ -184,14 +182,15 @@ if to_do == '1':
               "version of Plink at https://www.cog-genomics.org/plink2")
 
 #GenoQC: Update sex
-if to_do == '2':
+elif to_do == '2':
     #Get name of genotype file
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+    geno_name = input("\u001b[32;1m Please enter the name of the plink genotype files you'd like to update sex in "
+                      "(without bed/bim/fam extension: \u001b[0m")
 
     #Get name of file to be used for updating sex
     update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
 
-    #Import module where this command is
+    #Import module where this command is.
     import GenoQC
 
     #Call UpdateSex command using geno name and update sex filename as input
@@ -202,70 +201,68 @@ elif to_do == '3':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
-    #Import module where this command is
+    #Import module and call command
     import GenoQC
-
-    #Call specific command using geno_name as input.
     GenoQC.MissingCallRate(geno_name)
 
-#Relatives
-# Run IBD to identify relatives
-# Update FID IID information
-# Update parental IDs
-#Relatives: Run IBD
+#GenoRelatives: Run IBD
 elif to_do == '4':
+    # Identity-by-descent in Plink
+    # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
+    # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
+    #   from whitespace to tab delimited. This will have .tab.genome appended to your filename.
+
+    # Important values of Pi-hat
+    #   -First-degree relative = 0.5 (full sibs, parent-offspring)
+    #   -Second-degree relative = 0.25 (half-sibs, uncle/aunt-nephew/niece, grandparent-grandchild)
+    #   -Third-degree relative = 0.125 (cousins, etc.)
+    #   -Fourth-degree relative = 0.0625
+    #   -Fifth-degree relative = 0.03125
+    # A good cutoff to use for Pi_Hat is 0.1875. This represents the halfway point between 2nd and 3rd degree relatives.
+
     #Get name of genotype file
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files produced from step 1 (without bed/bim/fam extension: \u001b[0m')
+    geno_name = input('\u001b[32;1m Please enter the name of the genotype files to run an IBD on (without bed/bim/fam extension: \u001b[0m')
 
-    #Import module where this command is
+    #Import module and call command.
     import GenoRelatives
-
-    #Call command
     GenoRelatives.IBD(geno_name)
 
-#Update FID or IID
-elif to_do == '3':
-    # File for updating FID should have four fields
-    #  1) Old FID
-    #  2) Old IID
-    #  3) New FID
-    #  4) New IID
-
-    geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to change (without bed/bim/fam extension): \u001b[0m')
-    update_fid_filename = input('\u001b[34;1m Please enter the name of your text file for updating FID or IID (with file extension): \u001b[0m')
-    os.system('plink --bfile ' + geno_name + ' --update-ids ' + update_fid_filename + ' --make-bed --out ' + geno_name +
-            '_FIDUpdated')
-    print("\u001b[36;1m Finished. Your genotype files with the FID updated will have the name " + geno_name + "_FIDUpdated \u001b[0m")
-
-#Update parental IDs
-elif to_do == '4':
-    # File for updating parents should have four fields:
-    #   1) FID
-    #   2) IID
-    #   3) New paternal IID
-    #   4) New maternal IID
-
-    geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to change (without bed/bim/fam extension). Remember, if you '
-                      'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it.: \u001b[0m')
-    update_parents_filename = input('\u001b[34;1m Please enter the name of your text file for updating parents (with file extension): \u001b[0m')
-    os.system('plink --bfile ' + geno_name + ' --update-parents ' + update_parents_filename + ' --make-bed --out ' +
-              geno_name + '_ParentsUpdated')
-    print("\u001b[36;1m Finished. Your genotype files with parents updated will have the name " + geno_name + "_ParentsUpdated \u001b[0m")
-
-#Update sex
+#GenoRelatives: Update FID or IID
 elif to_do == '5':
-    # File for updating sex should have:
-    #   1) FID
-    #   2) IID
-    #   3) Sex (1 = M, 2 = F, 0 = missing)
+    #Just making sure the user knows what is needed.
+    print("The tab delimited text file for updating FID or IID should have four fields: \n"
+          "1) Old FID\n"
+          "2) Old IID\n"
+          "3) New FID\n"
+          "4) New IID")
+    #Getting name of working file.
+    geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to update FID/IID '
+                      'in (without bed/bim/fam extension): \u001b[0m')
+    #Name of file to be used to update the genotype files.
+    update_id_filename = input('\u001b[34;1m Please enter the name of your text file for updating FID or IID '
+                                '(with file extension): \u001b[0m')
+    #Import module and call command.
+    import GenoRelatives
+    GenoRelatives.UpdateID(geno_name, update_id_filename)
 
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files you would like to change (without bed/bim/fam extension). Remember, if you '
-                      'just updated FIDs, then your genotype name should have "_FIDUpdated" at the end of it. If you just '
-                      'updated parents, then your genotype name should have "_ParentsUpdated" at the end of it.: \u001b[0m')
-    update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
-    os.system('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out ' + geno_name
-              + '_SexUpdated')
-    print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
+#GenoRelatives: Update parental IDs
+elif to_do == '6':
+    #Just making sure the user knows what is needed.
+    print("The tab delimited text file for updating parents should have four fields: \n"
+          "1) FID\n"
+          "2) IID\n"
+          "3) Paternal IID\n"
+          "4) Maternal IID")
+    #Getting name of working file.
+    geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to update parents '
+                      'in (without bed/bim/fam extension): \u001b[0m')
+    #Getting name of file to be used for update
+    update_parents_filename = input('\u001b[34;1m Please enter the name of your text file for updating parents '
+                                    '(with file extension): \u001b[0m')
+
+    #Import module and call command.
+    import GenoRelatives
+    GenoRelatives.UpdateParental(geno_name, update_parents_filename)
 
 #Harmonize with 1000G
 elif to_do == '6':
