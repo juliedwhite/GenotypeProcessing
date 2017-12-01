@@ -73,7 +73,8 @@ import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
-              '2) Produce a new dataset of people and SNPs with missing call rate < 10%\n')
+              '2) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+              '3) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n')
 
 '''
 to_do = input('\u001b[31;1m What would you like to do?\n'
@@ -93,7 +94,7 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               'Please enter a number (i.e. 2): \u001b[0m')
 '''
 
-#Update sex
+#GenoQC: Update sex
 if to_do == '1':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
@@ -107,7 +108,7 @@ if to_do == '1':
     #Call UpdateSex command using geno name and update sex filename as input
     GenoQC.UpdateSex(geno_name, update_parents_filename)
 
-#Clean dataset by missing call rate > 10%
+#GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '2':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
@@ -118,38 +119,20 @@ elif to_do == '2':
     #Call specific command using geno_name as input.
     GenoQC.MissingCallRate(geno_name)
 
-#Run IBD
-elif to_do == '2':
-    # Identity-by-descent in Plink
-    # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
-    # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
-    #   from whitespace to tab delimited. This will have .tab.genome appended to your filename.
-
-    # Important values of Pi-hat
-    #   -First-degree relative = 0.5 (full sibs, parent-offspring)
-    #   -Second-degree relative = 0.25 (half-sibs, uncle/aunt-nephew/niece, grandparent-grandchild)
-    #   -Third-degree relative = 0.125 (cousins, etc.)
-    #   -Fourth-degree relative = 0.0625
-    #   -Fifth-degree relative = 0.03125
-
-    # A good cutoff to use for Pi_Hat is 0.1875. This represents the halfway point between 2nd and 3rd degree relatives.
+#Relatives
+# Run IBD to identify relatives
+# Update FID IID information
+# Update parental IDs
+#Relatives: Run IBD
+elif to_do == '3':
+    #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files produced from step 1 (without bed/bim/fam extension: \u001b[0m')
 
-    if not os.path.exists('IBS_Calculations'):
-        os.makedirs('IBS_Calculations')
+    #Import module where this command is
+    import GenoRelatives
 
-    os.system('plink --bfile ' + geno_name + ' --indep 50 5 2 --out IBS_Calculations/' + geno_name)
-    os.system('plink --bfile ' + geno_name + ' --exclude IBS_Calculations/' + geno_name + '.prune.out --genome --min 0.2 --out IBS_Calculations/' + geno_name)
-    os.system('sed -r "s/\s+/\t/g" IBS_Calculations/' + geno_name + '.genome > IBS_Calculations/' + geno_name + '.tab.genome')
-        # Comment out this line if you prefer whitespace delimited files
-
-    print("\u001b[36;1m Analysis finished. Your IBD results in a tab delimited file will have the name "
-          + geno_name + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate "
-                        "your relatives and possibly update the FID and IIDs in your file.\n"
-                        "If you are planning on using these data for future analyses like admixture or phasing/imputation, "
-                        "you should make set lists of people who are unrelated in each set. These lists should have "
-                        "Family ID / Individual ID pairs, one person per line (tab or space delimited).  \u001b[0m")
-    # Now your job is to use the .tab.genome file to investigate relatives and possibly update FID/IID and parents.
+    #Call command
+    GenoRelatives.IBD(geno_name)
 
 #Update FID or IID
 elif to_do == '3':
