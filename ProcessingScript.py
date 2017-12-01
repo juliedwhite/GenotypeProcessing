@@ -32,6 +32,8 @@
 import os
 import shutil
 import glob
+import platform
+import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Clean dataset of people and SNPs with missing call rate > 10%\n'
@@ -733,8 +735,74 @@ elif to_do == '9':
     #Write this file so that we can use it later to filter people out.
     het_keep[['FID', 'IID']].to_csv(geno_name + '_KeptAfterHetCheck.txt', sep='\t', header=False, index=False)
 
+#Prephasing check
+elif to_do == '10':
+    #Ask the user what to run the phasing check on.
+    geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
+                      'phasing check on (without bed/bim/fam extension: \u001b[0m')
 
-elif to_do == '10'
+    #Since shapeit only works on linux or mac, we need to first check what system they are on.
+    system_check = platform.system()
+
+    if system_check == "Linux":
+        #Now we need to know where they have shapeit, if they have it.
+        shapeit_exists = input("\u001b[35;1m Do you already have the linux shapeit program unpacked? (y/n):  \u001b[0m").lower()
+        #If yes, then ask for path of program
+        if shapeit_exists in ('yes', 'y'):
+            shapeit_path = input("\u001b[36;1m Please tell me the path where you have the shapeit program. "
+                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
+        #If no, download and unpack shapeit.
+        elif shapeit_exits in ('no', 'n'):
+            print('\u001b[36;1m Downloading shapeit to this directory now. \u001b[0m')
+            urllib.request.urlretrieve('https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.20.Linux.static.tgz, '
+                                       'shapeit.v2.r837.GLIBCv2.20.Linux.static.tgz')
+            # Making directory to store program
+            os.makedirs('Shapeit_v2.20_Linux_Static')
+            #Unpacking
+            os.system('tar -zxvf shapeit.v2.r837.GLIBCv2.20.Linux.static.tgz -C /Shapeit_v2.20_Linux_Static/')
+        else:
+            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
+
+        #This part is unfinished.
+        '''
+        hap_legend_sample_path = input('\u001b[35;1m Please enter the pathname of where your 1000G Phase3 '
+                                       'hap/legend/sample files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Hap_Legend_Sample etc.): \u001b[0m')
+        
+        
+        os.system('./shapeit -check -B ' + geno_name + ' -M genetic_map_chr'
+                  + [i] + '_combined_b37.txt --input-ref 1000GP_Phase3_chr'
+                  + [i] + '.hap.gz 1000GP_Phase3_chr' + [i] + '.legend.gz 1000GP_Phase3.sample --output-log '
+                  + geno_name + '_PhaseCheck')
+        '''
+    #If the user is on a mac
+    elif system_check == "Darwin":
+        #Ask if they already have shapeit
+        shapeit_exists = input("\u001b[34;1m Great, do you already have the mac shapeit program unpacked? (y/n):  \u001b[0m").lower()
+        if shapeit_exists in ('yes', 'y'):
+            #Ask where shapeit is located.
+            shapeit_path = input("\u001b[35;1m Please tell me the path where you have the shapeit program. "
+                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
+        elif shapeit_exits in ('no', 'n'):
+            print('\u001b[35;1m Downloading shapeit to this directory now. \u001b[0m')
+            #Download shapeit
+            urllib.request.urlretrieve('https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz, '
+                                       'shapeit.v2.r837.MacOSX.tgz')
+            #Create directory for shapeit.
+            os.makedirs('Shapeit_v2.20_Mac')
+            os.system('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C /Shapeit_v2.20_Mac/')
+        else:
+            sys.exit('\u001b[35;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
+
+    elif system_check == ("Windows"):
+        print("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
+              "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+
+    else:
+        sys.exit("\u001b[35;1m I have detected that you are not running Linux, Mac, or Windows. Exiting now. \u001b[0m")
+
+#Phasing ##### Unfinished.
+'''
+elif to_do == '11':
     #Prepares files for phasing using shapeit
     phasing_proceed_check = input("\u001b[32;1m Some cautions/notes before you perform this step:\n"
                                     "1) You must perform step 1-6 before this step.\n"
@@ -763,15 +831,13 @@ elif to_do == '10'
             shutil.copy2(file, 'Phasing')
 
         os.chdir('Phasing')
-
-
-
+'''
 #Nothing
-elif to_do == '10':
-    print("\u001b[36;1m You go, couch potato\u001b[0m")
+elif to_do == '12':
+    sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
-    print("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
+    sys.exit("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
 
 
 
