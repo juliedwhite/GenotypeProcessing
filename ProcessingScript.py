@@ -215,7 +215,6 @@ elif to_do == '11':
 # Harmonize with 1000G Phase 3
 # Merge with 1000G
 # Prepare for ADMIXTURE with k = 3..9
-# If on PSU cluster, can submit.
 elif to_do == '10':
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
@@ -240,6 +239,7 @@ elif to_do == '10':
                                     "cluster before running. I'll make a folder called 'Admixture' with all the files "
                                     "for you to transfer.\n"
                                     "Are you sure you want to proceed? (y/n): \u001b[0m").lower()
+
     if admixture_proceed_check in ('y', 'yes'):
         # Ask the user if they've already harmonized their data.
         harmonize_check = input('\u001b[33;1m Have you already harmonized your data with 1000G Phase 3? (y/n): \u001b[0m').lower()
@@ -247,9 +247,10 @@ elif to_do == '10':
         if harmonize_check in ('y', 'yes'):
            #Ask the user if they've already merged their data.
            merge_check = input('\u001b[34;1m Have you already merged your data with 1000G Phase 3 (y/n): \u001b[0m').lower()
-           #If yes, proceed
+           #If yes, proceed, but first ask what they called the files.
            if merge_check in ('y', 'yes'):
-               #This will kick it out of the if statement to proceed with the admixture prep.
+               admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to perform'
+                                 ' admixture on (without bed/bim/fam extension: \u001b[0m')
            #If no, merge the data.
            elif merge_check in ('n','no'):
                #Ask for name of harmonized genotype files, which we will use to merge.
@@ -261,7 +262,18 @@ elif to_do == '10':
                #Get module for merging
                import genomerge
                genomerge.merge(geno_name, harmonized_path)
-               #After, Should come back to this script and continue below whith admixture prep.
+               #After, Should come back to this script and continue below with admixture prep.
+
+               #Figure out what the final name of the merged file was.
+               if os.path.exists(geno_name + '1000G.bed'):
+                   admix_name = geno_name + '1000G.bed'
+               elif os.path.exists(geno_name + '1000G_merge2.bed'):
+                   admix_name = geno_name + '1000G_merge2.bed'
+               elif os.path.exists(geno_name + '1000G_merge3.bed'):
+                   admix_name = geno_name + '1000G_merge3.bed'
+               else:
+                   admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to perform'
+                                 ' admixture on (without bed/bim/fam extension: \u001b[0m')
 
            #If user gives non yes or no response:
            else:
@@ -284,128 +296,35 @@ elif to_do == '10':
             import genomerge
             genomerge.merge(geno_name, harmonize_path)
 
+            # Figure out what the final name of the merged file was.
+            if os.path.exists(geno_name + '1000G.bed'):
+                admix_name = geno_name + '1000G.bed'
+            elif os.path.exists(geno_name + '1000G_merge2.bed'):
+                admix_name = geno_name + '1000G_merge2.bed'
+            elif os.path.exists(geno_name + '1000G_merge3.bed'):
+                admix_name = geno_name + '1000G_merge3.bed'
+            else:
+                admix_name = input(
+                    '\u001b[34;1m Please enter the name of the genotype files that you would like to perform'
+                    ' admixture on (without bed/bim/fam extension: \u001b[0m')
+
+        #If user gives non-recognized answer.
         else:
             sys.exit("Please give a yes or no answer. Quitting now.")
+
+        #Prep for admixture and done.
+        import genoadmixture
+        genoadmixture.prep(admix_name)
 
     #If they do not want to perform admixture at this time.
     elif admixture_proceed_check in ('n', 'no'):
         sys.exit("Okay we will not perform admixture at this time.")
+
     #If they give a non yes or no answer.
     else:
         sys.exit('Please give a yes or no answer. Quitting now.')
 
 '''
-#prepare for ADMIXTURE
-elif to_do == '8':
-    #Prepares files for an admixture run k = 3...9
-    if admixture_proceed_check in ('y', 'yes'):
-        #Get filename to run admixture on
-        geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to perform '
-                          'admixture on (without bed/bim/fam extension: \u001b[0m')
-
-        #I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
-        allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
-
-        #Check if folder called 'Admixture' exists, if not, create it.
-        if not os.path.exists('Admixture'):
-            os.makedirs('Admixture')
-
-        #Ask if they have relatives in their sample.
-        relative_check = input('\u001b[32;1m Do you have relatives in your sample? Perhaps those identified in step 2. (y/n): \u001b[0m').lower()
-
-        # We want the LD correction to be the same for all sets, so do this on the full genotype file and put it in the Admixture file.
-        os.system('plink --bfile ' + geno_name + ' --indep-pairwise 50 10 0.1 --out Admixture/' + geno_name)
-
-        if relative_check in ('y', 'yes'):
-            # If they have relatives in their sample, get a list of the filenames for each set of people.
-            user_set_input = input('\u001b[34;1m Please give me a comma separated list of your set list filenames (with '
-                                   'file extenstion). I.e. dataset_setA.txt, dataset_setB.txt, etc. To do this,'
-                                   'break up your entire dataset (not just related individuals) across sets, making sure '
-                                   'that there are not related individuals within each set. These lists should be space '
-                                   'or tab delimited with FID then IID: \u001b[0m')
-            #Convert the user given list to a python list.
-            set_list = user_set_input.split(', ')
-            print(set_list)
-
-            #Perform the admixture prep separately on each set.
-            for i in range(0,len(set_list)):
-                #Tell the user what they gave as file names and what I'm going to output as file names (SetA, SetB, SetC, etc.)
-                set_name = chr(ord('a') + i).upper()
-                print(set_list[i] + ' = Set' + set_name)
-
-                #For each set, extract those people from the working genotype file and remove SNPs in LD. These files are what the user should put on the cluster.
-                os.system('plink --bfile ' + geno_name + ' --keep ' + set_list[i] + ' --extract Admixture/'
-                          + geno_name + '.prune.in --make-bed --out Admixture/' + geno_name + '_Set' + set_name + '_LDPruned')
-
-                #For each set, write a pbs script for admixture k = 3..6
-                with open('Admixture/' + geno_name + '_Set' + set_name + '_Admixture_k3to6.pbs', 'w') as file:
-                    file.write('#PBS -l walltime=150:00:00\n'
-                               '#PBS -l nodes=1:ppn=8\n'
-                               '#PBS -l pmem=8gb\n'
-                               '#PBS -A ' + allocation_name + '\n'
-                               '#PBS -j oe\n'
-                               'cd $PBS_O_WORKDIR\n'
-                               'for K in {3..6}; do ./admixture --cv '
-                               + geno_name + '_Set' + set_name + '_LDPruned.bed $K | tee '
-                               + geno_name + '_Set' + set_name + '_LDPruned.log${K}.out; done')
-
-                #For each set, write a pbs script for admixture k = 7..9
-                with open('Admixture/' + geno_name + '_Set' + set_name + '_Admixture_k7to9.pbs', 'w') as file:
-                    file.write('#PBS -l walltime=150:00:00\n'
-                               '#PBS -l nodes=1:ppn=8\n'
-                               '#PBS -l pmem=8gb\n'
-                               '#PBS -A ' + allocation_name + '\n'
-                               '#PBS -j oe\n'
-                               'cd $PBS_O_WORKDIR\n'
-                               'for K in {7..9}; do ./admixture --cv '
-                               + geno_name + '_Set' + set_name + '_LDPruned.bed $K | tee '
-                               + geno_name + '_Set' + set_name + '_LDPruned.log${K}.out; done')
-
-            #Tell the user it's finished and give them directions.
-            print("\u001b[36;1m Transfer " + geno_name + "_LDPruned bed/bim/fam files for each set, "
-                  + geno_name + "_Admixture_k3to6.pbs, and " + geno_name + "_Admixture_7to9.pbs files for each set to the cluster.\n"
-                  "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs\n"
-                  "When you get your results, you should evaluate them to see which makes sense given your study "
-                  "population and which has the lowest CV value\u001b[0m")
-
-        #If there's no relatives, we can do all of this on the full genotype file.
-        elif relative_check in ('n', 'no'):
-            #For all people, create file that is LD pruned.
-            os.system('plink --bfile ' + geno_name + ' --extract Admixture/' + geno_name + '.prune.in --make-bed --out Admixture/' + geno_name + '_LDPruned')
-
-            #For all people, create a pbs file for admixture k = 3..6
-            with open ('Admixture/' + geno_name + '_Admixture_k3to6.pbs', 'w') as file:
-                file.write('#PBS -l walltime=150:00:00\n'
-                           '#PBS -l nodes=1:ppn=8\n'
-                           '#PBS -l pmem=8gb\n'
-                           '#PBS -A ' + allocation_name + '\n'
-                           '#PBS -j oe\n'
-                           'cd $PBS_O_WORKDIR\n'
-                           'for K in {3..6}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
-
-            #For all people, create a pbs file for admixture k = 7..9
-            with open('Admixture/' + geno_name + '_Admixture_k7to9.pbs', 'w') as file:
-                file.write('#PBS -l walltime=150:00:00\n'
-                           '#PBS -l nodes=1:ppn=8\n'
-                           '#PBS -l pmem=8gb\n'
-                           '#PBS -A ' + allocation_name + '\n'
-                           '#PBS -j oe\n'
-                           'cd $PBS_O_WORKDIR\n'
-                           'for K in {7..9}; do ./admixture --cv ' + geno_name + '_LDPruned.bed $K | tee ' + geno_name + '_LDPruned.log${K}.out; done')
-
-            #End and give directions.
-            print("\u001b[36;1m Transfer " + geno_name + "_LDPruned bed/bim/fam files, " + geno_name + "_Admixture_k3to6.pbs, and "
-                  + geno_name + "_Admixture_7to9.pbs files to the cluster.\n"
-                  "Submit them using qsub " + geno_name + "Admixture_k3to6.pbs and qsub " + geno_name + "Admixture_k7to9.pbs\n"
-                  "When you get your results, you should evaluate them to see which makes sense given your study population and which has the lowest CV value\u001b[0m")
-
-    #If the user says they do not want to perform admixture at this time
-    elif admixture_proceed_check in ('n', 'no'):
-        print("\u001b[36;1m Okay, we will not perform admixture at this time.\u001b[0m")
-
-    #If the user does not return a recognizable answer.
-    else:
-        print("\u001b[36;1m Please answer yes or no\u001b[0m")
 
 #Heterozygosity
 elif to_do == '9':
