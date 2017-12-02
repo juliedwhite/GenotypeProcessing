@@ -1,4 +1,4 @@
-def merge(geno_name):
+def merge(geno_name, harmonized_path):
     import os
     import sys
 
@@ -53,11 +53,16 @@ def merge(geno_name):
         # Merge 1000G chr data into one plink formatted file, need to convert from vcf files - but only taking the snps
         # that are in the house dataset
         #Read in SNPs_Kept file from harmonization process
-        house_snps_kept = pd.read_csv('Harmonized_To_1000G/SNPs_Kept.txt', header=0, sep='\t')
-        #Keep only the 'SNP' column
-        house_snps_kept = house_snps_kept.loc[:, ['SNP']]
-        #Write that column to a file to be used by plink
-        house_snps_kept.to_csv('Merged_With_1000G/SNPs_Kept_List.txt', sep='\t', header=False, index=False)
+        if os.path.exists(os.path.join(harmonized_path,'SNPs_Kept.txt')):
+            house_snps_kept = pd.read_csv(os.path.join(harmonized_path,'SNPs_Kept.txt'), header=0, sep='\t')
+            #Keep only the 'SNP' column
+            house_snps_kept = house_snps_kept.loc[:, ['SNP']]
+            #Write that column to a file to be used by plink
+            house_snps_kept.to_csv('Merged_With_1000G/SNPs_Kept_List.txt', sep='\t', header=False, index=False)
+        else:
+            sys.exit("Quitting because I cannot find a file called 'SNPs_Kept.txt' at "
+                     + harmonized_path + ". This is a product of the harmonization process and is necessary for "
+                                         "merging with 1000G." )
 
         # Change to directory where we're going to merge the files.
         os.chdir('Merged_With_1000G')
@@ -328,16 +333,22 @@ def merge(geno_name):
 
             #If the bim file doesn't exist, try to figure out why.
             if not os.path.exists(geno_name + '_1000G_merge3.bim'):
-                # Check to see if the logfile still has warnings, if so, the user will need to identify them and take care of them manually
-                if logfile[0].str.contains('Warning:').any():
-                    print("\u001b[36;1m I'm sorry, the logfile still has warnings, even after removing snps that threw "
-                          "errors in the first two tries. You'll have to manually deal with these using the merge3 log "
-                          "file.\u001b[0m")
-                # If triallelic snps still exist the user will need to identify them and take care of them manually
-                if os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
-                    print("\u001b[36;1m I'm sorry, there are still snps with 3+ variants present, even after flipping "
+                # If logfile still has warnings, or there are still missnps, the user will need to identify them and take care of them manually.
+                if logfile[0].str.contains('Warning:').any() and os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
+                    sys.exit("\u001b[36;1m I'm sorry, the logfile still has warnings, even after removing snps that threw "
+                             "errors in the first two tries. There are also still snps with 3+ variants present, even after"
+                             "flipping some and removing the ones that the flip didn't solve. You'll have to manually "
+                             "deal with these using the merge3 log and the merge3-merge.missnp file. \u001b[0m")
+                # Check to see if the logfile still has warnings
+                elif logfile[0].str.contains('Warning:').any():
+                    sys.exit("\u001b[36;1m I'm sorry, the logfile still has warnings, even after removing snps that threw "
+                             "errors in the first two tries. You'll have to manually deal with these using the merge3 log"
+                             "file. \u001b[0m")
+                # If triallelic snps still exist
+                elif os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
+                    sys.exit("\u001b[36;1m I'm sorry, there are still snps with 3+ variants present, even after flipping "
                           "some and removing the ones that the flip didn't solve. You'll have to deal with these manually "
-                          "using the merge3 log file \u001b[0m")
+                          "using the merge3-merge.missnp file \u001b[0m")
 
             #If the bim file exists, then the merge should have happened correctly.
             if os.path.exists(geno_name + '_1000G_merge3.bim'):

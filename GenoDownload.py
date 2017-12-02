@@ -88,7 +88,7 @@ def plink():
         sys.exit("I'm sorry, I could not determine what operating system you are running. Please download the latest "
               "version of Plink at https://www.cog-genomics.org/plink2")
 
-def vcf_1000g_phase3:
+def vcf_1000g_phase3():
     import os
     import ftplib
 
@@ -126,6 +126,8 @@ def hls_1000g_phase3():
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
           'This will create a ~12G folder on your computer and WILL take a while.')
 
+    orig_wd = os.getcwd()
+
     # Create folder:
     if not os.path.exists('1000G_Phase3_HapLegendSample'):
         os.makedirs('1000G_Phase3_HapLegendSample')
@@ -154,7 +156,10 @@ def hls_1000g_phase3():
             tar.extract(item)
             print('Done extracting' + item)
 
-def genotype_harmonizer:
+        # Change back to original working directory.
+        os.chdir(orig_wd)
+
+def genotype_harmonizer():
     import urllib
     import zipfile
 

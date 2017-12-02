@@ -241,28 +241,56 @@ elif to_do == '10':
                                     "for you to transfer.\n"
                                     "Are you sure you want to proceed? (y/n): \u001b[0m").lower()
     if admixture_proceed_check in ('y', 'yes'):
+        # Ask the user if they've already harmonized their data.
         harmonize_check = input('\u001b[33;1m Have you already harmonized your data with 1000G Phase 3? (y/n): \u001b[0m').lower()
+        #If yes
         if harmonize_check in ('y', 'yes'):
-           #Finish this
-        elif harmonize_check in ('n', 'no'):
+           #Ask the user if they've already merged their data.
+           merge_check = input('\u001b[34;1m Have you already merged your data with 1000G Phase 3 (y/n): \u001b[0m').lower()
+           #If yes, proceed
+           if merge_check in ('y', 'yes'):
+               #This will kick it out of the if statement to proceed with the admixture prep.
+           #If no, merge the data.
+           elif merge_check in ('n','no'):
+               #Ask for name of harmonized genotype files, which we will use to merge.
+               geno_name = input('\u001b[33;1m Please enter the name of your harmonized genotype files that you would '
+                                  'like to merge with 1000G (without bed/bim/fam extension): \u001b[0m')
+               #Ask the user where their harmonized files are.
+               harmonize_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files are '
+                                      '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
+               #Get module for merging
+               import genomerge
+               genomerge.merge(geno_name, harmonized_path)
+               #After, Should come back to this script and continue below whith admixture prep.
 
-            geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize then '
-                              'perform ADMIXTURE on (without bed/bim/fam extension: \u001b[0m')
+           #If user gives non yes or no response:
+           else:
+               sys.exit("Please answer yes or no to merge question. Quitting now.")
+
+        #If they haven't harmonized, then harmonize and merge.
+        elif harmonize_check in ('n', 'no'):
+            #Ask for name of genotype file, which we will use to harmonize and then merge.
+            geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize, merge,'
+                              ' then prepare for ADMIXTURE (without bed/bim/fam extension): \u001b[0m')
 
             #Harmonize with 1000G Phase 3
             import genoharmonize
             genoharmonize.harmonize_with_1000g(geno_name)
 
+            # Since we've just harmonized, I know what the path is.
+            harmonize_path = os.path.join(os.getcwd(), 'Harmonized_To_1000G')
+
             #Merge with 1000G Phase 3
             import genomerge
-            genomerge.merge(geno_name)
+            genomerge.merge(geno_name, harmonize_path)
 
         else:
             sys.exit("Please give a yes or no answer. Quitting now.")
 
+    #If they do not want to perform admixture at this time.
     elif admixture_proceed_check in ('n', 'no'):
         sys.exit("Okay we will not perform admixture at this time.")
-
+    #If they give a non yes or no answer.
     else:
         sys.exit('Please give a yes or no answer. Quitting now.')
 
