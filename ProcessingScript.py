@@ -2,26 +2,23 @@
 # Date 9.5.17
 
 # WHAT THIS DOES #
-# 2) Run IBD matrix through plink
-# 3) Update family and individual IDs
-# 4) Update maternal and paternal IDs
-# 5) Update sex
-# 6) Using 1000 Genomes as a reference (this part based off Perl script by W. Rayner, 2015, wrayner@well.ox.ac.uk)
-    #   -Removes SNPs with MAF < 5% in study dataset
-    #   -Removes SNPs not in 1000 Genomes
-    #   -Removes all A/T G/C SNPs with MAF > 40% in the reference data set
-    #   -Removes all SNPs with an AF difference >0.2, between reference and dataset frequency file, frequency file is
-    #       expected to be a plink frequency file with the same number of SNPs as the bim file
-    #   -Removes duplicates that may be introduced with the position update
-    #   -Removes indels
+# 1) Download Plink
+# 2) Update sex
+# 3) Produce new dataset with people and SNPs with missing call rate < 10%
+# 4) Run IBD matrix through plink
+# 5) Update family (FID) and individual IDs (IID)
+# 6) Update maternal and paternal IDs
+# 7) Prepare for ADMIXTURE with k = 3...9. Relatedness matters
+
+
 # 7) Merges your data with 1000 Genomes
-# 8) Prepares files for ADMIXTURE with k = 3...9. Relatedness matters
+
 # 9) Prepares files for phasing using SHAPEIT2. Relatedness matters
 # 10) Prepares files for imputation using the Sanger Imputation Server. Relatedness matters.
 
 # REQUIREMENTS #
-# You must have plink 1.9 (https://www.cog-genomics.org/plink2) in the same directory as your genotype files and this script,
-#   and it should be called 'plink' Alternatively, you could put plink in your PATH.
+# You must have plink 1.9 (https://www.cog-genomics.org/plink2) in the same directory as your genotype files and this
+#   script, if you do not have plink already, run step #1 and we will download it.
 # You must have downloaded the 1000G Phase 3 legend files from http://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3/.
 #   These can be anywhere you want, you'll tell me the path later
 # You must have downloaded the 1000G Phase 3 VCF files from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/.
@@ -78,21 +75,9 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
               '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+              ') Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
-
-'''
-to_do = input('\u001b[31;1m What would you like to do?\n'
-              '1) Clean dataset of people and SNPs with missing call rate > 10%\n'
-              '6) Harmonize with 1000 Genomes Phase 3 (need to do this before merging or phasing)\n'
-              '7) Merge your data with 1000G\n'
-              '8) Prepare files for ADMIXTURE with k = 3...9\n'
-              '9) Heterozygosity check\n'
-              '10) Prephasing check\n'
-              '11) Phasing\n'
-              '12) Nothing\n'
-              'Please enter a number (i.e. 2): \u001b[0m')
-'''
 #Download Plink
 if to_do == '1':
     import os
@@ -264,239 +249,52 @@ elif to_do == '6':
     import GenoRelatives
     GenoRelatives.UpdateParental(geno_name, update_parents_filename)
 
-#Harmonize with 1000G
-elif to_do == '6':
-    # Removes SNPs not in the reference 1000G Phase 3
-    # Removes SNPs with HWE p-value < 0.01
-    # Removes SNPs with MAF < 5%
-    # Update IDs to match the reference
-    # Updates the reference allele to match 1000G
-    # Outputs new files per chromosome, in vcf and plink bed/bim/fam format.
+#Admixture Steps:
+# Harmonize with 1000G Phase 3
+# Merge with 1000G
+# Prepare for ADMIXTURE with k = 3..9
+# If on PSU cluster, can submit.
 
-    import pandas as pd
-    import numpy as np
-    import zipfile
-    import urllib.request
+#PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
+elif to_do == '7':
+    import sys
 
-    orig_wd = os.getcwd()
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype file produced after finishing steps 1-5 (without bed/bim/fam extension: \u001b[0m')
-    vcf_path = input('\u001b[34;1m Please enter the pathname of where your 1000G vcf files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
-    legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
+    # Make sure the reader knows what they're getting into.
+    admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
+                                    " an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform this step:\n"
+                                    "1) You should perform the steps 2-6 BEFORE this one (in roughly that order).\n"
+                                    "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
+                                    "3) There should not be related individuals when you perform admixture. If you have "
+                                    "related individuals in your sample, you should create set lists so that the people "
+                                    "in each set are unrelated (using information from the IBD analysis\n"
+                                    "4) This will prepare files to run ADMIXTURE from k = 3 - 9. If you'd like other "
+                                    "admixture runs performed, then you should change the PrepAdmixture.py code to "
+                                    "reflect that.\n"
+                                    "5) You must have a Penn State ACI cluster allocation to perofrm this step. We are "
+                                    "using the cluster because ADMIXTURE takes a long time to run. I will ask you for "
+                                    "your cluster name.\n"
+                                    "6) This will write the files that you need, but you are responsible for the memory, "
+                                    "node, and time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for "
+                                    "putting them on the cluster and submitting them\n"
+                                    "7) On the cluster, You will need the admixture program either on your path or in "
+                                    "the same folder where you will submit this job.\n"
+                                    "8) You will need to transfer the pbs files and genotype bed/bim/fam files to your "
+                                    "cluster before running. I'll make a folder called 'Admixture' with all the files "
+                                    "for you to transfer.\n"
+                                    "Are you sure you want to proceed? (y/n): \u001b[0m").lower()
+    if admixture_proceed_check in ('y', 'yes'):
+        geno_name = input('\u001b[32;1m Please enter the name of the genotype file you would like to perform ADMIXTURE on '
+                          '(without bed/bim/fam extension: \u001b[0m')
 
-    harmonizer_exists = input('\u001b[32;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m').lower()
-    if harmonizer_exists in ('y', 'yes'):
-        harmonizer_path = input('\u001b[34;1m Please enter the pathname of where the Genotype Harmonizer folder is '
-                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): \u001b[0m')
-    elif harmonizer_exists in ('n', 'no'):
-        print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
-        urllib.request.urlretrieve('http://www.molgenis.org/downloads/GenotypeHarmonizer/GenotypeHarmonizer-1.4.20-dist.zip', 'GenotypeHarmonizer-1.4.20.zip')
-        zip_ref = zipfile.ZipFile('GenotypeHarmonizer-1.4.20.zip', 'r')
-        zip_ref.extractall('GenotypeHarmonizer-1.4.20')
-        zip_ref.close()
-        harmonizer_path = '/GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/'
+        #Harmonize with 1000G Phase 3
+        import GenoHarmonize
+        HarmonizeWith1000G(geno_name)
+
+    elif admixture_proceed_check in ('n', 'no'):
+        sys.exit("Okay we will not perform admixture at this time.")
+
     else:
-        print('\u001b[36;1m Please write yes or no \u001b[0m')
-
-    if not os.path.exists('Harmonized_To_1000G'):
-        os.makedirs('Harmonized_To_1000G')
-
-    shutil.copy2(geno_name + '.bed', 'Harmonized_To_1000G')
-    shutil.copy2(geno_name + '.bim', 'Harmonized_To_1000G')
-    shutil.copy2(geno_name + '.fam', 'Harmonized_To_1000G')
-
-    for file in glob.glob(r'plink*'):
-        print(file)
-        shutil.copy(file, 'Harmonized_To_1000G')
-
-    os.chdir('Harmonized_To_1000G')
-
-    ref_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in range(1,23)]
-    ref_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
-    harmonized_geno_names = [geno_name + '_chr%d_Harmonized' % x for x in range(1, 24)]
-    freq_file_names = [geno_name + '_chr%d_Harmonized.frq' % x for x in range(1,24)]
-    legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1,23)]
-    legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend'])
-    AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,24)]
-    final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,24)]
-    AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1,24)]
-
-    # Harmonize for each chromosome
-    for i in range(0, len(ref_file_names)):
-        if i < 22:
-            os.system('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* '
-                      '--input ' + geno_name +
-                      ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
-                      '" --refType VCF '
-                      '--chrFilter ' + str(i + 1) +
-                      ' --hweFilter 0.01 '
-                      '--mafFilter 0.05 '
-                      '--update-id '
-                      '--debug '
-                      '--mafAlign 0 '
-                      '--update-reference-allele '
-                      '--outputType PLINK_BED '
-                      '--output ' + harmonized_geno_names[i])
-
-        elif i == 22:
-            # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and convert the 23 to X before harmonizing
-            os.system('plink --bfile ' + geno_name + ' --chr X --make-bed --out ' + geno_name + '_chr23')
-            bim_file = pd.read_csv(geno_name + '_chr23.bim', sep='\t', header=None)
-            bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
-            bim_file.to_csv(geno_name + '_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
-
-            os.system('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* '
-                      '--input ' + geno_name + '_chr23'
-                      ' --ref "' + os.path.join(vcf_path,ref_file_names[i]) +
-                      '" --refType VCF '
-                      '--hweFilter 0.01 '
-                      '--mafFilter 0.05 '
-                      '--update-id '
-                      '--debug '
-                      '--mafAlign 0 '
-                      '--update-reference-allele '
-                      '--outputType PLINK_BED '
-                      '--output ' + harmonized_geno_names[i])
-        else:
-            print("\u001b[36;1m Something is wrong with the number/name of reference files \u001b[0m")
-
-    # Now for each that was just harmonized, remove all SNPs with an allele (AF) difference > 0.2 since we are going to use a global reference population
-    # between study dataset and all superpopulation allele frequencies. IF within 0.2 of any superpopulation frequency,
-    # keep variant. Frequency file is expected to be a Plink frequency file with the same number of variants as the bim file.
-    for i in range(0, len(harmonized_geno_names)):
-        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --freq --out ' + harmonized_geno_names[i])
-        freq_file = pd.read_csv(freq_file_names[i], sep='\s+', header = 0, usecols = [0,1,2,3,4],
-                                dtype = {'CHR': int, 'SNP': str, 'A1': str, 'A2': str, 'MAF':float})
-        freq_file.rename(columns={'A1': 'dataset_a1', 'A2': 'dataset_a2', 'MAF': 'dataset_a1_frq'}, inplace=True)
-        freq_file['dataset_a2_frq'] = 1-freq_file['dataset_a1_frq']
-
-        bim_file = pd.read_csv(harmonized_geno_names[i] + '.bim', sep='\s+', header=None, usecols=[0, 1, 3],
-                               names=['CHR', 'SNP', 'position'])
-
-        freq_file_with_position = pd.merge(left = freq_file, right = bim_file, how = 'inner', on=['CHR','SNP'])
-
-        legend_file = pd.read_csv(os.path.join(legend_path,legend_file_names[i]), compression="gzip", sep=" ", header = 0,
-                                  dtype={'id': str, 'position': int, 'a0': str,'a1': str, 'TYPE': str, 'AFR': float,
-                                         'AMR': float, 'EAS': float, 'EUR': float, 'SAS': float, 'ALL': float})
-        legend_file.rename(columns={'id': 'reference_id', 'a0': 'reference_a0', 'a1': 'reference_a1'}, inplace=True)
-
-        merged_file = pd.merge(left=freq_file_with_position, right=legend_file, how='inner', on='position')
-
-        #The MAF column in the frq file is the allele frequency of the A1 allele (which is usually minor, but
-        # possibly not in my case because I just updated the reference to match 1000G.
-        #The AF columns in the legend file are the allele frequencies of the a1 allele in that file.
-        #Need to match based on A1 alleles (hopefully this has already been done in the harmonization step, then
-        # calculate the allele frequency difference.
-        merged_file['AFR_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                                 abs(merged_file['dataset_a1_frq'] - merged_file['AFR']),'')
-        merged_file['AMR_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                                 abs(merged_file['dataset_a1_frq'] - merged_file['AMR']), '')
-        merged_file['EAS_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                                 abs(merged_file['dataset_a1_frq'] - merged_file['EAS']), '')
-        merged_file['EUR_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                                 abs(merged_file['dataset_a1_frq'] - merged_file['EUR']), '')
-        merged_file['SAS_Match_Diff'] = np.where((merged_file['dataset_a1']==merged_file['reference_a1']) &
-                                                 (merged_file['dataset_a2'] == merged_file['reference_a0']),
-                                                 abs(merged_file['dataset_a1_frq'] - merged_file['SAS']), '')
-        merged_file['AFR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                     abs(merged_file['dataset_a2_frq'] - merged_file['AFR']), '')
-        merged_file['AMR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                     abs(merged_file['dataset_a2_frq'] - merged_file['AMR']), '')
-        merged_file['EAS_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                     abs(merged_file['dataset_a2_frq'] - merged_file['EAS']), '')
-        merged_file['EUR_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                     abs(merged_file['dataset_a2_frq'] - merged_file['EUR']), '')
-        merged_file['SAS_FlipMatch_Diff'] = np.where((merged_file['dataset_a1'] == merged_file['reference_a0']) &
-                                                     (merged_file['dataset_a2'] == merged_file['reference_a1']),
-                                                     abs(merged_file['dataset_a2_frq'] - merged_file['SAS']), '')
-        merged_file['AFR_Diff'] = merged_file['AFR_Match_Diff']+merged_file['AFR_FlipMatch_Diff']
-        merged_file['AMR_Diff'] = merged_file['AMR_Match_Diff']+merged_file['AMR_FlipMatch_Diff']
-        merged_file['EAS_Diff'] = merged_file['EAS_Match_Diff']+merged_file['EAS_FlipMatch_Diff']
-        merged_file['EUR_Diff'] = merged_file['EUR_Match_Diff']+merged_file['EUR_FlipMatch_Diff']
-        merged_file['SAS_Diff'] = merged_file['SAS_Match_Diff']+merged_file['SAS_FlipMatch_Diff']
-
-        merged_file.drop(labels = ['AFR_Match_Diff', 'AFR_FlipMatch_Diff', 'AMR_Match_Diff', 'AMR_FlipMatch_Diff',
-                                   'EAS_Match_Diff', 'EAS_FlipMatch_Diff', 'EUR_Match_Diff', 'EUR_FlipMatch_Diff',
-                                   'SAS_Match_Diff', 'SAS_FlipMatch_Diff'],axis=1, inplace = True)
-
-        merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']] = \
-            merged_file[['AFR_Diff', 'AMR_Diff', 'EAS_Diff', 'EUR_Diff', 'SAS_Diff']].apply(pd.to_numeric, errors = 'coerce')
-
-        merged_file['AF_Decision'] = np.where((merged_file['AFR_Diff'] > 0.2) & (merged_file['AMR_Diff'] > 0.2) &
-                                              (merged_file['EAS_Diff'] > 0.2) & (merged_file['EUR_Diff'] > 0.2) &
-                                              (merged_file['SAS_Diff'] > 0.2), 'Remove', 'Keep')
-
-        merged_file.drop_duplicates(subset=['SNP'], keep = False, inplace=True)
-
-        AF_diff_removed_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Remove']
-
-        final_snp_lists_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Keep']
-        final_snp_lists_by_chr[i]['SNP'].to_csv(final_snp_lists_by_chr[i] + '.txt', sep='\t', header=False, index=False)
-
-        # Make both bed and vcf files for each chromosomes. Need bed file for merging, and need vcf file for phasing
-        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --extract ' + final_snp_lists_by_chr[i] +
-                  '.txt --recode vcf-iid bgz --make-bed --out ' + AF_checked_names[i])
-
-        if os.path.getsize(AF_checked_names[i] + '.bim') > 0:
-            os.system('rm ' + final_snp_lists_by_chr[i] + '.txt')
-            os.system('rm ' + harmonized_geno_names[i] + '.bed')
-            os.system('rm ' + harmonized_geno_names[i] + '.bim')
-            os.system('rm ' + harmonized_geno_names[i] + '.fam')
-            os.system('rm ' + harmonized_geno_names[i] + '.log')
-            os.system('rm ' + harmonized_geno_names[i] + '.frq')
-            os.system('rm ' + harmonized_geno_names[i] + '.nosex')
-            os.system('rm ' + harmonized_geno_names[i] + '.hh')
-
-        print('\u001b[36;1m Finished with chr' + str(i + 1) + '\u001b[0m')
-
-    # Write a list of all SNPs removed and all SNPs kept just for reference purposes.
-    All_SNPs_Removed = pd.concat([AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
-                                  AF_diff_removed_by_chr[3], AF_diff_removed_by_chr[4], AF_diff_removed_by_chr[5],
-                                  AF_diff_removed_by_chr[6], AF_diff_removed_by_chr[7], AF_diff_removed_by_chr[8],
-                                  AF_diff_removed_by_chr[9], AF_diff_removed_by_chr[10], AF_diff_removed_by_chr[11],
-                                  AF_diff_removed_by_chr[12], AF_diff_removed_by_chr[13], AF_diff_removed_by_chr[14],
-                                  AF_diff_removed_by_chr[15], AF_diff_removed_by_chr[16], AF_diff_removed_by_chr[17],
-                                  AF_diff_removed_by_chr[18], AF_diff_removed_by_chr[19], AF_diff_removed_by_chr[20],
-                                  AF_diff_removed_by_chr[21], AF_diff_removed_by_chr[22]])
-    All_SNPs_Removed.to_csv('SNPs_Removed_AFDiff.txt', sep='\t', header = True, index = False)
-
-    All_SNPs_Kept = pd.concat([final_snp_lists_by_chr[0], final_snp_lists_by_chr[1], final_snp_lists_by_chr[2],
-                               final_snp_lists_by_chr[3], final_snp_lists_by_chr[4], final_snp_lists_by_chr[5],
-                               final_snp_lists_by_chr[6], final_snp_lists_by_chr[7], final_snp_lists_by_chr[8],
-                               final_snp_lists_by_chr[9], final_snp_lists_by_chr[10], final_snp_lists_by_chr[11],
-                               final_snp_lists_by_chr[12], final_snp_lists_by_chr[13], final_snp_lists_by_chr[14],
-                               final_snp_lists_by_chr[15], final_snp_lists_by_chr[16], final_snp_lists_by_chr[17],
-                               final_snp_lists_by_chr[18], final_snp_lists_by_chr[19], final_snp_lists_by_chr[20],
-                               final_snp_lists_by_chr[21], final_snp_lists_by_chr[22]])
-    All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header = True, index = False)
-
-    with open("HouseMergeList.txt", "w") as f:
-        wr = csv.writer(f, delimiter="\n")
-        wr.writerow(AF_checked_names)
-    os.system('plink --merge-list HouseMergeList.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
-
-    if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
-        for i in range(0, len(AF_checked_names)):
-            os.system('rm ' + AF_checked_names[i] + '.bed')
-            os.system('rm ' + AF_checked_names[i] + '.bim')
-            os.system('rm ' + AF_checked_names[i] + '.fam')
-            os.system('rm ' + AF_checked_names[i] + '.log')
-            os.system('rm ' + AF_checked_names[i] + '.nosex')
-            os.system('rm ' + AF_checked_names[i] + '.hh')
-    else:
-        print("\u001b[36;1m For some reason the house gentoypes did not merge. You should try it manually \u001b[0m")
-
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.bed', orig_wd)
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.bim', orig_wd)
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.fam', orig_wd)
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.log', orig_wd)
+        sys.exit('Please give a yes or no answer. Quitting now.')
 
 #Merge with 1000G
 elif to_do == '7':
@@ -705,24 +503,6 @@ elif to_do == '7':
 #prepare for ADMIXTURE
 elif to_do == '8':
     #Prepares files for an admixture run k = 3...9
-    #Make sure the reader knows what they're getting into.
-    admixture_proceed_check = input("\u001b[32;1m Some cautions/notes before you perform this step:\n"
-                                    "1) If you'd like to compare your population to 1000G, then you should perform step "
-                                    "6 & 7 before this step. If not, then you should still run steps 1 - 5\n"
-                                    "2) There should not be related individuals when you perform admixture. If you have "
-                                    "related individuals, you should create set lists so that the people in each set are "
-                                    "unrelated using information from step 2.\n"
-                                    "3) This will prepare files to run admixture from k = 3 - 9. If you'd like other admixture "
-                                    "runs performed, then you should change this code to reflect that. Or, submit a "
-                                    "request to change the code and I'll get around to it.\n"
-                                    "4) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
-                                    "5) This will write the files that you need, but you are responsible for the memory, node, and "
-                                    "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
-                                    "on the cluster and submitting them to admixture \n"
-                                    "6) On the cluster, You will need the admixture program either on your path or in the same folder where "
-                                    "you will submit this job.\n"
-                                    "7) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running.\n"
-                                    "8) Are you okay with all of this? (y/n): \u001b[0m").lower()
     if admixture_proceed_check in ('y', 'yes'):
         #Get filename to run admixture on
         geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to perform '
