@@ -65,7 +65,7 @@
 #import os
 #import shutil
 #import glob
-#import sys
+import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Download Plink\n'
@@ -257,8 +257,6 @@ elif to_do == '6':
 
 #PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
 elif to_do == '7':
-    import sys
-
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
                                     " an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform this step:\n"
@@ -283,12 +281,12 @@ elif to_do == '7':
                                     "for you to transfer.\n"
                                     "Are you sure you want to proceed? (y/n): \u001b[0m").lower()
     if admixture_proceed_check in ('y', 'yes'):
-        geno_name = input('\u001b[32;1m Please enter the name of the genotype file you would like to perform ADMIXTURE on '
+        geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to perform ADMIXTURE on '
                           '(without bed/bim/fam extension: \u001b[0m')
 
         #Harmonize with 1000G Phase 3
         import GenoHarmonize
-        HarmonizeWith1000G(geno_name)
+        GenoHarmonize.HarmonizeWith1000G(geno_name)
 
     elif admixture_proceed_check in ('n', 'no'):
         sys.exit("Okay we will not perform admixture at this time.")
@@ -296,6 +294,7 @@ elif to_do == '7':
     else:
         sys.exit('Please give a yes or no answer. Quitting now.')
 
+'''
 #Merge with 1000G
 elif to_do == '7':
     #Merges house dataset with 1000G
@@ -674,7 +673,6 @@ elif to_do == '10':
             sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
 
         #This part is unfinished.
-        '''
         hap_legend_sample_path = input('\u001b[35;1m Please enter the pathname of where your 1000G Phase3 '
                                        'hap/legend/sample files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Hap_Legend_Sample etc.): \u001b[0m')
         
@@ -683,7 +681,7 @@ elif to_do == '10':
                   + [i] + '_combined_b37.txt --input-ref 1000GP_Phase3_chr'
                   + [i] + '.hap.gz 1000GP_Phase3_chr' + [i] + '.legend.gz 1000GP_Phase3.sample --output-log '
                   + geno_name + '_PhaseCheck')
-        '''
+    
     #If the user is on a mac
     elif system_check == "Darwin":
         #Ask if they already have shapeit
@@ -712,7 +710,7 @@ elif to_do == '10':
 
 #Phasing ##### Unfinished.
 elif to_do == '11':
-    '''
+
     #Prepares files for phasing using shapeit
     phasing_proceed_check = input("\u001b[32;1m Some cautions/notes before you perform this step:\n"
                                     "1) You must perform step 1-6 before this step.\n"
@@ -741,13 +739,12 @@ elif to_do == '11':
             shutil.copy2(file, 'Phasing')
 
         os.chdir('Phasing')
-    '''
+
 #Nothing
 elif to_do == '12':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
-    sys.exit("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
-
-
+    print("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
+'''
 

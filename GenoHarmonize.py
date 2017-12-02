@@ -79,7 +79,7 @@ def HarmonizeWith1000G(geno_name):
                             '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
         #List of legend file names that we're going to need.
         legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1, 23)]
-        legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend'])
+        legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend.gz'])
 
     elif legend_exists in ('n', 'no'):
         print('Downloading 1000G Phase 3 legend files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
@@ -151,7 +151,8 @@ def HarmonizeWith1000G(geno_name):
     harmonized_geno_names = [geno_name + '_chr%d_Harmonized' % x for x in range(1, 24)]
     freq_file_names = [geno_name + '_chr%d_Harmonized.frq' % x for x in range(1,24)]
     AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,24)]
-    final_snp_lists_by_chr = ['chr%d_SNPsKept' % x for x in range(1,24)]
+    final_snps_by_chr = ['chr%d_SNPsKept' % x for x in range(1,24)]
+    final_snp_lists = ['chr%d_SNPsKept.txt' % x for x in range(1,24)]
     AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1,24)]
 
     '''
@@ -315,44 +316,19 @@ def HarmonizeWith1000G(geno_name):
         #Write file for each chromosome of the SNPs that we've removed in this step.
         AF_diff_removed_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Remove']
 
-        # Make a big list of all SNPs removed and all SNPs kept just for reference purposes.
-        All_SNPs_Removed = pd.concat([AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
-                                      AF_diff_removed_by_chr[3], AF_diff_removed_by_chr[4], AF_diff_removed_by_chr[5],
-                                      AF_diff_removed_by_chr[6], AF_diff_removed_by_chr[7], AF_diff_removed_by_chr[8],
-                                      AF_diff_removed_by_chr[9], AF_diff_removed_by_chr[10], AF_diff_removed_by_chr[11],
-                                      AF_diff_removed_by_chr[12], AF_diff_removed_by_chr[13],
-                                      AF_diff_removed_by_chr[14],
-                                      AF_diff_removed_by_chr[15], AF_diff_removed_by_chr[16],
-                                      AF_diff_removed_by_chr[17],
-                                      AF_diff_removed_by_chr[18], AF_diff_removed_by_chr[19],
-                                      AF_diff_removed_by_chr[20],
-                                      AF_diff_removed_by_chr[21], AF_diff_removed_by_chr[22]])
-        #Write list to text file.
-        All_SNPs_Removed.to_csv('SNPs_Removed_AFDiff.txt', sep='\t', header=True, index=False)
-
-        #Write list of final SNPs that we are keeping.
-        final_snp_lists_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Keep']
+        #Write list for each chromosome of final SNPs that we are keeping.
+        final_snps_by_chr[i] = merged_file[merged_file['AF_Decision'] == 'Keep']
         #Write list for each chromosome, because we're going to use it to filter the chromosomes to create new files.
-        final_snp_lists_by_chr[i]['SNP'].to_csv(final_snp_lists_by_chr[i] + '.txt', sep='\t', header=False, index=False)
-        #Make one big list of all SNPs kept
-        All_SNPs_Kept = pd.concat([final_snp_lists_by_chr[0], final_snp_lists_by_chr[1], final_snp_lists_by_chr[2],
-                                   final_snp_lists_by_chr[3], final_snp_lists_by_chr[4], final_snp_lists_by_chr[5],
-                                   final_snp_lists_by_chr[6], final_snp_lists_by_chr[7], final_snp_lists_by_chr[8],
-                                   final_snp_lists_by_chr[9], final_snp_lists_by_chr[10], final_snp_lists_by_chr[11],
-                                   final_snp_lists_by_chr[12], final_snp_lists_by_chr[13], final_snp_lists_by_chr[14],
-                                   final_snp_lists_by_chr[15], final_snp_lists_by_chr[16], final_snp_lists_by_chr[17],
-                                   final_snp_lists_by_chr[18], final_snp_lists_by_chr[19], final_snp_lists_by_chr[20],
-                                   final_snp_lists_by_chr[21], final_snp_lists_by_chr[22]])
-        #Write this list to a text file.
-        All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header=True, index=False)
+        final_snps_by_chr[i]['SNP'].to_csv(final_snp_lists[i], sep='\t', header=False, index=False)
 
         #Make both bed and vcf files for each chromosomes. Need bed file for merging, and need vcf file for phasing
-        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --extract ' + final_snp_lists_by_chr[i] +
-                  '.txt --recode vcf-iid bgz --make-bed --out ' + AF_checked_names[i])
+        os.system('plink --bfile ' + harmonized_geno_names[i] + ' --extract ' + final_snp_lists[i] +
+                  ' --recode vcf-iid bgz --make-bed --out ' + AF_checked_names[i])
 
         # Remove extra files that we don't need anymore. These were files that were harmonized, but not checked for allele frequency differences.
+        '''
         if os.path.getsize(AF_checked_names[i] + '.bim') > 0:
-            os.system('rm ' + final_snp_lists_by_chr[i] + '.txt')
+            os.system('rm ' + final_snps_by_chr[i] + '.txt')
             os.system('rm ' + harmonized_geno_names[i] + '.bed')
             os.system('rm ' + harmonized_geno_names[i] + '.bim')
             os.system('rm ' + harmonized_geno_names[i] + '.fam')
@@ -361,7 +337,32 @@ def HarmonizeWith1000G(geno_name):
             os.system('rm ' + harmonized_geno_names[i] + '.nosex')
             os.system('rm ' + harmonized_geno_names[i] + '.hh')
         #Done with one chromosome.
+        '''
         print('\u001b[36;1m Finished with chr' + str(i + 1) + '\u001b[0m')
+
+    # Make a big list of all SNPs removed and all SNPs kept just for reference purposes.
+    All_SNPs_Removed = pd.concat([AF_diff_removed_by_chr[0], AF_diff_removed_by_chr[1], AF_diff_removed_by_chr[2],
+                                  AF_diff_removed_by_chr[3], AF_diff_removed_by_chr[4], AF_diff_removed_by_chr[5],
+                                  AF_diff_removed_by_chr[6], AF_diff_removed_by_chr[7], AF_diff_removed_by_chr[8],
+                                  AF_diff_removed_by_chr[9], AF_diff_removed_by_chr[10], AF_diff_removed_by_chr[11],
+                                  AF_diff_removed_by_chr[12], AF_diff_removed_by_chr[13],AF_diff_removed_by_chr[14],
+                                  AF_diff_removed_by_chr[15], AF_diff_removed_by_chr[16],AF_diff_removed_by_chr[17],
+                                  AF_diff_removed_by_chr[18], AF_diff_removed_by_chr[19],AF_diff_removed_by_chr[20],
+                                  AF_diff_removed_by_chr[21], AF_diff_removed_by_chr[22]])
+    # Write list to text file.
+    All_SNPs_Removed.to_csv('SNPs_Removed_AFDiff.txt', sep='\t', header=True, index=False)
+
+    # Make one big list of all SNPs kept
+    All_SNPs_Kept = pd.concat([final_snps_by_chr[0], final_snps_by_chr[1], final_snps_by_chr[2],
+                               final_snps_by_chr[3], final_snps_by_chr[4], final_snps_by_chr[5],
+                               final_snps_by_chr[6], final_snps_by_chr[7], final_snps_by_chr[8],
+                               final_snps_by_chr[9], final_snps_by_chr[10], final_snps_by_chr[11],
+                               final_snps_by_chr[12], final_snps_by_chr[13], final_snps_by_chr[14],
+                               final_snps_by_chr[15], final_snps_by_chr[16], final_snps_by_chr[17],
+                               final_snps_by_chr[18], final_snps_by_chr[19], final_snps_by_chr[20],
+                               final_snps_by_chr[21], final_snps_by_chr[22]])
+    # Write this list to a text file.
+    All_SNPs_Kept.to_csv('SNPs_Kept.txt', sep='\t', header=True, index=False)
 
 ####Merge harmonized dataset genotypes####
     with open("HouseMergeList.txt", "w") as f:
