@@ -62,112 +62,56 @@
 # User submits to Sanger Imputation Server (https://imputation.sanger.ac.uk/?instructions=1)
 
 # Getting the needed modules.
-#import os
-#import shutil
-#import glob
+import os
+import shutil
+import glob
 import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Download Plink\n'
-              '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
-              '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
-              '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-              '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+              '2) Download 1000G Phase 3 VCF files\n'
+              '3) Download 1000G Phase 3 Hap/Legend/Sample files \n'
+              '4) Download Genotype Harmonizer\n'
+              '5) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
+              '6) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+              '7) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+              '8) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
-              '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+              '9) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+              '10) Prepare for ADMIXTURE with 1000G Phase 3 files'
               ') Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
-#Download Plink
+#GenoDownload: Download Plink
 if to_do == '1':
-    import os
-    import platform
-    import zipfile
-    import shutil
-    import urllib.request
+    #Get the module for downloading stuff.
+    import GenoDownload
+    #Call download plink command
+    GenoDownload.Plink()
 
-    system_check = platform.system()
-    architecture_check = platform.architecture()[0]
+#GenoDownload: Download 1000G VCF files.
+elif to_do == '2':
+    #Get the module for downloading stuff.
+    import GenoDownload
+    #Call the download 1000G phase 3 VCF command.
+    GenoDownload.VCF1000GPhase3()
 
-    if system_check == "Linux":
-        if architecture_check == '64bit':
-            #Download 64 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_linux_x86_64.zip
-            print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_linux_x86_64.zip',
-                                       'Plink_1.9_Linux64.zip')
-            #Making directory to store program
-            os.makedirs('Plink_1.9_Linux64')
-            #Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Linux64.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Linux64")
-            #Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Linux64/plink',os.getcwd())
+#GenoDownload: Download 1000G HapLegendSample files.
+elif to_do == '3':
+    #Get the module for downloading stuff.
+    import GenoDownload
+    #Call the download 1000G Phase 3 HapLegendSample command
+    GenoDownload.HapLegendSample1000GPhase3()
 
-        elif architecture_check == '32bit':
-            #Download 32 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_linux_i686.zip
-            print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_linux_i686.zip',
-                                       'Plink_1.9_Linux32.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Linux32')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Linux32.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Linux32")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Linux32/plink', os.getcwd())
-
-        else:
-            print("I'm sorry, I could not determine what Linux Plink version to download.")
-
-    elif system_check == "Darwin":
-        #Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_mac.zip
-        print("Downloading Mac Plink 1.9 to this directory now.")
-        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_mac.zip',
-                                   'Plink_1.9_Mac.zip')
-        # Making directory to store program
-        os.makedirs('Plink_1.9_Mac')
-        # Unpacking to this directory
-        with zipfile.ZipFile("Plink_1.9_Mac.zip", "r") as zip_ref:
-            zip_ref.extractall("Plink_1.9_Mac")
-        # Copy plink from archive folder to current working directory.
-        shutil.copy2('Plink_1.9_Mac/plink', os.getcwd())
-
-    elif system_check == "Windows":
-        if architecture_check == '64bit':
-            #Download 64 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_win64.zip
-            print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_win64.zip',
-                                       'Plink_1.9_Win64.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Win64')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Win64.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Win64")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Win64/plink.exe', os.getcwd())
-
-        elif architecture_check == '32bit':
-            #Download 32 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_win32.zip
-            print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_win32.zip',
-                                       'Plink_1.9_Win32.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Win32')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Win32.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Win32")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Win32/plink.exe', os.getcwd())
-
-        else:
-            print("I'm sorry, I could not determine what Windows Plink version to download.")
-
-    else:
-        print("I'm sorry, I could not determine what operating system you are running. Please download the latest "
-              "version of Plink at https://www.cog-genomics.org/plink2")
+#GenoDownload: Download Genotype Harmonizer.
+elif to_do == '4':
+    #Get the module
+    import GenoDownload
+    #Call the download Genotype Harmonizer command
+    GenoDownload.GenotypeHarmonizer()
 
 #GenoQC: Update sex
-elif to_do == '2':
+elif to_do == '5':
     #Get name of genotype file
     geno_name = input("\u001b[32;1m Please enter the name of the plink genotype files you'd like to update sex in "
                       "(without bed/bim/fam extension: \u001b[0m")
@@ -182,7 +126,7 @@ elif to_do == '2':
     GenoQC.UpdateSex(geno_name, update_parents_filename)
 
 #GenoQC: Clean dataset by missing call rate > 10%
-elif to_do == '3':
+elif to_do == '6':
     #Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
@@ -191,7 +135,7 @@ elif to_do == '3':
     GenoQC.MissingCallRate(geno_name)
 
 #GenoRelatives: Run IBD
-elif to_do == '4':
+elif to_do == '7':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -213,7 +157,7 @@ elif to_do == '4':
     GenoRelatives.IBD(geno_name)
 
 #GenoRelatives: Update FID or IID
-elif to_do == '5':
+elif to_do == '8':
     #Just making sure the user knows what is needed.
     print("The tab delimited text file for updating FID or IID should have four fields: \n"
           "1) Old FID\n"
@@ -231,7 +175,7 @@ elif to_do == '5':
     GenoRelatives.UpdateID(geno_name, update_id_filename)
 
 #GenoRelatives: Update parental IDs
-elif to_do == '6':
+elif to_do == '9':
     #Just making sure the user knows what is needed.
     print("The tab delimited text file for updating parents should have four fields: \n"
           "1) FID\n"
@@ -256,11 +200,11 @@ elif to_do == '6':
 # If on PSU cluster, can submit.
 
 #PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
-elif to_do == '7':
+elif to_do == '10':
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
                                     " an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform this step:\n"
-                                    "1) You should perform the steps 2-6 BEFORE this one (in roughly that order).\n"
+                                    "1) You should perform the steps 5-9 BEFORE this one (in roughly that order).\n"
                                     "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
                                     "3) There should not be related individuals when you perform admixture. If you have "
                                     "related individuals in your sample, you should create set lists so that the people "
@@ -287,6 +231,8 @@ elif to_do == '7':
         #Harmonize with 1000G Phase 3
         import GenoHarmonize
         GenoHarmonize.HarmonizeWith1000G(geno_name)
+
+
 
     elif admixture_proceed_check in ('n', 'no'):
         sys.exit("Okay we will not perform admixture at this time.")

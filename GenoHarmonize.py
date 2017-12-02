@@ -11,21 +11,18 @@ def HarmonizeWith1000G(geno_name):
     #   -Updates the reference allele to match 1000G
     #   -Outputs new files per chromosome, in vcf and plink bed/bim/fam format.
 
-    #Needed modules
+#Needed modules
     import os
     import shutil
     import glob
     import sys
     import pandas as pd
     import numpy as np
-    import zipfile
-    import urllib.request
-    import ftplib
 
     # Get current working directory.
     orig_wd = os.getcwd()
 
-###Getting require reference files and genotype harmonizer program###
+###Getting required reference files and genotype harmonizer program###
     #Ask the user if they already have the 1000G Phase 3 vcf files.
     vcf_exists = input('\u001b[34;1m Have you already downloaded the 1000G Phase3 VCF files? (y/n): \u001b[0m').lower()
 
@@ -34,71 +31,29 @@ def HarmonizeWith1000G(geno_name):
         vcf_path = input('\u001b[34;1m Please enter the pathname of where your 1000G vcf files are '
                          '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): \u001b[0m')
 
-        # List of VCF files that we're going to need.
-        vcf_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
-                          range(1, 23)]
-        vcf_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
-
     elif vcf_exists in ('n', 'no'):
-        print('Downloading 1000G Phase 3 VCF files now, putting them in "1000G_Phase3_VCF" folder. This might take a while.')
-
-        #Create folder:
-        if not os.path.exists('1000G_Phase3_VCF'):
-            os.makedirs('1000G_Phase3_VCF')
-
-        #List of VCF files that we're going to need.
-        vcf_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in range(1, 23)]
-        vcf_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
-
-        #Open ftp connection
-        ftp = ftplib.FTP('ftp.1000genomes.ebi.ac.uk')
-        ftp.login()
-        ftp.cwd('/vol1/ftp/release/20130502/')
-
-        #Download files and put them in 1000G_Phase3_VCF folder.
-        for filename in vcf_file_names:
-            local_filename = os.path.join(os.getcwd(), '1000G_Phase3_VCF', filename)
-            file = open(local_filename, 'wb')
-            ftp.retrbinary('RETR ' + filename, file.write)
-            file.close()
-        #Once we are done downloading, close the connection to the ftp server.
-        ftp.quit()
-
+        #Get module where downloading instructions are.
+        import GenoDownload
+        #From that module, call download 1000G Phase 3 VCF
+        GenoDownload.VCF1000GPhase3()
         #Saving VCF path
         vcf_path = os.path.join(os.getcwd(), '1000G_Phase3_VCF')
-
     else:
         sys.exit("Please answer yes or no. Quitting now because no VCF files.")
 
-    #Ask the uer if they alraedy have the 1000G Phase 3 Hap/Legend/Sample files.
+    #Ask the user if they alraedy have the 1000G Phase 3 Hap/Legend/Sample files.
     legend_exists = input('\u001b[35;1m Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): \u001b[0m').lower()
 
     if legend_exists in ('y', 'yes'):
         #Ask the user where the Legend files are.
         legend_path = input('\u001b[35;1m Please enter the pathname of where your 1000G legend files are '
                             '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
-        #List of legend file names that we're going to need.
-        legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1, 23)]
-        legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend.gz'])
 
     elif legend_exists in ('n', 'no'):
-        print('Downloading 1000G Phase 3 legend files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
-              'This might take a while.')
-
-        # Create folder:
-        if not os.path.exists('1000G_Phase3_HapLegendSample'):
-            os.makedirs('1000G_Phase3_HapLegendSample')
-
-            # List of legend file names that we're going to need.
-            legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1, 23)]
-            legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend'])
-
-            legend_server = "http://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3/"
-
-            # Download files and put them in 1000G_Phase3_VCF folder.
-            for filename in legend_file_names:
-                urllib.request.urlretrieve(os.path.join(legend_server, filename), os.path.join(os.getcwd(),'1000G_Phase3_HapLegendSample', filename))
-
+        #Get GenoDownload module
+        import GenoDownload
+        #Call download HapLegendSample command
+        GenoDownload.HapLegendSample1000GPhase3()
         # Saving legend path
         legend_path = os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample')
     else:
@@ -106,19 +61,15 @@ def HarmonizeWith1000G(geno_name):
 
     #Ask if they have genotype harmonizer.
     harmonizer_exists = input('\u001b[32;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m').lower()
+
     if harmonizer_exists in ('y', 'yes'):
         #Ask the user where genotype harmonizer is.
         harmonizer_path = input('\u001b[34;1m Please enter the pathname of where the Genotype Harmonizer folder is '
                                 '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): \u001b[0m')
 
     elif harmonizer_exists in ('n', 'no'):
-        print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
-        #Download genotype harmonizer zip file
-        urllib.request.urlretrieve('http://www.molgenis.org/downloads/GenotypeHarmonizer/GenotypeHarmonizer-1.4.20-dist.zip', 'GenotypeHarmonizer-1.4.20.zip')
-        #Unzip Genotype Harmonizer
-        zip_ref = zipfile.ZipFile('GenotypeHarmonizer-1.4.20.zip', 'r')
-        zip_ref.extractall('GenotypeHarmonizer-1.4.20')
-        zip_ref.close()
+        import GenoDownload
+        GenoDownload.GenotypeHarmonizer()
         #Harmonize path now that we've downloaded it.
         harmonizer_path = os.path.join(os.getcwd(),'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
 
@@ -148,6 +99,11 @@ def HarmonizeWith1000G(geno_name):
     os.chdir('Harmonized_To_1000G')
 
     #Make the lists that we're going to need, since this is on a per chromosome basis.
+    vcf_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
+                      range(1, 23)]
+    vcf_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
+    legend_file_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1, 23)]
+    legend_file_names.extend(['1000GP_Phase3_chrX_NONPAR.legend.gz'])
     harmonized_geno_names = [geno_name + '_chr%d_Harmonized' % x for x in range(1, 24)]
     freq_file_names = [geno_name + '_chr%d_Harmonized.frq' % x for x in range(1,24)]
     AF_diff_removed_by_chr = ['chr%d_SNPsRemoved_AFDiff' % x for x in range(1,24)]
@@ -155,7 +111,6 @@ def HarmonizeWith1000G(geno_name):
     final_snp_lists = ['chr%d_SNPsKept.txt' % x for x in range(1,24)]
     AF_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1,24)]
 
-    '''
     #Harmonize for each chromosome
     for i in range(0, len(vcf_file_names)):
         #Call genotype harmonizer for autosomes
@@ -198,7 +153,7 @@ def HarmonizeWith1000G(geno_name):
                       '--output ' + harmonized_geno_names[i])
         else:
             sys.exit("\u001b[36;1m Something is wrong with the number/name of reference files \u001b[0m")
-    '''
+
     # Now for each that was just harmonized, remove all SNPs with an allele (AF) difference > 0.2 since we are going to use a global reference population
     # between study dataset and all superpopulation allele frequencies. IF within 0.2 of any superpopulation frequency,
     # keep variant. Frequency file is expected to be a Plink frequency file with the same number of variants as the bim file.
@@ -326,7 +281,7 @@ def HarmonizeWith1000G(geno_name):
                   ' --recode vcf-iid bgz --make-bed --out ' + AF_checked_names[i])
 
         # Remove extra files that we don't need anymore. These were files that were harmonized, but not checked for allele frequency differences.
-        '''
+
         if os.path.getsize(AF_checked_names[i] + '.bim') > 0:
             os.system('rm ' + final_snps_by_chr[i] + '.txt')
             os.system('rm ' + harmonized_geno_names[i] + '.bed')
@@ -337,7 +292,7 @@ def HarmonizeWith1000G(geno_name):
             os.system('rm ' + harmonized_geno_names[i] + '.nosex')
             os.system('rm ' + harmonized_geno_names[i] + '.hh')
         #Done with one chromosome.
-        '''
+
         print('\u001b[36;1m Finished with chr' + str(i + 1) + '\u001b[0m')
 
     # Make a big list of all SNPs removed and all SNPs kept just for reference purposes.
@@ -380,9 +335,8 @@ def HarmonizeWith1000G(geno_name):
             os.system('rm ' + AF_checked_names[i] + '.hh')
     else:
         sys.exit("\u001b[36;1m For some reason the house gentoypes did not merge. You should try it manually \u001b[0m")
-'''
+
     shutil.copy2(geno_name + '_HarmonizedTo1000G.bed', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G.bim', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G.fam', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G.log', orig_wd)
-'''
