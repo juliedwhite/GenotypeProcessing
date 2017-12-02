@@ -195,7 +195,7 @@ elif to_do == '9':
 
 #GenoHarmonize: Harmonize with 1000G
 elif to_do == '10':
-    #Get GenoName
+    #Get name of genotypes.
     geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
                       '(without bed/bim/fam extension: \u001b[0m')
 
@@ -205,17 +205,25 @@ elif to_do == '10':
 
 #GenoMerge: Merge with 1000G
 elif to_do == '11':
+    #Ask user genotype names.
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files you would like to merge with 1000G '
                       '(without bed/bim/fam extension: \u001b[0m')
+    #If there are genotype files with _HarmonizedTo1000G as ending in this working directory, then I know the path
+    if os.path.exists(geno_name + '_HarmonizedTo1000G.bed'):
+        harmonize_path = os.getcwd()
+    else: #If I can't find the files in this working directory, ask the user where their harmonized files are.
+        harmonize_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files are '
+                               '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
+    #Import module and run.
     import genomerge
-    genomerge.merge(geno_name)
+    genomerge.merge(geno_name, harmonize_path)
 
 #PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
 #Steps:
 # Harmonize with 1000G Phase 3
 # Merge with 1000G
 # Prepare for ADMIXTURE with k = 3..9
-elif to_do == '10':
+elif to_do == '12':
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
                                     " an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform this step:\n"
