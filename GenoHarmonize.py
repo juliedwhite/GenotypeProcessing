@@ -33,9 +33,9 @@ def harmonize_with_1000g(geno_name):
 
     elif vcf_exists in ('n', 'no'):
         #Get module where downloading instructions are.
-        import GenoDownload
+        import genodownload
         #From that module, call download 1000G Phase 3 VCF
-        GenoDownload.VCF1000GPhase3()
+        genodownload.vcf_1000g_phase3()
         #Saving VCF path
         vcf_path = os.path.join(os.getcwd(), '1000G_Phase3_VCF')
     else:
@@ -50,10 +50,10 @@ def harmonize_with_1000g(geno_name):
                             '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
 
     elif legend_exists in ('n', 'no'):
-        #Get GenoDownload module
-        import GenoDownload
+        #Get genodownload module
+        import genodownload
         #Call download HapLegendSample command
-        GenoDownload.HapLegendSample1000GPhase3()
+        genodownload.hls_1000g_phase3()
         # Saving legend path
         legend_path = os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample')
     else:
@@ -68,8 +68,8 @@ def harmonize_with_1000g(geno_name):
                                 '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): \u001b[0m')
 
     elif harmonizer_exists in ('n', 'no'):
-        import GenoDownload
-        GenoDownload.GenotypeHarmonizer()
+        import genodownload
+        genodownload.genotype_harmonizer()
         #Harmonize path now that we've downloaded it.
         harmonizer_path = os.path.join(os.getcwd(),'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
 
@@ -190,7 +190,7 @@ def harmonize_with_1000g(geno_name):
         legend_file['AMR_MAF'] = np.where(legend_file['AMR'] < 0.5, legend_file['AMR'], 1 - legend_file['AMR'])
         legend_file['EAS_MAF'] = np.where(legend_file['EAS'] < 0.5, legend_file['EAS'], 1 - legend_file['EAS'])
         legend_file['EUR_MAF'] = np.where(legend_file['EUR'] < 0.5, legend_file['EUR'], 1 - legend_file['EUR'])
-        legend_file['SAS_MAF'] = np.where(legend_file['SAS'] < 0.5, legend_file['AFR'], 1 - legend_file['SAS'])
+        legend_file['SAS_MAF'] = np.where(legend_file['SAS'] < 0.5, legend_file['SAS'], 1 - legend_file['SAS'])
 
         #Create column in legend file with decision about whether to keep or remove SNP, if it is an ATGC SNP where
         # the MAF in all superpopulations is greater than 40%, then remove it.
@@ -340,3 +340,6 @@ def harmonize_with_1000g(geno_name):
     shutil.copy2(geno_name + '_HarmonizedTo1000G.bim', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G.fam', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G.log', orig_wd)
+
+    # Change back to original working directory.
+    os.chdir(orig_wd)
