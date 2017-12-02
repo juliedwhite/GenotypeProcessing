@@ -1,6 +1,6 @@
 import os
 
-def UpdateSex(geno_name, update_sex_filename):
+def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
     #   1) FID
     #   2) IID
@@ -9,7 +9,7 @@ def UpdateSex(geno_name, update_sex_filename):
               + '_SexUpdated')
     print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
 
-def MissingCallRate(geno_name):
+def missing_call_rate(geno_name):
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
     os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out ' + geno_name + '_geno0.1_mind0.1')
 

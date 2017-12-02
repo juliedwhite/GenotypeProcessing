@@ -1,4 +1,4 @@
-def IBD(geno_name):
+def ibd(geno_name):
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -34,7 +34,7 @@ def IBD(geno_name):
                         "you should make set lists of people who are unrelated in each set. These lists should have "
                         "Family ID / Individual ID pairs, one person per line (tab or space delimited).  \u001b[0m")
 
-def UpdateID(geno_name, update_id_filename):
+def update_id(geno_name, update_id_filename):
     # File for updating FID should have four fields
     #  1) Old FID
     #  2) Old IID
@@ -45,7 +45,7 @@ def UpdateID(geno_name, update_id_filename):
               '_IDUpdated')
     print("\u001b[36;1m Finished. Your genotype files with the ID updated will have the name " + geno_name + "_IDUpdated \u001b[0m")
 
-def UpdateParental(geno_name, update_parents_filename):
+def update_parental(geno_name, update_parents_filename):
     # File for updating parents should have four fields:
     #   1) FID
     #   2) IID

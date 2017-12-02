@@ -1,4 +1,4 @@
-def Plink():
+def plink():
     import os
     import platform
     import zipfile
@@ -88,7 +88,10 @@ def Plink():
         sys.exit("I'm sorry, I could not determine what operating system you are running. Please download the latest "
               "version of Plink at https://www.cog-genomics.org/plink2")
 
-def VCF1000GPhase3:
+def vcf_1000g_phase3:
+    import os
+    import ftplib
+
     print('Downloading 1000G Phase 3 VCF files now, putting them in "1000G_Phase3_VCF" folder. '
           'This will create a ~16G folder on your computer and WILL take a while.')
 
@@ -115,7 +118,11 @@ def VCF1000GPhase3:
     # Once we are done downloading, close the connection to the ftp server.
     ftp.quit()
 
-def HapLegendSample1000GPhase3():
+def hls_1000g_phase3():
+    import os
+    import urllib
+    import tarfile
+
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
           'This will create a ~12G folder on your computer and WILL take a while.')
 
@@ -123,26 +130,34 @@ def HapLegendSample1000GPhase3():
     if not os.path.exists('1000G_Phase3_HapLegendSample'):
         os.makedirs('1000G_Phase3_HapLegendSample')
 
+        #Where the files are
+        legend_server = "http://mathgen.stats.ox.ac.uk/impute/"
+
         # List of file names that we're going to need.
-
-        file_list = ['1000GP_Phase3.sample']
-        file_list.extend(['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1, 23)])
-        file_list.extend(['1000GP_Phase3_chr%d.hap.gz' % x for x in range(1,23)])
-        file_list.extend(['1000GP_Phase3_chrX_NONPAR.hap.gz', '1000GP_Phase3_chrX_NONPAR.legend.gz',
-                          '1000GP_Phase3_chrX_PAR1.hap.gz', '1000GP_Phase3_chrX_PAR1.legend.gz',
-                          '1000GP_Phase3_chrX_PAR2.hap.gz', '1000GP_Phase3_chrX_PAR2.legend.gz'])
-        file_list.extend(['genetic_map_chr%d_combined_b37.txt' % x for x in range(1,23)])
-        file_list.extend(['genetic_map_chrX_PAR1_combined.b37.txt', 'genetic_map_chrX_PAR2_combined.b37.txt',
-                          'genetic_map_chrX_nonPAR_combined_b37.txt'])
-
-        legend_server = "http://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3/"
+        file_list = ['1000GP_Phase3.tgz','1000GP_Phase3_chrX.tgz']
 
         # Download files and put them in 1000G_Phase3_VCF folder.
         for filename in file_list:
             urllib.request.urlretrieve(os.path.join(legend_server, filename),
                                        os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample', filename))
 
-def GenotypeHarmonizer:
+        #Change directory where tgz files are
+        os.chdir('1000G_Phase3_HapLegendSample')
+        #Unpack tar files
+        tar = tarfile.open('1000GP_Phase3.tgz', 'r:gz')
+        for item in tar:
+            tar.extract(item)
+            print('Done extracting' + item)
+        #Unpack tar files
+        tar = tarfile.open('1000GP_Phase3_chrX.tgz', 'r:gz')
+        for item in tar:
+            tar.extract(item)
+            print('Done extracting' + item)
+
+def genotype_harmonizer:
+    import urllib
+    import zipfile
+
     print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
     # Download genotype harmonizer zip file
     urllib.request.urlretrieve(

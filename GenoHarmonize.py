@@ -1,4 +1,4 @@
-def HarmonizeWith1000G(geno_name):
+def harmonize_with_1000g(geno_name):
     # Using 1000 Genomes as a reference(based off Perl script by W.Rayner, 2015, wrayner @ well.ox.ac.uk)
     #   -Removes SNPs with MAF < 5% in study dataset
     #   -Removes SNPs not in 1000 Genomes Phase 3

@@ -87,28 +87,28 @@ if to_do == '1':
     #Get the module for downloading stuff.
     import GenoDownload
     #Call download plink command
-    GenoDownload.Plink()
+    GenoDownload.plink()
 
 #GenoDownload: Download 1000G VCF files.
 elif to_do == '2':
     #Get the module for downloading stuff.
     import GenoDownload
     #Call the download 1000G phase 3 VCF command.
-    GenoDownload.VCF1000GPhase3()
+    GenoDownload.vcf_1000g_phase3()
 
 #GenoDownload: Download 1000G HapLegendSample files.
 elif to_do == '3':
     #Get the module for downloading stuff.
     import GenoDownload
     #Call the download 1000G Phase 3 HapLegendSample command
-    GenoDownload.HapLegendSample1000GPhase3()
+    GenoDownload.hls_1000g_phase3()
 
 #GenoDownload: Download Genotype Harmonizer.
 elif to_do == '4':
     #Get the module
     import GenoDownload
     #Call the download Genotype Harmonizer command
-    GenoDownload.GenotypeHarmonizer()
+    GenoDownload.genotype_harmonizer()
 
 #GenoQC: Update sex
 elif to_do == '5':
@@ -123,7 +123,7 @@ elif to_do == '5':
     import GenoQC
 
     #Call UpdateSex command using geno name and update sex filename as input
-    GenoQC.UpdateSex(geno_name, update_parents_filename)
+    GenoQC.update_sex(geno_name, update_parents_filename)
 
 #GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '6':
@@ -132,7 +132,7 @@ elif to_do == '6':
 
     #Import module and call command
     import GenoQC
-    GenoQC.MissingCallRate(geno_name)
+    GenoQC.missing_call_rate(geno_name)
 
 #GenoRelatives: Run IBD
 elif to_do == '7':
@@ -154,7 +154,7 @@ elif to_do == '7':
 
     #Import module and call command.
     import GenoRelatives
-    GenoRelatives.IBD(geno_name)
+    GenoRelatives.ibd(geno_name)
 
 #GenoRelatives: Update FID or IID
 elif to_do == '8':
@@ -172,7 +172,7 @@ elif to_do == '8':
                                 '(with file extension): \u001b[0m')
     #Import module and call command.
     import GenoRelatives
-    GenoRelatives.UpdateID(geno_name, update_id_filename)
+    GenoRelatives.update_id(geno_name, update_id_filename)
 
 #GenoRelatives: Update parental IDs
 elif to_do == '9':
@@ -191,7 +191,7 @@ elif to_do == '9':
 
     #Import module and call command.
     import GenoRelatives
-    GenoRelatives.UpdateParental(geno_name, update_parents_filename)
+    GenoRelatives.update_parental(geno_name, update_parents_filename)
 
 #Admixture Steps:
 # Harmonize with 1000G Phase 3
@@ -230,7 +230,7 @@ elif to_do == '10':
 
         #Harmonize with 1000G Phase 3
         import GenoHarmonize
-        GenoHarmonize.HarmonizeWith1000G(geno_name)
+        GenoHarmonize.harmonize_with_1000g(geno_name)
 
 
 
