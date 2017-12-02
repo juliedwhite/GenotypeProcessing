@@ -85,30 +85,30 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
 #GenoDownload: Download Plink
 if to_do == '1':
     #Get the module for downloading stuff.
-    import GenoDownload
+    import genodownload
     #Call download plink command
-    GenoDownload.plink()
+    genodownload.plink()
 
 #GenoDownload: Download 1000G VCF files.
 elif to_do == '2':
     #Get the module for downloading stuff.
-    import GenoDownload
+    import genodownload
     #Call the download 1000G phase 3 VCF command.
-    GenoDownload.vcf_1000g_phase3()
+    genodownload.vcf_1000g_phase3()
 
 #GenoDownload: Download 1000G HapLegendSample files.
 elif to_do == '3':
     #Get the module for downloading stuff.
-    import GenoDownload
+    import genodownload
     #Call the download 1000G Phase 3 HapLegendSample command
-    GenoDownload.hls_1000g_phase3()
+    genodownload.hls_1000g_phase3()
 
 #GenoDownload: Download Genotype Harmonizer.
 elif to_do == '4':
     #Get the module
-    import GenoDownload
+    import genodownload
     #Call the download Genotype Harmonizer command
-    GenoDownload.genotype_harmonizer()
+    genodownload.genotype_harmonizer()
 
 #GenoQC: Update sex
 elif to_do == '5':
@@ -120,10 +120,10 @@ elif to_do == '5':
     update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
 
     #Import module where this command is.
-    import GenoQC
+    import genoqc
 
     #Call UpdateSex command using geno name and update sex filename as input
-    GenoQC.update_sex(geno_name, update_parents_filename)
+    genoqc.update_sex(geno_name, update_parents_filename)
 
 #GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '6':
@@ -131,8 +131,8 @@ elif to_do == '6':
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
     #Import module and call command
-    import GenoQC
-    GenoQC.missing_call_rate(geno_name)
+    import genoqc
+    genoqc.missing_call_rate(geno_name)
 
 #GenoRelatives: Run IBD
 elif to_do == '7':
@@ -153,8 +153,8 @@ elif to_do == '7':
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files to run an IBD on (without bed/bim/fam extension: \u001b[0m')
 
     #Import module and call command.
-    import GenoRelatives
-    GenoRelatives.ibd(geno_name)
+    import genorelatives
+    genorelatives.ibd(geno_name)
 
 #GenoRelatives: Update FID or IID
 elif to_do == '8':
@@ -171,8 +171,8 @@ elif to_do == '8':
     update_id_filename = input('\u001b[34;1m Please enter the name of your text file for updating FID or IID '
                                 '(with file extension): \u001b[0m')
     #Import module and call command.
-    import GenoRelatives
-    GenoRelatives.update_id(geno_name, update_id_filename)
+    import genorelatives
+    genorelatives.update_id(geno_name, update_id_filename)
 
 #GenoRelatives: Update parental IDs
 elif to_do == '9':
@@ -190,8 +190,8 @@ elif to_do == '9':
                                     '(with file extension): \u001b[0m')
 
     #Import module and call command.
-    import GenoRelatives
-    GenoRelatives.update_parental(geno_name, update_parents_filename)
+    import genorelatives
+    genorelatives.update_parental(geno_name, update_parents_filename)
 
 #Admixture Steps:
 # Harmonize with 1000G Phase 3
@@ -229,8 +229,8 @@ elif to_do == '10':
                           '(without bed/bim/fam extension: \u001b[0m')
 
         #Harmonize with 1000G Phase 3
-        import GenoHarmonize
-        GenoHarmonize.harmonize_with_1000g(geno_name)
+        import genoharmonize
+        genoharmonize.harmonize_with_1000g(geno_name)
 
 
 
