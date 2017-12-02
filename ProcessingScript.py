@@ -78,7 +78,10 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '8) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
               '9) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-              '10) Prepare for ADMIXTURE with 1000G Phase 3 files'
+              '10) Harmonize with 1000G\n'
+              '11) Filter for extreme (+-3SD) heterozygosity values\n'
+              '12) Merge with 1000G\n'
+              '13) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
               ') Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
@@ -203,8 +206,17 @@ elif to_do == '10':
     import genoharmonize
     genoharmonize.harmonize_with_1000g(geno_name)
 
-#GenoMerge: Merge with 1000G
+# Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
 elif to_do == '11':
+    geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
+                      'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
+
+    # Call module and function.
+    import genoqc
+    genoqc.het(geno_name)
+
+#GenoMerge: Merge with 1000G
+elif to_do == '12':
     #Ask user genotype names.
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files you would like to merge with 1000G '
                       '(without bed/bim/fam extension: \u001b[0m')
@@ -223,7 +235,7 @@ elif to_do == '11':
 # Harmonize with 1000G Phase 3
 # Merge with 1000G
 # Prepare for ADMIXTURE with k = 3..9
-elif to_do == '12':
+elif to_do == '13':
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
                                     " an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform this step:\n"
@@ -333,39 +345,6 @@ elif to_do == '12':
         sys.exit('Please give a yes or no answer. Quitting now.')
 
 '''
-
-#Heterozygosity
-elif to_do == '9':
-    #Identifies individuals with extreme heterozygosity values (more than +- 3 SD)
-    #Getting extra required modules
-    import pandas as pd
-    import numpy as np
-
-    #Asking user what genotype files we're using
-    geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
-                      'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
-
-    #Uses plink to calculate the heterozygosity, paying attention to geno and mind.
-    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --het --out ' + geno_name)
-
-    #Read het file into pandas
-    het_file = pd.read_csv(geno_name + '.het', sep='\s+', header=0)
-
-    #Create new column with formula: (N(NM)-O(HOM))/N(NM)
-    het_file['HET'] = (het_file['N(NM)'] - het_file['O(HOM)']) / het_file['N(NM)']
-
-    #Getting standard deviation and average of HET column
-    het_sd = np.std(het_file['HET'])
-    het_avg = np.mean(het_file['HET'])
-
-    #Add label 'keep' to people within 3*SD of the average het value, give 'remove' to everyone else.
-    het_file['HET_Filter'] = np.where((het_file['HET'] > het_avg - 3 * het_sd) & (het_file['HET'] < het_avg + 3 * het_sd), 'Keep', 'Remove')
-    #Write this file so the user has it.
-    het_file.to_csv(geno_name + '.het', sep='\t', header=True, index=False)
-    #Make a list of the people who pass the filter.
-    het_keep = het_file[het_file['HET_Filter'] == 'Keep']
-    #Write this file so that we can use it later to filter people out.
-    het_keep[['FID', 'IID']].to_csv(geno_name + '_KeptAfterHetCheck.txt', sep='\t', header=False, index=False)
 
 #Prephasing check
 elif to_do == '10':
