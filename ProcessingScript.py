@@ -82,62 +82,63 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '11) Filter for extreme (+-3SD) heterozygosity values\n'
               '12) Merge with 1000G\n'
               '13) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
+              '14) Run a phasing check and prepare files for phasing using SHAPEIT\n'
               ') Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
-#GenoDownload: Download Plink
+# GenoDownload: Download Plink
 if to_do == '1':
-    #Get the module for downloading stuff.
+    # Get the module for downloading stuff.
     import genodownload
-    #Call download plink command
+    # Call download plink command
     genodownload.plink()
 
-#GenoDownload: Download 1000G VCF files.
+# GenoDownload: Download 1000G VCF files.
 elif to_do == '2':
-    #Get the module for downloading stuff.
+    # Get the module for downloading stuff.
     import genodownload
-    #Call the download 1000G phase 3 VCF command.
+    # Call the download 1000G phase 3 VCF command.
     genodownload.vcf_1000g_phase3()
 
-#GenoDownload: Download 1000G HapLegendSample files.
+# GenoDownload: Download 1000G HapLegendSample files.
 elif to_do == '3':
-    #Get the module for downloading stuff.
+    # Get the module for downloading stuff.
     import genodownload
-    #Call the download 1000G Phase 3 HapLegendSample command
+    # Call the download 1000G Phase 3 HapLegendSample command
     genodownload.hls_1000g_phase3()
 
-#GenoDownload: Download Genotype Harmonizer.
+# GenoDownload: Download Genotype Harmonizer.
 elif to_do == '4':
-    #Get the module
+    # Get the module
     import genodownload
-    #Call the download Genotype Harmonizer command
+    # Call the download Genotype Harmonizer command
     genodownload.genotype_harmonizer()
 
-#GenoQC: Update sex
+# GenoQC: Update sex
 elif to_do == '5':
-    #Get name of genotype file
+    # Get name of genotype file
     geno_name = input("\u001b[32;1m Please enter the name of the plink genotype files you'd like to update sex in "
                       "(without bed/bim/fam extension: \u001b[0m")
 
-    #Get name of file to be used for updating sex
+    # Get name of file to be used for updating sex
     update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
 
-    #Import module where this command is.
+    # Import module where this command is.
     import genoqc
 
-    #Call UpdateSex command using geno name and update sex filename as input
+    # Call UpdateSex command using geno name and update sex filename as input
     genoqc.update_sex(geno_name, update_parents_filename)
 
-#GenoQC: Clean dataset by missing call rate > 10%
+# GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '6':
-    #Get name of genotype file
+    # Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
-    #Import module and call command
+    # Import module and call command
     import genoqc
     genoqc.missing_call_rate(geno_name)
 
-#GenoRelatives: Run IBD
+# GenoRelatives: Run IBD
 elif to_do == '7':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
@@ -152,53 +153,53 @@ elif to_do == '7':
     #   -Fifth-degree relative = 0.03125
     # A good cutoff to use for Pi_Hat is 0.1875. This represents the halfway point between 2nd and 3rd degree relatives.
 
-    #Get name of genotype file
+    # Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files to run an IBD on (without bed/bim/fam extension: \u001b[0m')
 
-    #Import module and call command.
+    # Import module and call command.
     import genorelatives
     genorelatives.ibd(geno_name)
 
-#GenoRelatives: Update FID or IID
+# GenoRelatives: Update FID or IID
 elif to_do == '8':
-    #Just making sure the user knows what is needed.
+    # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating FID or IID should have four fields: \n"
           "1) Old FID\n"
           "2) Old IID\n"
           "3) New FID\n"
           "4) New IID")
-    #Getting name of working file.
+    # Getting name of working file.
     geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to update FID/IID '
                       'in (without bed/bim/fam extension): \u001b[0m')
-    #Name of file to be used to update the genotype files.
+    # Name of file to be used to update the genotype files.
     update_id_filename = input('\u001b[34;1m Please enter the name of your text file for updating FID or IID '
                                 '(with file extension): \u001b[0m')
-    #Import module and call command.
+    # Import module and call command.
     import genorelatives
     genorelatives.update_id(geno_name, update_id_filename)
 
-#GenoRelatives: Update parental IDs
+# GenoRelatives: Update parental IDs
 elif to_do == '9':
-    #Just making sure the user knows what is needed.
+    # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating parents should have four fields: \n"
           "1) FID\n"
           "2) IID\n"
           "3) Paternal IID\n"
           "4) Maternal IID")
-    #Getting name of working file.
+    # Getting name of working file.
     geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to update parents '
                       'in (without bed/bim/fam extension): \u001b[0m')
-    #Getting name of file to be used for update
+    # Getting name of file to be used for update
     update_parents_filename = input('\u001b[34;1m Please enter the name of your text file for updating parents '
                                     '(with file extension): \u001b[0m')
 
-    #Import module and call command.
+    # Import module and call command.
     import genorelatives
     genorelatives.update_parental(geno_name, update_parents_filename)
 
-#GenoHarmonize: Harmonize with 1000G
+# GenoHarmonize: Harmonize with 1000G
 elif to_do == '10':
-    #Get name of genotypes.
+    # Get name of genotypes.
     geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
                       '(without bed/bim/fam extension: \u001b[0m')
 
@@ -206,7 +207,7 @@ elif to_do == '10':
     import genoharmonize
     genoharmonize.harmonize_with_1000g(geno_name)
 
-# Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
+# GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
 elif to_do == '11':
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
                       'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
@@ -215,44 +216,45 @@ elif to_do == '11':
     import genoqc
     genoqc.het(geno_name)
 
-#GenoMerge: Merge with 1000G
+# GenoMerge: Merge with 1000G
 elif to_do == '12':
-    #Ask user genotype names.
+    # Ask user genotype names.
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files you would like to merge with 1000G '
                       '(without bed/bim/fam extension: \u001b[0m')
-    #If there are genotype files with _HarmonizedTo1000G as ending in this working directory, then I know the path
+    # If there are genotype files with _HarmonizedTo1000G as ending in this working directory, then I know the path
     if os.path.exists(geno_name + '_HarmonizedTo1000G.bed'):
         harmonize_path = os.getcwd()
-    else: #If I can't find the files in this working directory, ask the user where their harmonized files are.
+    else: # If I can't find the files in this working directory, ask the user where their harmonized files are.
         harmonize_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files are '
                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
     #Import module and run.
     import genomerge
     genomerge.merge(geno_name, harmonize_path)
 
-#PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
-#Steps:
-# Harmonize with 1000G Phase 3
-# Merge with 1000G
-# Prepare for ADMIXTURE with k = 3..9
+# PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
+# Steps:
+#   Harmonize with 1000G Phase 3
+#   Merge with 1000G
+#   Prepare for ADMIXTURE with k = 3..9
 elif to_do == '13':
     # Make sure the reader knows what they're getting into.
-    admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files for"
-                                    " an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform this step:\n"
+    admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files "
+                                    "for an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform "
+                                    "this step:\n"
                                     "1) You should perform the steps 5-9 BEFORE this one (in roughly that order).\n"
                                     "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
-                                    "3) There should not be related individuals when you perform admixture. If you have "
-                                    "related individuals in your sample, you should create set lists so that the people "
-                                    "in each set are unrelated (using information from the IBD analysis\n"
+                                    "3) There should not be related individuals when you perform admixture. If you have"
+                                    " related individuals in your sample, you should create set lists so that the "
+                                    "people in each set are unrelated (using information from the IBD analysis\n"
                                     "4) This will prepare files to run ADMIXTURE from k = 3 - 9. If you'd like other "
                                     "admixture runs performed, then you should change the PrepAdmixture.py code to "
                                     "reflect that.\n"
                                     "5) You must have a Penn State ACI cluster allocation to perofrm this step. We are "
                                     "using the cluster because ADMIXTURE takes a long time to run. I will ask you for "
                                     "your cluster name.\n"
-                                    "6) This will write the files that you need, but you are responsible for the memory, "
-                                    "node, and time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for "
-                                    "putting them on the cluster and submitting them\n"
+                                    "6) This will write the files that you need, but you are responsible for the "
+                                    "memory, node, and time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) "
+                                    "and for putting them on the cluster and submitting them\n"
                                     "7) On the cluster, You will need the admixture program either on your path or in "
                                     "the same folder where you will submit this job.\n"
                                     "8) You will need to transfer the pbs files and genotype bed/bim/fam files to your "
@@ -262,57 +264,59 @@ elif to_do == '13':
 
     if admixture_proceed_check in ('y', 'yes'):
         # Ask the user if they've already harmonized their data.
-        harmonize_check = input('\u001b[33;1m Have you already harmonized your data with 1000G Phase 3? (y/n): \u001b[0m').lower()
-        #If yes
+        harmonize_check = input('\u001b[33;1m Have you already harmonized your data with 1000G Phase 3? (y/n): '
+                                '\u001b[0m').lower()
+        # If yes
         if harmonize_check in ('y', 'yes'):
-           #Ask the user if they've already merged their data.
-           merge_check = input('\u001b[34;1m Have you already merged your data with 1000G Phase 3 (y/n): \u001b[0m').lower()
-           #If yes, proceed, but first ask what they called the files.
-           if merge_check in ('y', 'yes'):
-               admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to perform'
-                                 ' admixture on (without bed/bim/fam extension: \u001b[0m')
-           #If no, merge the data.
-           elif merge_check in ('n','no'):
-               #Ask for name of harmonized genotype files, which we will use to merge.
-               geno_name = input('\u001b[33;1m Please enter the name of your harmonized genotype files that you would '
+            # Ask the user if they've already merged their data.
+            merge_check = input('\u001b[34;1m Have you already merged your data with 1000G Phase 3 (y/n): '
+                                '\u001b[0m').lower()
+            # If yes, proceed, but first ask what they called the files.
+            if merge_check in ('y', 'yes'):
+                admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to '
+                                   'perform admixture on (without bed/bim/fam extension: \u001b[0m')
+            # If no, merge the data.
+            elif merge_check in ('n','no'):
+                # Ask for name of harmonized genotype files, which we will use to merge.
+                geno_name = input('\u001b[33;1m Please enter the name of your harmonized genotype files that you would '
                                   'like to merge with 1000G (without bed/bim/fam extension): \u001b[0m')
-               #Ask the user where their harmonized files are.
-               harmonize_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files are '
-                                      '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
-               #Get module for merging
-               import genomerge
-               genomerge.merge(geno_name, harmonized_path)
-               #After, Should come back to this script and continue below with admixture prep.
+                # Ask the user where their harmonized files are.
+                harmonized_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files '
+                                        'are (i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
+                # Get module for merging
+                import genomerge
+                genomerge.merge(geno_name, harmonized_path)
+                # After, Should come back to this script and continue below with admixture prep.
 
-               #Figure out what the final name of the merged file was.
-               if os.path.exists(geno_name + '1000G.bed'):
-                   admix_name = geno_name + '1000G.bed'
-               elif os.path.exists(geno_name + '1000G_merge2.bed'):
-                   admix_name = geno_name + '1000G_merge2.bed'
-               elif os.path.exists(geno_name + '1000G_merge3.bed'):
-                   admix_name = geno_name + '1000G_merge3.bed'
-               else:
-                   admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to perform'
-                                 ' admixture on (without bed/bim/fam extension: \u001b[0m')
+                # Figure out what the final name of the merged file was.
+                if os.path.exists(geno_name + '1000G.bed'):
+                    admix_name = geno_name + '1000G.bed'
+                elif os.path.exists(geno_name + '1000G_merge2.bed'):
+                    admix_name = geno_name + '1000G_merge2.bed'
+                elif os.path.exists(geno_name + '1000G_merge3.bed'):
+                    admix_name = geno_name + '1000G_merge3.bed'
+                else:
+                    admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like '
+                                       'to perform admixture on (without bed/bim/fam extension: \u001b[0m')
 
-           #If user gives non yes or no response:
-           else:
-               sys.exit("Please answer yes or no to merge question. Quitting now.")
+            # If user gives non yes or no response:
+            else:
+                sys.exit("Please answer yes or no to merge question. Quitting now.")
 
-        #If they haven't harmonized, then harmonize and merge.
+        # If they haven't harmonized, then harmonize and merge.
         elif harmonize_check in ('n', 'no'):
-            #Ask for name of genotype file, which we will use to harmonize and then merge.
-            geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize, merge,'
-                              ' then prepare for ADMIXTURE (without bed/bim/fam extension): \u001b[0m')
+            # Ask for name of genotype file, which we will use to harmonize and then merge.
+            geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize, '
+                              'merge, then prepare for ADMIXTURE (without bed/bim/fam extension): \u001b[0m')
 
-            #Harmonize with 1000G Phase 3
+            # Harmonize with 1000G Phase 3
             import genoharmonize
             genoharmonize.harmonize_with_1000g(geno_name)
 
             # Since we've just harmonized, I know what the path is.
             harmonize_path = os.path.join(os.getcwd(), 'Harmonized_To_1000G')
 
-            #Merge with 1000G Phase 3
+            # Merge with 1000G Phase 3
             import genomerge
             genomerge.merge(geno_name, harmonize_path)
 
@@ -324,91 +328,70 @@ elif to_do == '13':
             elif os.path.exists(geno_name + '1000G_merge3.bed'):
                 admix_name = geno_name + '1000G_merge3.bed'
             else:
-                admix_name = input(
-                    '\u001b[34;1m Please enter the name of the genotype files that you would like to perform'
-                    ' admixture on (without bed/bim/fam extension: \u001b[0m')
+                admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to '
+                                   'perform admixture on (without bed/bim/fam extension: \u001b[0m')
 
-        #If user gives non-recognized answer.
+        # If user gives non-recognized answer.
         else:
             sys.exit("Please give a yes or no answer. Quitting now.")
 
-        #Prep for admixture and done.
+        # Prep for admixture and done.
         import genoadmixture
         genoadmixture.prep(admix_name)
 
-    #If they do not want to perform admixture at this time.
+    # If they do not want to perform admixture at this time.
     elif admixture_proceed_check in ('n', 'no'):
         sys.exit("Okay we will not perform admixture at this time.")
 
-    #If they give a non yes or no answer.
+    # If they give a non yes or no answer.
     else:
         sys.exit('Please give a yes or no answer. Quitting now.')
 
+# GenoPhase: Run pre-phasing check
+elif to_do == '14':
+    # Ask the user what to run the phasing check on.
+    geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
+                      'phasing check on (without bed/bim/fam extension). You should only do this after running steps '
+                      '5 - 11: \u001b[0m')
+    # Import module
+    import genophase
+    # Call function
+    genophase.check(geno_name)
+    # Duohmm flag not currently working.
+
+    # Need to deal with output of phasing check
+    # Need to look for Mendel errors and remove those with > 5%?
+
+    # How I did it last time:
+    # Needed to remove individuals or SNPs based on Mendel error rate:
+    '''
+    ./ plink - -bfile
+    ADAPT_2778ppl_491K_Autosomal_hg19_ATGC.chr1 - -make - bed - -me
+    0.05
+    0.1 - -out
+    ADAPT_2778ppl_491K_MendelRem.chr1
+
+    # Set to missing the remaining Mendel errors. Otherwise ShapeIt will give an error message 
+    ./ plink - -bfile
+    ADAPT_2778ppl_491K_MendelRem.chr1 - -make - bed - -me
+    1
+    1 - -out
+    ADAPT_2778ppl_491K_MendelOut.chr1 - -set - me - missing
+
+    # Then did another check for strand alignment: 
+    ./ shapeit - check - B
+    ADAPT_2778ppl_491K_MendelOut.chr1 - M
+    genetic_map_chr1_combined_b37.txt - -input - ref
+    1000
+    GP_Phase3_chr1.hap.gz
+    1000
+    GP_Phase3_chr1.legend.gz
+    1000
+    GP_Phase3.sample - -output - log
+    chr1.alignments
+    '''
 '''
 
-#Prephasing check
-elif to_do == '10':
-    #Ask the user what to run the phasing check on.
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
-                      'phasing check on (without bed/bim/fam extension: \u001b[0m')
-
-    #Since shapeit only works on linux or mac, we need to first check what system they are on.
-    system_check = platform.system()
-
-    if system_check == "Linux":
-        #Now we need to know where they have shapeit, if they have it.
-        shapeit_exists = input("\u001b[35;1m Do you already have the linux shapeit program unpacked? (y/n):  \u001b[0m").lower()
-        #If yes, then ask for path of program
-        if shapeit_exists in ('yes', 'y'):
-            shapeit_path = input("\u001b[36;1m Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
-        #If no, download and unpack shapeit.
-        elif shapeit_exits in ('no', 'n'):
-            print('\u001b[36;1m Downloading shapeit to this directory now. \u001b[0m')
-            urllib.request.urlretrieve('https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.20.Linux.static.tgz, '
-                                       'shapeit.v2.r837.GLIBCv2.20.Linux.static.tgz')
-            # Making directory to store program
-            os.makedirs('Shapeit_v2.20_Linux_Static')
-            #Unpacking
-            os.system('tar -zxvf shapeit.v2.r837.GLIBCv2.20.Linux.static.tgz -C /Shapeit_v2.20_Linux_Static/')
-        else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
-
-        #This part is unfinished.
-        hap_legend_sample_path = input('\u001b[35;1m Please enter the pathname of where your 1000G Phase3 '
-                                       'hap/legend/sample files are (i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Hap_Legend_Sample etc.): \u001b[0m')
-        
-        
-        os.system('./shapeit -check -B ' + geno_name + ' -M genetic_map_chr'
-                  + [i] + '_combined_b37.txt --input-ref 1000GP_Phase3_chr'
-                  + [i] + '.hap.gz 1000GP_Phase3_chr' + [i] + '.legend.gz 1000GP_Phase3.sample --output-log '
-                  + geno_name + '_PhaseCheck')
-    
-    #If the user is on a mac
-    elif system_check == "Darwin":
-        #Ask if they already have shapeit
-        shapeit_exists = input("\u001b[34;1m Great, do you already have the mac shapeit program unpacked? (y/n):  \u001b[0m").lower()
-        if shapeit_exists in ('yes', 'y'):
-            #Ask where shapeit is located.
-            shapeit_path = input("\u001b[35;1m Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
-        elif shapeit_exits in ('no', 'n'):
-            print('\u001b[35;1m Downloading shapeit to this directory now. \u001b[0m')
-            #Download shapeit
-            urllib.request.urlretrieve('https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz, '
-                                       'shapeit.v2.r837.MacOSX.tgz')
-            #Create directory for shapeit.
-            os.makedirs('Shapeit_v2.20_Mac')
-            os.system('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C /Shapeit_v2.20_Mac/')
-        else:
-            sys.exit('\u001b[35;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
-
-    elif system_check == ("Windows"):
-        print("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-              "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
-
-    else:
-        sys.exit("\u001b[35;1m I have detected that you are not running Linux, Mac, or Windows. Exiting now. \u001b[0m")
 
 #Phasing ##### Unfinished.
 elif to_do == '11':
