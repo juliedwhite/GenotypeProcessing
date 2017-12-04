@@ -1,5 +1,6 @@
 import os
 
+
 def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
     #   1) FID
@@ -7,11 +8,15 @@ def update_sex(geno_name, update_sex_filename):
     #   3) Sex (1 = M, 2 = F, 0 = missing)
     os.system('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out ' + geno_name
               + '_SexUpdated')
-    print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated \u001b[0m")
+    print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name "
+          + geno_name + "_SexUpdated \u001b[0m")
+
 
 def missing_call_rate(geno_name):
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
-    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out ' + geno_name + '_geno0.1_mind0.1')
+    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out '
+              + geno_name + '_geno0.1_mind0.1')
+
 
 def het(geno_name):
     # Identifies individuals with extreme heterozygosity values (more than +- 3 SD)
@@ -42,8 +47,9 @@ def het(geno_name):
     # Write this file so that we can use it later to filter people out.
     het_keep[['FID', 'IID']].to_csv(geno_name + '_KeptAfterHetCheck.txt', sep='\t', header=False, index=False)
 
-    #Make new plink file with people passing het check.
+    # Make new plink file with people passing het check.
     os.system('plink --bfile ' + geno_name + '--keep ' + geno_name + '_KeptAfterHetCheck.txt --geno 0.1 --make-bed '
                                                                      '--out ' + geno_name + '_HetChecked')
 
-    print("Done. Your new file of people with non-extreme heterozygosity values will be called " + geno_name + "_HetChecked")
+    print("Done. Your new file of people with non-extreme heterozygosity values will be called "
+          + geno_name + "_HetChecked")

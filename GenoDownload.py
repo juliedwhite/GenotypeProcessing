@@ -6,9 +6,9 @@ def plink():
     import urllib.request
     import sys
 
-    #Get what system the user is using
+    # Get what system the user is using
     system_check = platform.system()
-    #Get the version of that system
+    # Get the version of that system
     architecture_check = platform.architecture()[0]
 
     if system_check == "Linux":
@@ -86,7 +86,8 @@ def plink():
 
     else:
         sys.exit("I'm sorry, I could not determine what operating system you are running. Please download the latest "
-              "version of Plink at https://www.cog-genomics.org/plink2")
+                 "version of Plink at https://www.cog-genomics.org/plink2")
+
 
 def vcf_1000g_phase3():
     import os
@@ -118,9 +119,10 @@ def vcf_1000g_phase3():
     # Once we are done downloading, close the connection to the ftp server.
     ftp.quit()
 
+
 def hls_1000g_phase3():
     import os
-    import urllib
+    import urllib.request
     import tarfile
 
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
@@ -132,7 +134,7 @@ def hls_1000g_phase3():
     if not os.path.exists('1000G_Phase3_HapLegendSample'):
         os.makedirs('1000G_Phase3_HapLegendSample')
 
-        #Where the files are
+        # Where the files are
         legend_server = "http://mathgen.stats.ox.ac.uk/impute/"
 
         # List of file names that we're going to need.
@@ -143,24 +145,25 @@ def hls_1000g_phase3():
             urllib.request.urlretrieve(os.path.join(legend_server, filename),
                                        os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample', filename))
 
-        #Change directory where tgz files are
+        # Change directory where tgz files are
         os.chdir('1000G_Phase3_HapLegendSample')
-        #Unpack tar files
+        # Unpack tar files
         tar = tarfile.open('1000GP_Phase3.tgz', 'r:gz')
         for item in tar:
             tar.extract(item)
-            print('Done extracting' + item)
-        #Unpack tar files
+            print('Done extracting' + str(item))
+        # Unpack tar files
         tar = tarfile.open('1000GP_Phase3_chrX.tgz', 'r:gz')
         for item in tar:
             tar.extract(item)
-            print('Done extracting' + item)
+            print('Done extracting' + str(item))
 
         # Change back to original working directory.
         os.chdir(orig_wd)
 
+
 def genotype_harmonizer():
-    import urllib
+    import urllib.request
     import zipfile
 
     print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
