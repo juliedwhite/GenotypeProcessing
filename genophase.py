@@ -1,4 +1,4 @@
-def phase(geno_name):
+def phase(geno_name, allocation_name):
     import platform
     import urllib.request
     import os
@@ -94,9 +94,12 @@ def phase(geno_name):
     os.system(plink + ' --bfile ' + geno_name + ' --me 0.05 0.1 --make-bed --out ' + geno_name + '_MeFilter')
 
     # Names of reference files needed.
-    genetic_map_names = ['genetic_map_chr%d_combined_b37.txt' % x for x in range(1, 24)]
-    hap_names = ['1000GP_Phase3_chr%d.hap.gz' % x for x in range(1,24)]
-    legend_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1,24)]
+    genetic_map_names = ['genetic_map_chr%d_combined_b37.txt' % x for x in range(1, 23)]
+    genetic_map_names.extend(['genetic_map_chrX_nonPAR_combined_b37.txt'])
+    hap_names = ['1000GP_Phase3_chr%d.hap.gz' % x for x in range(1,23)]
+    hap_names.extend(['1000GP_Phase3_chrX_NONPAR.hap.gz'])
+    legend_names = ['1000GP_Phase3_chr%d.legend.gz' % x for x in range(1,23)]
+    legend_names.extend(['1000GP_Phase3_chrX_NONPAR.legend.gz'])
     geno_bed_names = ['Phasing/' + geno_name + '_MeFilter.chr%d.bed' % x for x in range(1,24)]
     geno_bim_names = ['Phasing/' + geno_name + '_MeFilter.chr%d.bim' % x for x in range(1, 24)]
     geno_fam_names = ['Phasing/' + geno_name + '_MeFilter.chr%d.fam' % x for x in range(1, 24)]
@@ -104,45 +107,62 @@ def phase(geno_name):
     # Perform phasing check per chromosome.
     for i in range(0,23):
         # Split the geno file into separate chromosomes and put it in the Phasing folder.
-        os.system(plink + ' --bfile ' + geno_name + '_MeFilter --chr ' + str(i+1) + ' --make-bed --out Phasing/'
-                  + geno_name + '_MeFilter.chr' + str(i+1))
-        # Perform phasing check.
+        os.system(plink + ' --bfile ' + geno_name + ' --chr ' + str(i+1) + ' --make-bed --out Phasing/'
+                  + geno_name + '.chr' + str(i+1))
+        # Perform phasing check. We are telling it to ignore the pedigree information for now because we will use the
+        # --duohmm flag later
         os.system(os.path.join(shapeit_path,'shapeit') + ' -check --input-bed ' + geno_bed_names[i] + ' '
-                  + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --input-map '
+                  + geno_bim_names[i] + ' ' + geno_fam_names[i] + '--noped --input-map '
                   + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                   + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
                   + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log Phasing/'
-                  + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1))
+                  + geno_name + 'MeFilter_PhaseCheck.chr' + str(i+1))
 
-    for i in range(0,23):
-        # Identify if there were Mendel errors (shouldn't be, but maybe)
-        if (os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.snp.me')) or \
-                (os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.ind.me')):
-            sys.exit("There are SNPs or people in your sample with high rates of Mendel error. Please remove these and "
-                     "rerun.")
-
+    # Prepare files for phasing and submit to cluster.
     for i in range(0,23):
         # If a log file with snp.strand exclude is produced, then these SNPs need to be removed.
-        if os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + 'snp.strand.exclude'):
-            print("You have SNPs in your sample that are not on the same strand as the reference or are not in the "
-                  "reference. I'll remove these when phasing")
-
-            # Run the phase after removing these SNPs
-            os.system(os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                      + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
-                      + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
-                      + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
-                      + os.path.join(ref_path, '1000GP_Phase3.sample') + '--exclude-snp Phasing/' + geno_name
-                      + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.snp.strand.exclude --output-log Phasing/'
-                      + geno_name + '_MeFilter_PhasedTo1000G.chr' + str(i + 1))
+        if os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.snp.strand.exclude'):
+            # Write file removing the strand inconsistent SNPs
+            with open ('Phasing/' + geno_name + '_MeFilter_PhaseScript.chr' + str(i+1) + '.pbs', 'w') as file:
+                file.write('#!/bin/bash\n'
+                           '#PBS -l walltime=30:00:00\n'
+                           '#PBS -l nodes=1:ppn=8\n'
+                           '#PBS -l pmem=7gb\n'
+                           '#PBS -A ' + allocation_name +
+                           '\n'
+                           '#PBS -j oe\n'
+                           'cd $PBS_O_WORKDIR\n'
+                           '\n' +
+                           os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
+                           + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                           + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
+                           + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
+                           + os.path.join(ref_path, '1000GP_Phase3.sample') + '--exclude-snp Phasing/' + geno_name
+                           + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.snp.strand.exclude --output-max Phasing/'
+                           + geno_name + '_MeFilter_PhasedTo1000G.chr' + str(i + 1) + ' --output-log Phasing/'
+                           + geno_name + '_MeFilter_PhasedTo1000G.chr' + str(i + 1))
+            # Submit to cluster
+            os.system('qsub Phasing/' + geno_name + '_MeFilter_PhaseScript.chr' + str(i+1) + '.pbs')
 
         # If this file doesn't exist, then run the phase on all snps
         else:
-            print("Phasing now.")
-            # Run the phase
-            os.system(os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                      + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
-                      + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
-                      + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
-                      + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log Phasing/'
-                      + geno_name + 'MeFilter_PhasedTo1000G.chr' + str(i + 1))
+            # Write file using all SNPs.
+            with open('Phasing/' + geno_name + '_MeFilter_PhaseScript.chr' + str(i + 1) + '.pbs', 'w') as file:
+                file.write('#!/bin/bash\n'
+                           '#PBS -l walltime=30:00:00\n'
+                           '#PBS -l nodes=1:ppn=8\n'
+                           '#PBS -l pmem=7gb\n'
+                           '#PBS -A ' + allocation_name +
+                           '\n'
+                           '#PBS -j oe\n'
+                           'cd $PBS_O_WORKDIR\n'
+                           '\n' +
+                           os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
+                           + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                           + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
+                           + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
+                           + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max Phasing/'
+                           + geno_name + '_MeFilter_PhasedTo1000G.chr' + str(i + 1) + ' --output-log Phasing/'
+                           + geno_name + '_MeFilter_PhasedTo1000G.chr' + str(i + 1))
+            # Submit to cluster
+            os.system('qsub Phasing/' + geno_name + '_MeFilter_PhaseScript.chr' + str(i + 1) + '.pbs')
