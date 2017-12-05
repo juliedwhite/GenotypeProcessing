@@ -347,16 +347,19 @@ elif to_do == '13':
     else:
         sys.exit('Please give a yes or no answer. Quitting now.')
 
-# GenoPhase: Run pre-phasing check
+# GenoPhase: Run pre-phasing check; prepare and submit files for phasing.
 elif to_do == '14':
     # Ask the user what to run the phasing check on.
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
                       'phasing check on (without bed/bim/fam extension). You should only do this after running steps '
                       '5 - 11: \u001b[0m')
+
+    # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
+    allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
     # Import module
     import genophase
     # Call function
-    genophase.phase(geno_name)
+    genophase.phase(geno_name, allocation_name)
 
 '''
 
