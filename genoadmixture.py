@@ -42,7 +42,8 @@ def prep(admix_name):
 
             # For each set, write a pbs script for admixture k = 3..6
             with open('Admixture/' + admix_name + '_Set' + set_name + '_Admixture_k3to6.pbs', 'w') as file:
-                file.write('#PBS -l walltime=150:00:00\n'
+                file.write('#!/bin/bash\n'
+                           '#PBS -l walltime=150:00:00\n'
                            '#PBS -l nodes=1:ppn=8\n'
                            '#PBS -l pmem=8gb\n'
                            '#PBS -A ' + allocation_name + '\n'
@@ -55,7 +56,8 @@ def prep(admix_name):
 
             # For each set, write a pbs script for admixture k = 7..9
             with open('Admixture/' + admix_name + '_Set' + set_name + '_Admixture_k7to9.pbs', 'w') as file:
-                file.write('#PBS -l walltime=150:00:00\n'
+                file.write('#!/bin/bash\n'
+                           '#PBS -l walltime=150:00:00\n'
                            '#PBS -l nodes=1:ppn=8\n'
                            '#PBS -l pmem=8gb\n'
                            '#PBS -A ' + allocation_name + '\n'
