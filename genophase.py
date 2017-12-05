@@ -112,7 +112,7 @@ def phase(geno_name, allocation_name):
         # Perform phasing check. We are telling it to ignore the pedigree information for now because we will use the
         # --duohmm flag later
         os.system(os.path.join(shapeit_path,'shapeit') + ' -check --input-bed ' + geno_bed_names[i] + ' '
-                  + geno_bim_names[i] + ' ' + geno_fam_names[i] + '--noped --input-map '
+                  + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --noped --input-map '
                   + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                   + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
                   + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log Phasing/'
@@ -130,6 +130,7 @@ def phase(geno_name, allocation_name):
                            '#PBS -l pmem=7gb\n'
                            '#PBS -A ' + allocation_name +
                            '\n'
+                           '#PBS -o Phasing/\n'
                            '#PBS -j oe\n'
                            'cd $PBS_O_WORKDIR\n'
                            '\n' +
@@ -154,7 +155,8 @@ def phase(geno_name, allocation_name):
                            '#PBS -l pmem=7gb\n'
                            '#PBS -A ' + allocation_name +
                            '\n'
-                           '#PBS -j oe\n'
+                           '#PBS -o Phasing/\n'
+                           '#PBS -j oe Phasing/\n'
                            'cd $PBS_O_WORKDIR\n'
                            '\n' +
                            os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
