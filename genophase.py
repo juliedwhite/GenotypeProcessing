@@ -1,4 +1,4 @@
-def check(geno_name):
+def phase(geno_name):
     import platform
     import urllib.request
     import os
@@ -108,9 +108,41 @@ def check(geno_name):
                   + geno_name + '_MeFilter.chr' + str(i+1))
         # Perform phasing check.
         os.system(os.path.join(shapeit_path,'shapeit') + ' -check --input-bed ' + geno_bed_names[i] + ' '
-                  + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                  + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --input-map '
                   + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                   + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
                   + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log Phasing/'
-                  + geno_name + 'MeFilter_PhaseCheck' + '.chr' + str(i+1))
+                  + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1))
 
+    for i in range(0,23):
+        # Identify if there were Mendel errors (shouldn't be, but maybe)
+        if (os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.snp.me')) or \
+                (os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.ind.me')):
+            sys.exit("There are SNPs or people in your sample with high rates of Mendel error. Please remove these and "
+                     "rerun.")
+
+    for i in range(0,23):
+        # If a log file with snp.strand exclude is produced, then these SNPs need to be removed.
+        if os.path.exists('Phasing/' + geno_name + '_MeFilter_PhaseCheck.chr' + str(i+1) + 'snp.strand.exclude'):
+            print("You have SNPs in your sample that are not on the same strand as the reference or are not in the "
+                  "reference. I'll remove these when phasing")
+
+            # Run the phase after removing these SNPs
+            os.system(os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
+                      + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                      + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
+                      + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
+                      + os.path.join(ref_path, '1000GP_Phase3.sample') + '--exclude-snp Phasing/' + geno_name
+                      + '_MeFilter_PhaseCheck.chr' + str(i+1) + '.snp.strand.exclude --output-log Phasing/'
+                      + geno_name + '_MeFilter_PhasedTo1000G.chr' + str(i + 1))
+
+        # If this file doesn't exist, then run the phase on all snps
+        else:
+            print("Phasing now.")
+            # Run the phase
+            os.system(os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
+                      + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                      + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
+                      + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
+                      + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log Phasing/'
+                      + geno_name + 'MeFilter_PhasedTo1000G.chr' + str(i + 1))

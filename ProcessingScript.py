@@ -127,7 +127,7 @@ elif to_do == '5':
     import genoqc
 
     # Call UpdateSex command using geno name and update sex filename as input
-    genoqc.update_sex(geno_name, update_parents_filename)
+    genoqc.update_sex(geno_name, update_sex_filename)
 
 # GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '6':
@@ -356,40 +356,8 @@ elif to_do == '14':
     # Import module
     import genophase
     # Call function
-    genophase.check(geno_name)
-    # Duohmm flag not currently working.
+    genophase.phase(geno_name)
 
-    # Need to deal with output of phasing check
-    # Need to look for Mendel errors and remove those with > 5%?
-
-    # How I did it last time:
-    # Needed to remove individuals or SNPs based on Mendel error rate:
-    '''
-    ./ plink - -bfile
-    ADAPT_2778ppl_491K_Autosomal_hg19_ATGC.chr1 - -make - bed - -me
-    0.05
-    0.1 - -out
-    ADAPT_2778ppl_491K_MendelRem.chr1
-
-    # Set to missing the remaining Mendel errors. Otherwise ShapeIt will give an error message 
-    ./ plink - -bfile
-    ADAPT_2778ppl_491K_MendelRem.chr1 - -make - bed - -me
-    1
-    1 - -out
-    ADAPT_2778ppl_491K_MendelOut.chr1 - -set - me - missing
-
-    # Then did another check for strand alignment: 
-    ./ shapeit - check - B
-    ADAPT_2778ppl_491K_MendelOut.chr1 - M
-    genetic_map_chr1_combined_b37.txt - -input - ref
-    1000
-    GP_Phase3_chr1.hap.gz
-    1000
-    GP_Phase3_chr1.legend.gz
-    1000
-    GP_Phase3.sample - -output - log
-    chr1.alignments
-    '''
 '''
 
 
