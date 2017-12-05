@@ -361,46 +361,11 @@ elif to_do == '14':
     # Call function
     genophase.phase(geno_name, allocation_name)
 
-'''
-
-
-#Phasing ##### Unfinished.
-elif to_do == '11':
-
-    #Prepares files for phasing using shapeit
-    phasing_proceed_check = input("\u001b[32;1m Some cautions/notes before you perform this step:\n"
-                                    "1) You must perform step 1-6 before this step.\n"
-                                    "2) You should have an ACI-B cluster allocation at Penn State to perform this step.\n"
-                                    "3) This will write the files that you need, but you are responsible for the memory, node, and "
-                                    "time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them "
-                                    "on the cluster and submitting them to SHAPEIT \n"
-                                    "5) On the cluster, You will need the SHAPEIT program either on your path or in the same folder where "
-                                    "you will submit this job.\n"
-                                    "6) You will need to transfer the pbs file and genotype bed/bim/fam files to your cluster before running.\n"
-                                    "7) Are you okay with all of this? (y/n): \u001b[0m").lower()
-    if phasing_proceed_check in ('y', 'yes'):
-
-        geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to phase on '
-                          '(aka the name of the _HarmonizedTo1000G file produced from #5 (without bed/bim/fam extension: \u001b[0m')
-
-        if not os.path.exists('Phasing'):
-            os.makedirs('Phasing')
-
-        shutil.copy2(geno_name + '.bed', 'Phasing')
-        shutil.copy2(geno_name + '.bim', 'Phasing')
-        shutil.copy2(geno_name + '.fam', 'Phasing')
-
-        for file in glob.glob(r'plink*'):
-            print(file)
-            shutil.copy2(file, 'Phasing')
-
-        os.chdir('Phasing')
-
-#Nothing
-elif to_do == '12':
+# Nothing
+elif to_do == '15':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
     print("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
-'''
+
 
