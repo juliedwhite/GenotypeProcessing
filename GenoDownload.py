@@ -162,6 +162,25 @@ def hls_1000g_phase3():
         os.chdir(orig_wd)
 
 
+def fasta_1000G_hg19():
+    print('Downloading 1000G hg19 fasta file now, putting it in the "1000G_hg19_fasta" folder.')
+
+    # Create folder:
+    if not os.path.exists('1000G_hg19_fasta'):
+        os.makedirs('1000G_hg19_fasta')
+
+    # Open ftp connection
+    ftp = ftplib.FTP('ftp.1000genomes.ebi.ac.uk')
+    ftp.login()
+    ftp.cwd('/vol1/ftp/technical/reference/')
+
+    # Download files and put them in 1000G_hg19_fasta.
+    file = open('1000G_hg19_fasta/human_g1k_v37.fasta.gz', 'wb')
+    ftp.retrbinary('RETR human_g1k_v37.fasta.gz', file.write)
+    ftp.quit()
+    file.close()
+
+
 def genotype_harmonizer():
     import urllib.request
     import zipfile
@@ -175,3 +194,11 @@ def genotype_harmonizer():
     zip_ref = zipfile.ZipFile('GenotypeHarmonizer-1.4.20.zip', 'r')
     zip_ref.extractall('GenotypeHarmonizer-1.4.20')
     zip_ref.close()
+
+
+def snpflip():
+    import pip
+    # Use pip to install snpflip and it's dependencies.
+    pip.main(['install', 'snpflip'])
+
+
