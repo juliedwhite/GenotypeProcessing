@@ -162,13 +162,12 @@ def merge(geno_name, harmonized_path):
 
 ### Merge of house data and 1000G ####
         # Copying harmonized to 1000G files to this folder.
-        shutil.copy2(os.path.join(orig_wd, geno_name + '_HarmonizedTo1000G.bed', os.getcwd()))
-        shutil.copy2(os.path.join(orig_wd, geno_name + '_HarmonizedTo1000G.bim', os.getcwd()))
-        shutil.copy2(os.path.join(orig_wd, geno_name + '_HarmonizedTo1000G.fam', os.getcwd()))
-        shutil.copy2(os.path.join(orig_wd, geno_name + '_HarmonizedTo1000G.log', os.getcwd()))
+        shutil.copy2(os.path.join(orig_wd, geno_name + '.bed'), os.getcwd())
+        shutil.copy2(os.path.join(orig_wd, geno_name + '.bim'), os.getcwd())
+        shutil.copy2(os.path.join(orig_wd, geno_name + '.fam'), os.getcwd())
 
         # Perform initial merge
-        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed '
+        os.system('plink --bfile ' + geno_name + '--bmerge 1000G_Phase3 --geno 0.01 --make-bed '
                                                  '--out ' + geno_name + '_1000G')
 
         # Read in log file to see if anything went wrong
@@ -194,13 +193,13 @@ def merge(geno_name, harmonized_path):
                                                                                      '--geno 0.01 --make-bed '
                                                                                      '--out 1000G_Phase3')
                 # Flip missnps in house dataset.
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
+                os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name +
                           '_1000G_MergeWarnings.txt --flip ' + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed '
-                                                                           '--out ' + geno_name + '_HarmonizedTo1000G')
+                                                                           '--out ' + geno_name)
                 # Remove old files.
                 os.system('rm *~')
                 # Retry merge.
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                os.system('plink --bfile ' + geno_name + ' --bmerge 1000G_Phase3 --geno 0.01 '
                                                          '--make-bed --out ' + geno_name + '_1000G_merge2')
 
             else:  # If only mergewarnings exists, exclude warning snps from both 1000G and house dataset.
@@ -208,24 +207,23 @@ def merge(geno_name, harmonized_path):
                                                                                      '--geno 0.01 --make-bed '
                                                                                      '--out 1000G_Phase3')
                 # Exclude warning snps from house dataset.
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                          '_1000G_MergeWarnings.txt --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+                os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name +
+                          '_1000G_MergeWarnings.txt --geno 0.01 --make-bed --out ' + geno_name)
                 # Remove old plink files.
                 os.system('rm *~')
                 # Retry merge
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                os.system('plink --bfile ' + geno_name + ' --bmerge 1000G_Phase3 --geno 0.01 '
                                                          '--make-bed --out ' + geno_name + '_1000G_merge2')
         # If only the missnps exist, flip them in the house dataset.
         elif os.path.exists(geno_name + '_1000G-merge.missnp') \
                 and not os.path.exists(geno_name + '_1000G_MergeWarnings.txt'):
             # Flip in house dataset.
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --flip '
-                      + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out '
-                      + geno_name + '_HarmonizedTo1000G')
+            os.system('plink --bfile ' + geno_name + ' --flip '
+                      + geno_name + '_1000G-merge.missnp --geno 0.01 --make-bed --out ' + geno_name)
             # Remove old plink files.
             os.system('rm *~')
             # Retry the merge.
-            os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 --make-bed '
+            os.system('plink --bfile ' + geno_name + ' --bmerge 1000G_Phase3 --geno 0.01 --make-bed '
                                                      '--out ' + geno_name + '_1000G_merge2')
 
         elif os.path.exists(geno_name + '_1000G.bim'):
@@ -279,13 +277,12 @@ def merge(geno_name, harmonized_path):
                                                                                     '--geno 0.01 --make-bed '
                                                                                     '--out 1000G_Phase3')
                     # Remove all of these snps from house dataset.
-                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name
-                              + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out '
-                              + geno_name + '_HarmonizedTo1000G')
+                    os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name
+                              + '_1000G_merge2_warnings_missnp.txt --geno 0.01 --make-bed --out ' + geno_name)
                     # Remove old plink files.
                     os.system('rm *~')
                     # Try merge a third time.
-                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                    os.system('plink --bfile ' + geno_name + ' --bmerge 1000G_Phase3 --geno 0.01 '
                                                              '--make-bed --out ' + geno_name + '_1000G_merge3')
 
                 else:  # If only merge warnings still exist, exclude from both 1000G and house dataset.
@@ -294,27 +291,26 @@ def merge(geno_name, harmonized_path):
                                                                                          '--geno 0.01 --make-bed '
                                                                                          '--out 1000G_Phase3')
                     # Exclude from house dataset
-                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                              '_1000G_merge2_warnings.txt --geno 0.01 --make-bed --out '
-                              + geno_name + '_HarmonizedTo1000G')
+                    os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name +
+                              '_1000G_merge2_warnings.txt --geno 0.01 --make-bed --out ' + geno_name)
                     # Remove old plink files.
                     os.system('rm *~')
                     # Retry merge a third time.
-                    os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                    os.system('plink --bfile ' + geno_name + ' --bmerge 1000G_Phase3 --geno 0.01 '
                                                              '--make-bed --out ' + geno_name + '_1000G_merge3')
             # If only the missnps still exist, remove them in both datasets.
             elif os.path.exists(geno_name + '_1000G_merge2-merge.missnp') \
                     and not os.path.exists(geno_name + '_1000G_merge2_warnings.txt'):
                 # Exclude from house dataset.
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude ' + geno_name +
-                          '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out ' + geno_name + '_HarmonizedTo1000G')
+                os.system('plink --bfile ' + geno_name + ' --exclude ' + geno_name +
+                          '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out ' + geno_name)
                 # Exclude from 1000G dataset.
                 os.system('plink --bfile 1000G_Phase3 --exclude '
                           + geno_name + '_1000G_merge2-merge.missnp --geno 0.01 --make-bed --out 1000G_Phase3')
                 # Remove old files.
                 os.system('rm *~')
                 # Retry merge a third time.
-                os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --bmerge 1000G_Phase3 --geno 0.01 '
+                os.system('plink --bfile ' + geno_name + ' --bmerge 1000G_Phase3 --geno 0.01 '
                                                          '--make-bed --out ' + geno_name + '_1000G_merge3')
             # If we don't find warnings or missnps
             elif os.path.exists(geno_name + '_1000G_merge2.bim'):
