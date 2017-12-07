@@ -63,26 +63,25 @@
 
 # Getting the needed modules.
 import os
-import shutil
-import glob
 import sys
 
 to_do = input('\u001b[31;1m What would you like to do?\n'
               '1) Download Plink\n'
               '2) Download 1000G Phase 3 VCF files\n'
               '3) Download 1000G Phase 3 Hap/Legend/Sample files \n'
-              '4) Download Genotype Harmonizer\n'
-              '5) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
-              '6) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
-              '7) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-              '8) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+              '4) Download 1000G hg19/GrCh37 FASTA file\n'
+              '5) Download Genotype Harmonizer\n'
+              '6) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
+              '7) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+              '8) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+              '9) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
-              '9) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-              '10) Harmonize with 1000G\n'
-              '11) Filter for extreme (+-3SD) heterozygosity values\n'
-              '12) Merge with 1000G\n'
-              '13) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
-              '14) Run a phasing check and prepare files for phasing using SHAPEIT\n'
+              '10) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+              '11) Harmonize with 1000G\n'
+              '12) Filter for extreme (+-3SD) heterozygosity values\n'
+              '13) Merge with 1000G\n'
+              '14) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
+              '15) Run a phasing check and prepare files for phasing using SHAPEIT\n'
               ') Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
@@ -107,15 +106,22 @@ elif to_do == '3':
     # Call the download 1000G Phase 3 HapLegendSample command
     genodownload.hls_1000g_phase3()
 
-# GenoDownload: Download Genotype Harmonizer.
+# GenoDownload: Download 1000G hg19/GrCH37 FASTA file
 elif to_do == '4':
+    # Get the module
+    import genodownload
+    # Call the command
+    genodownload.fasta_1000G_hg19()
+
+# GenoDownload: Download Genotype Harmonizer.
+elif to_do == '5':
     # Get the module
     import genodownload
     # Call the download Genotype Harmonizer command
     genodownload.genotype_harmonizer()
 
 # GenoQC: Update sex
-elif to_do == '5':
+elif to_do == '6':
     # Get name of genotype file
     geno_name = input("\u001b[32;1m Please enter the name of the plink genotype files you'd like to update sex in "
                       "(without bed/bim/fam extension: \u001b[0m")
@@ -130,7 +136,7 @@ elif to_do == '5':
     genoqc.update_sex(geno_name, update_sex_filename)
 
 # GenoQC: Clean dataset by missing call rate > 10%
-elif to_do == '6':
+elif to_do == '7':
     # Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
 
@@ -139,7 +145,7 @@ elif to_do == '6':
     genoqc.missing_call_rate(geno_name)
 
 # GenoRelatives: Run IBD
-elif to_do == '7':
+elif to_do == '8':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -161,7 +167,7 @@ elif to_do == '7':
     genorelatives.ibd(geno_name)
 
 # GenoRelatives: Update FID or IID
-elif to_do == '8':
+elif to_do == '9':
     # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating FID or IID should have four fields: \n"
           "1) Old FID\n"
@@ -179,7 +185,7 @@ elif to_do == '8':
     genorelatives.update_id(geno_name, update_id_filename)
 
 # GenoRelatives: Update parental IDs
-elif to_do == '9':
+elif to_do == '10':
     # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating parents should have four fields: \n"
           "1) FID\n"
@@ -198,7 +204,7 @@ elif to_do == '9':
     genorelatives.update_parental(geno_name, update_parents_filename)
 
 # GenoHarmonize: Harmonize with 1000G
-elif to_do == '10':
+elif to_do == '11':
     # Get name of genotypes.
     geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
                       '(without bed/bim/fam extension: \u001b[0m')
@@ -208,7 +214,7 @@ elif to_do == '10':
     genoharmonize.harmonize_with_1000g(geno_name)
 
 # GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
-elif to_do == '11':
+elif to_do == '12':
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
                       'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
 
@@ -217,7 +223,7 @@ elif to_do == '11':
     genoqc.het(geno_name)
 
 # GenoMerge: Merge with 1000G
-elif to_do == '12':
+elif to_do == '13':
     # Ask user genotype names.
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files you would like to merge with 1000G '
                       '(without bed/bim/fam extension: \u001b[0m')
@@ -236,12 +242,12 @@ elif to_do == '12':
 #   Harmonize with 1000G Phase 3
 #   Merge with 1000G
 #   Prepare for ADMIXTURE with k = 3..9
-elif to_do == '13':
+elif to_do == '14':
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files "
                                     "for an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform "
                                     "this step:\n"
-                                    "1) You should perform the steps 5-9 BEFORE this one (in roughly that order).\n"
+                                    "1) You should perform the steps 6-10 BEFORE this one (in roughly that order).\n"
                                     "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
                                     "3) There should not be related individuals when you perform admixture. If you have"
                                     " related individuals in your sample, you should create set lists so that the "
@@ -316,21 +322,22 @@ elif to_do == '13':
             # Since we've just harmonized, I know what the path is.
             harmonize_path = os.path.join(os.getcwd(), 'Harmonized_To_1000G')
 
+            #Create new name because they've just been harmonized and I know what the ending should be.
+            harmonized_name = geno_name + '_HarmonizedTo1000G_StrandChecked'
             # Merge with 1000G Phase 3
             import genomerge
-            genomerge.merge(geno_name, harmonize_path)
+            genomerge.merge(harmonized_name, harmonize_path)
 
             # Figure out what the final name of the merged file was.
-            if os.path.exists(geno_name + '1000G.bed'):
-                admix_name = geno_name + '1000G.bed'
-            elif os.path.exists(geno_name + '1000G_merge2.bed'):
-                admix_name = geno_name + '1000G_merge2.bed'
-            elif os.path.exists(geno_name + '1000G_merge3.bed'):
-                admix_name = geno_name + '1000G_merge3.bed'
+            if os.path.exists(harmonized_name + '1000G.bed'):
+                admix_name = (harmonized_name + '1000G.bed')
+            elif os.path.exists(harmonized_name + '1000G_merge2.bed'):
+                admix_name = harmonized_name + '1000G_merge2.bed'
+            elif os.path.exists(harmonized_name + '1000G_merge3.bed'):
+                admix_name = harmonized_name + '1000G_merge3.bed'
             else:
                 admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to '
                                    'perform admixture on (without bed/bim/fam extension: \u001b[0m')
-
         # If user gives non-recognized answer.
         else:
             sys.exit("Please give a yes or no answer. Quitting now.")
@@ -348,7 +355,7 @@ elif to_do == '13':
         sys.exit('Please give a yes or no answer. Quitting now.')
 
 # GenoPhase: Run pre-phasing check; prepare and submit files for phasing.
-elif to_do == '14':
+elif to_do == '15':
     # Ask the user what to run the phasing check on.
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
                       'phasing check on (without bed/bim/fam extension). You should only do this after running steps '
@@ -362,7 +369,7 @@ elif to_do == '14':
     genophase.phase(geno_name, allocation_name)
 
 # Nothing
-elif to_do == '15':
+elif to_do == '16':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
