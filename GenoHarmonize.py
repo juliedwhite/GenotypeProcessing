@@ -60,6 +60,24 @@ def harmonize_with_1000g(geno_name):
     else:
         sys.exit('Please answer yes or no. Quitting now because no legend files.')
 
+    # Ask if they have the hg19 fasta files.
+    fasta_exists = input('\u001b[34;1m Have you already downloaded the 1000G hg19 fasta file? (y/n): \u001b[0m').lower()
+
+    if fasta_exists in ('y', 'yes'):
+        # Ask the user where the fasta file is.
+        fasta_path = input('\u001b[34;1m Please enter the pathname of where the your 1000G hg19 fasta file is '
+                                '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): '
+                                '\u001b[0m')
+    elif fasta_exists in ('n', 'no'):
+        # Get geno download module
+        import genodownload
+        # Call download fasta command
+        genodownload.fasta_1000G_hg19()
+        # Saving fasta path
+        fasta_path = os.path.join(os.getcwd(), '1000G_hg19_fasta')
+    else:
+        sys.exit('Please answer yes or no. Quitting now because no fasta file.')
+
     # Ask if they have genotype harmonizer.
     harmonizer_exists = input('\u001b[32;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m').lower()
 
@@ -135,7 +153,7 @@ def harmonize_with_1000g(geno_name):
             # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and
             # convert the 23 to X before harmonizing
             os.system('plink --bfile ' + geno_name + ' --chr X --make-bed --out ' + geno_name + '_chr23')
-            # Read chrX file into plink
+            # Read chrX file into pandas
             bim_file = pd.read_csv(geno_name + '_chr23.bim', sep='\t', header=None)
             # Replace '23' with 'X', which is how genotype harmonizer calls X
             bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
@@ -345,10 +363,57 @@ def harmonize_with_1000g(geno_name):
     else:
         sys.exit("\u001b[36;1m For some reason the house gentoypes did not merge. You should try it manually \u001b[0m")
 
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.bed', orig_wd)
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.bim', orig_wd)
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.fam', orig_wd)
-    shutil.copy2(geno_name + '_HarmonizedTo1000G.log', orig_wd)
+### Check to make sure the snps are on the same strand as the reference ###
+    # First need to change the chromosome names to match the fasta file so they can match.
+    # Read chrX file into pandas
+    bim_file = pd.read_csv(geno_name + '_HarmonizedTo1000G.bim', sep='\t', header=None)
+    # Replace '23' with 'X', which is how the fasta file calls X
+    bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
+    # Replace '24' with 'Y', which is how the fasta file calls Y
+    bim_file.iloc[:, 0].replace(24, 'Y', inplace=True)
+    # Replace '26' with 'MT' which is how the fasta file calls the mitochondrial DNA
+    bim_file.iloc[:, 0].replace(26, 'MT', inplace=True)
+    # Write new genotype
+    bim_file.to_csv(geno_name + '_HarmonizedTo1000G.bim', sep='\t', header=False, index=False, na_rep='NA')
+
+    try:
+        os.system('snpflip --fasta-genome = ' + os.path.join(fasta_path,'human_g1k_v37.fasta.gz') + ' --bim-file = '
+                  + geno_name + '_HarmonizedTo1000G --output-prefix = ' + geno_name + '_HarmonizedTo1000G')
+    except ImportError:
+        # Import module where I have snpflip
+        import genodownload
+        # Download snpflip
+        genodownload.snpflip()
+        # Re-do snpflip process.
+        os.system('snpflip --fasta-genome = ' + os.path.join(fasta_path, 'human_g1k_v37.fasta.gz') + ' --bim-file = '
+                  + geno_name + '_HarmonizedTo1000G --output-prefix = ' + geno_name + '_HarmonizedTo1000G')
+
+    # If SNPs exist that are on the reverse strand, then flip them. If SNPs exist that are ambiguous, then remove them.
+    if os.path.exists(geno_name + '_HarmonizedTo1000G.reverse') \
+            & os.path.exists(geno_name + '_HarmonizedTo1000G.ambiguous'):
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --flip '
+                  + geno_name + '_HarmonizedTo1000G.reverse --exclude '
+                  + geno_name + '_HarmonizedTo1000G.ambiguous --make-bed --out '
+                  + geno_name + '_HarmonizedTo1000G_StrandChecked')
+    # If SNPs exist that are on the reverse strand, flip them.
+    elif os.path.exists(geno_name + '_HarmonizedTo1000G.reverse'):
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --flip '
+                  + geno_name + '_HarmonizedTo1000G.reverse --make-bed --out '
+                  + geno_name + '_HarmonizedTo1000G_StrandChecked')
+    # If SNPs exist that have ambiguous strand, then remove them
+    elif os.path.exists(geno_name + '_HarmonizedTo1000G.ambiguous'):
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --exclude '
+                  + geno_name + '_HarmonizedTo1000G.ambiguous --make-bed --out '
+                  + geno_name + '_HarmonizedTo1000G_StrandChecked')
+    # If neither of these exist, still make a new file to signify that you've done the strand check.
+    else:
+        os.system('plink --bfile ' + geno_name + '_HarmonizedTo1000G --make-bed --out '
+                  + geno_name + '_HarmonizedTo1000G_StrandChecked')
+
+    # Finished
+    shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.bed', orig_wd)
+    shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.bim', orig_wd)
+    shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.fam', orig_wd)
 
     # Change back to original working directory.
     os.chdir(orig_wd)
