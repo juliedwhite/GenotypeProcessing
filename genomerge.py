@@ -1,4 +1,4 @@
-def merge(geno_name, harmonized_path):
+def merge1000g(geno_name, harmonized_path):
     import os
     import sys
 
