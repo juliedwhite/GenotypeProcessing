@@ -82,8 +82,11 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '13) Merge with 1000G\n'
               '14) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
               '15) Run a phasing check and prepare files for phasing using SHAPEIT\n'
+              '16) Prepare for imputation on the sanger imputation server\n'
               ') Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
+
+# Add part to check if on hg19.
 
 # GenoDownload: Download Plink
 if to_do == '1':
@@ -205,13 +208,29 @@ elif to_do == '10':
 
 # GenoHarmonize: Harmonize with 1000G
 elif to_do == '11':
-    # Get name of genotypes.
-    geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
-                      '(without bed/bim/fam extension: \u001b[0m')
+    print("Before we harmonize your data, please make sure your genotype data are on GRCh37/hg19 by comparing some of "
+          "the positions in your bim file to the position for that rsid on the UCSC Genome Browser: "
+          "https://genome.ucsc.edu/cgi-bin/hgGateway You should search your risd after selecting Human and "
+          "Feb. 2009 (GRCh37/hg19). Your snp position should be directly in the middle of the snp ranges it gives when "
+          "you search (i.e. rs1042522 at chr17:7579472-7579472. If you find that your snps don't match, then you "
+          "should figure out what GRCh/hg version your snps are on and use the LiftOver tool "
+          "(https://genome.ucsc.edu/cgi-bin/hgLiftOver) to change the coordinates to GRCh37/hg19.")
 
-    # Harmonize with 1000G Phase 3
-    import genoharmonize
-    genoharmonize.harmonize_with_1000g(geno_name)
+    coord_check = input("Have you checked that your data are on GRCh37/hg19? (y/n): ").lower()
+
+    if coord_check in ('yes', 'y'):
+        # Get name of genotypes.
+        geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize with '
+                          '1000G Phase 3 (without bed/bim/fam extension: \u001b[0m')
+        # Harmonize with 1000G Phase 3
+        import genoharmonize
+        genoharmonize.harmonize_with_1000g(geno_name)
+
+    elif coord_check in ('no', 'n'):
+        sys.exit("Please make sure your data are on GRCh37/hg19 then re-run this script. Exiting now.")
+
+    else:
+        sys.exit("Please answer 'yes' or 'no'. Exiting now.")
 
 # GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
 elif to_do == '12':
@@ -235,7 +254,7 @@ elif to_do == '13':
                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
     #Import module and run.
     import genomerge
-    genomerge.merge(geno_name, harmonize_path)
+    genomerge.merge1000g(geno_name, harmonize_path)
 
 # PrepAdmixture: Prepares files for running ADMIXTURE, using 1000G as reference.
 # Steps:
@@ -368,8 +387,16 @@ elif to_do == '15':
     # Call function
     genophase.phase(geno_name, allocation_name)
 
-# Nothing
 elif to_do == '16':
+    # The user should only do this after phasing.
+    print("I will prepare files for imputation now. It is very important that you do this AFTER phasing.")
+    # Import module
+    import genoimpute
+    # Call function
+    genoimpute.prep(haps_list, sample_list)
+
+# Nothing
+elif to_do == '17':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
