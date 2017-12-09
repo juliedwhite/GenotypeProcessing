@@ -103,7 +103,8 @@ def vcf_1000g_phase3():
     # List of VCF files that we're going to download.
     vcf_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
                       range(1, 23)]
-    vcf_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz'])
+    vcf_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz',
+                           'ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz'])
 
     # Open ftp connection
     ftp = ftplib.FTP('ftp.1000genomes.ebi.ac.uk')
@@ -202,3 +203,87 @@ def snpflip():
     pip.main(['install', 'snpflip'])
 
 
+def shapeit():
+    import platform
+    import urllib.request
+    import os
+    import sys
+
+    # Since shapeit only works on linux or mac, we need to first check what system they are on.
+    system_check = platform.system()
+
+    if system_check == "Linux":
+        print('\u001b[36;1m Downloading shapeit now. \u001b[0m')
+        urllib.request.urlretrieve(
+            'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz',
+            'shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz')
+        # Making directory to store program
+        os.makedirs('Shapeit_v2.12_Linux_Static')
+        # Unpacking
+        os.system('tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz -C Shapeit_v2.12_Linux_Static/')
+
+    # If the user is on a mac
+    elif system_check == "Darwin":
+        print('\u001b[35;1m Downloading shapeit now. \u001b[0m')
+        # Download shapeit
+        urllib.request.urlretrieve(
+            'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz',
+            'shapeit.v2.r837.MacOSX.tgz')
+        # Create directory for shapeit.
+        os.makedirs('Shapeit_v2.20_Mac')
+        # Untar shapeit to that directory.
+        os.system('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C Shapeit_v2.20_Mac/')
+
+    # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
+    elif system_check == ("Windows"):
+        sys.exit("\u001b[35;1m I'm sorry, I've detected that you're working on a Windows computer and shapeit is a "
+                 "linux or unix program only. . If you have access to the Penn State clusters, you should run this "
+                 "script from there (they are linux). \u001b[0m")
+
+    # If I cannot detect what system they're on, force exit.
+    else:
+        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+
+
+def vcftools():
+    import platform
+    import urllib.request
+    import os
+    import sys
+
+    # vcftools is easily installed on a linux system, more difficult to install on a mac, and does not have a Windows
+    # distribution, so we need to check the platform.
+    system_check = platform.system()
+
+    if system_check == "Linux":
+        print('\u001b[36;1m Downloading vcftools now. \u001b[0m')
+        urllib.request.urlretrieve(
+            'https://github.com/vcftools/vcftools/tarball/master',
+            'vcftools.tgz')
+        # Making directory to store program
+        os.makedirs('Shapeit_v2.12_Linux_Static')
+        # Unpacking
+        os.system('tar -xvf vcftools.tgz -C vcftools/')
+        # Moving into the vcftools folder
+        os.system('cd vcftools')
+        # Running configuration and installation steps
+        os.system('./autogen.sh')
+        os.system('./configure --prefix=$HOME/Software/')
+        os.system('make')
+        os.system('make install')
+
+    # If the user is on a mac
+    elif system_check == "Darwin":
+        sys.exit('\u001b[35;1m To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
+              'https://brew.sh/ then download vcftools by typing "brew install homebrew/science/vcftools" in your '
+              'command terminal. Then, follow the directions in the README file for configuring. \u001b[0m')
+
+    # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
+    elif system_check == ("Windows"):
+        sys.exit("\u001b[35;1m I'm sorry, I've detected that you're working on a Windows computer and vcftools is a "
+                 "linux or unix program only. . If you have access to the Penn State clusters, you should run this "
+                 "script from there (they are linux). \u001b[0m")
+
+    # If I cannot detect what system they're on, force exit.
+    else:
+        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
