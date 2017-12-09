@@ -1,12 +1,11 @@
 def phase(geno_name, allocation_name):
     import platform
-    import urllib.request
     import os
     import sys
     import pandas as pd
     import numpy as np
 
-    # If it doesn't exist,
+    # If it doesn't exist, create Phasing folder
     if not os.path.exists('Phasing'):
         os.makedirs('Phasing')
 
@@ -24,17 +23,14 @@ def phase(geno_name, allocation_name):
                                  "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
         # If no, download and unpack shapeit.
         elif shapeit_exists in ('no', 'n'):
-            print('\u001b[36;1m Downloading shapeit to this directory now. \u001b[0m')
-            urllib.request.urlretrieve(
-                'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz',
-                'shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz')
-            # Making directory to store program
-            os.makedirs('Shapeit_v2.12_Linux_Static')
-            # Unpacking
-            os.system('tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz -C Shapeit_v2.12_Linux_Static/')
+            # Get genodownload module
+            import genodownload
+            genodownload.shapeit()
+            # Since we just downloaded it, I know where the path is.
             shapeit_path = os.path.join(os.getcwd(),'Shapeit_v2.12_Linux_Static/bin/')
         else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
+            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had shapeit. Exiting now. '
+                     '\u001b[0m')
 
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -47,15 +43,10 @@ def phase(geno_name, allocation_name):
             shapeit_path = input("\u001b[35;1m Please tell me the path where you have the shapeit program. "
                                  "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
         elif shapeit_exists in ('no', 'n'):
-            print('\u001b[35;1m Downloading shapeit now. \u001b[0m')
-            # Download shapeit
-            urllib.request.urlretrieve(
-                'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz',
-                'shapeit.v2.r837.MacOSX.tgz')
-            # Create directory for shapeit.
-            os.makedirs('Shapeit_v2.20_Mac')
-            # Untar shapeit to that directory.
-            os.system('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C Shapeit_v2.20_Mac/')
+            # Get genodownload module
+            import genodownload
+            genodownload.shapeit()
+            # Since we just downloaded it, I know where the path is.
             shapeit_path = os.path.join(os.getcwd(), 'Shapeit_v2.20_Mac/bin/')
         else:
             sys.exit('\u001b[35;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
@@ -454,7 +445,11 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --exclude-ind ' + check_log_names[i] + '.ind.hh.exclude'
-                               + ' --output-max ' + output_max_names[i] + ' --output-log ' + output_log_names[i])
+                               + ' --output-max ' + output_max_names[i] + ' --output-log ' + output_log_names[i] + '\n'
+                               +
+                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
+                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
+
             # If only snp_exclude_name variable is filled, then we have snps to remove.
             elif 'snp_exclude_name' in locals():
                 # Write pbs script
@@ -475,7 +470,9 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --output-max ' + output_max_names[i] + ' --output-log '
-                               + output_log_names[i])
+                               + output_log_names[i] + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
+                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
             # If there are only people in ind_hh_exclude, then we have people to remove.
             elif len(ind_hh_exclude) > 0:
                 # Write pbs script
@@ -496,7 +493,9 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-ind '
                                + check_log_names[i] + '.ind.hh.exclude' + ' --output-max ' + output_max_names[i]
-                               + ' --output-log ' + output_log_names[i])
+                               + ' --output-log ' + output_log_names[i] + '\n' +
+                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
+                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
             # If none of these are filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -516,7 +515,9 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
-                               + output_max_names[i] + ' --output-log ' + output_log_names[i])
+                               + output_max_names[i] + ' --output-log ' + output_log_names[i] + '\n' +
+                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
+                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
 
     #I If the user is currently on the cluster, then submit the pbs files to start running.
     if on_cluster in ('y', 'yes'):
