@@ -8,8 +8,17 @@ def update_sex(geno_name, update_sex_filename):
     #   3) Sex (1 = M, 2 = F, 0 = missing)
     os.system('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out ' + geno_name
               + '_SexUpdated')
+
+    # Checks the sex listed in the file against the chromosomal sex.
+    os.system('plink --bfile ' + geno_name + '_SexUpdated --indep-pairphase 20000 2000 0.5 --out ' + geno_name
+              + '_SexUpdated')
+    os.system('plink --bfile ' + geno_name + '_SexUpdated --exclude ' + geno_name
+              + '_SexUpdated.prune.out --check-sex ycount ' + geno_name + '_SexUpdated')
+
     print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name "
-          + geno_name + "_SexUpdated \u001b[0m")
+          + geno_name + "_SexUpdated. I also ran a sex check on your sample, which will have the name "
+          + geno_name + "_SexUpdated.sexcheck. You should check this file against "
+          + update_sex_filename + " to make sure that they match. \u001b[0m")
 
 
 def missing_call_rate(geno_name):
