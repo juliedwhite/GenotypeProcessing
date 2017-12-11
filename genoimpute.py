@@ -1,4 +1,4 @@
-def prep(haps_list, sample_list):
+def prep():
     '''
     Required by the sanger imputation server.
     If not requesting pre-phasing, then all sites and samples should be phased with no missing data. - genophase
