@@ -3,7 +3,7 @@ def todownload():
 
     item = input('\u001b[31;1m What would you like to download?\n'
                  '1) Python 3.6.3\n'
-                 '2) Plink\n'
+                 '2) Plink 1.9\n'
                  '3) 1000G Phase 3 VCF\n'
                  '4) 1000G Phase 3 Hap/Legend/Sample\n'
                  '5) GRCh37/hg19 1000G FASTA file\n'
