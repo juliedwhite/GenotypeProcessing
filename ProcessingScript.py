@@ -2,153 +2,140 @@
 # Date 9.5.17
 
 # WHAT THIS DOES #
-# 1) Download Plink
-# 2) Update sex
-# 3) Produce new dataset with people and SNPs with missing call rate < 10%
-# 4) Run IBD matrix through plink
-# 5) Update family (FID) and individual IDs (IID)
-# 6) Update maternal and paternal IDs
-# 7) Prepare for ADMIXTURE with k = 3...9. Relatedness matters
+# Sees what version of Python you're running. Downloads Python 3.6.3 if you're on linux and exits telling you to
+    # download it if on Mac or Windows.
+# Asks the user if they want to do the following:
+    # 1) Download reference files and programs
+    # 2) Update sex
+    # 3) Produce new dataset with people and SNPs with missing call rate < 10%
+    # 4) Run IBD matrix through plink
+    # 5) Update family (FID) and individual IDs (IID)
+    # 6) Update maternal and paternal IDs
+    # 7) Harmonize with 1000G
+    # 8) Filter for extreme (+-3SD) heterozygosity values
+    # 9) Merge with 1000G
+    # 10) Prepare for ADMIXTURE with k = 3...9.
+    # 11) Run a phasing check and prepares files for phasing using SHAPEIT2.
+    # 12) Prepares files for imputation using the Sanger Imputation Server.
+    # 13) Nothing.
 
+# MODULE FUNCTIONS #
+# genodownload
+    # Python 3.6.3
+    # Plink 1.9
+    # 1000G Phase 3 VCF
+    # 1000G Phase 3 Hap/Legend/Sample'
+    # GRCh37/hg19 1000G FASTA file'
+    # Genotype Harmonizer'
+    # pip'
+    # snpflip'
+    # shapeit'
+    # vcftools'
+    # bcftools'
+    # htslib'
 
-# 7) Merges your data with 1000 Genomes
+# genoqc
+    # Update sex
+    # Missing call rate
+    # Heterozygosity check
 
-# 9) Prepares files for phasing using SHAPEIT2. Relatedness matters
-# 10) Prepares files for imputation using the Sanger Imputation Server. Relatedness matters.
+# genorelatives
+    # Run IBD to identify relatives
+    # Update FID IID information
+    # Update parental IDs
 
-# REQUIREMENTS #
-# You must have plink 1.9 (https://www.cog-genomics.org/plink2) in the same directory as your genotype files and this
-#   script, if you do not have plink already, run step #1 and we will download it.
-# You must have downloaded the 1000G Phase 3 legend files from http://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3/.
-#   These can be anywhere you want, you'll tell me the path later
-# You must have downloaded the 1000G Phase 3 VCF files from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/.
-#   These can be anywhere you want, you'll tell me the path later
+# genoharmonize
+    # Harmonize with 1000G
 
-#GenoQC
-# Update sex
-# Missing call rate
+# genomerge
+    # Merge with 1000G
 
-#Relatives
-# Run IBD to identify relatives
-# Update FID IID information
-# Update parental IDs
+# genoadmixture
+    # Prepare for admixture, submit job if on Penn Sate ACI-B cluster
+    # Things that should be done before running this:
+        # Missing call rate - genoqc.missing_call_rate()
+        # Run IBD to identify relatives - genorelatives.ibd
+        # Update FID IID information - genorelatives.update_id
+        # Update parental IDs - genorelatives.update_parental
+        # Harmonize with 1000G Phase 3 - genoharmonize.harmonize_with_1000G
+        # Merge with 1000G - genomerge.merge1000g
 
-#Admixture Steps:
-# Missing call rate
-# Run IBD to identify relatives
-# Update FID IID information
-# Update parental IDs
-# Harmonize with 1000G Phase 3
-# Merge with 1000G
-# Prepare for ADMIXTURE with k = 3..9
-# If on PSU cluster, can submit.
+# genophaseimpute
+    # phase - Checks data and prepares for phasing using shapeit.
+    # impute - checks phased data for imputation
 
-#Imputation steps:
-# Must be on hg19, user should check this.
-# Missing call rate
-# Heterozygosity check (MAF threshold, HWE p-value)
-# Set haploid genotypes (male chr X) as missing
-# Check for gender mismatches
-# Harmonize with 1000G Phase3
-# Prephasing check
-# Phasing file preparation
-# If on PSU cluster, can submit phasing to shapeit.
-# Imputation file preparation.
-#   -Convert to single VCF, not one file per chromosome
-#   -Check validity of VCF
-#   -Records sorted by genomic position
-#   -Chromosome names should be 1, 2, 3, etc… not chr1, chr2, chr3, etc… Some programs will represent X as 23, Y as 24, etc…. Please remove or replace these names.
-#   -Give sample file (samples.txt) with Sample Name then M or F.
-# User submits to Sanger Imputation Server (https://imputation.sanger.ac.uk/?instructions=1)
+        # Things that should be done before running this:
+            # Must be on hg19, user should check this.
+            # Missing call rate - genoqc.missing_call_rate
+            # Heterozygosity check - genoqc.het
+            # MAF threshold - genoharmonize.harmonize_with_1000G
+            # HWE p-value - genoharmonize.harmonize_with_1000G
+            # Set haploid genotypes (male chr X) as missing - DO I NEED TO DO THIS?
+            # Check for gender mismatches - genoqc.update_sex, genophaseimpute.impute
+            # Harmonize with 1000G Phase3 - genoharmonize.harmonize_with_1000G
 
 # Getting the needed modules.
 import os
 import sys
 
+if (sys.version_info > (3, 0)):
+   pass
+else:
+    print("I've detected that you are not running Python3. This script was written with that in mind, so I'm going to "
+          "download it (or ask you to download it) and exit. Then you should re-run this script.")
+    import genodownload
+    genodownload.python3()
+    sys.exit("Exiting now, please re-run the script now that we've downloaded python3.")
+
+# Ask the user what they'd like to do.
 to_do = input('\u001b[31;1m What would you like to do?\n'
-              '1) Download Plink\n'
-              '2) Download 1000G Phase 3 VCF files\n'
-              '3) Download 1000G Phase 3 Hap/Legend/Sample files \n'
-              '4) Download 1000G hg19/GrCh37 FASTA file\n'
-              '5) Download Genotype Harmonizer\n'
-              '6) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column headings)\n'
-              '7) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
-              '8) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-              '9) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+              '1) Download reference files or programs.\n'
+              '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
+              'headings)\n'
+              '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+              '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+              '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
               'New FID, New IID.\n'
-              '10) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-              '11) Harmonize with 1000G\n'
-              '12) Filter for extreme (+-3SD) heterozygosity values\n'
-              '13) Merge with 1000G\n'
-              '14) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
-              '15) Run a phasing check and prepare files for phasing using SHAPEIT\n'
-              '16) Prepare for imputation on the sanger imputation server\n'
-              ') Nothing. \n'
+              '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+              '7) Harmonize with 1000G\n'
+              '8) Filter for extreme (+-3SD) heterozygosity values\n'
+              '9) Merge with 1000G\n'
+              '10) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
+              '11) Run a phasing check and prepare files for phasing using SHAPEIT\n'
+              '12) Prepare for imputation on the sanger imputation server\n'
+              '13) Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
-# Add part to check if on hg19.
-
-# GenoDownload: Download Plink
+# Use genodownload to figure out what to download.
 if to_do == '1':
     # Get the module for downloading stuff.
     import genodownload
-    # Call download plink command
-    genodownload.plink()
-
-# GenoDownload: Download 1000G VCF files.
-elif to_do == '2':
-    # Get the module for downloading stuff.
-    import genodownload
-    # Call the download 1000G phase 3 VCF command.
-    genodownload.vcf_1000g_phase3()
-
-# GenoDownload: Download 1000G HapLegendSample files.
-elif to_do == '3':
-    # Get the module for downloading stuff.
-    import genodownload
-    # Call the download 1000G Phase 3 HapLegendSample command
-    genodownload.hls_1000g_phase3()
-
-# GenoDownload: Download 1000G hg19/GrCH37 FASTA file
-elif to_do == '4':
-    # Get the module
-    import genodownload
-    # Call the command
-    genodownload.fasta_1000G_hg19()
-
-# GenoDownload: Download Genotype Harmonizer.
-elif to_do == '5':
-    # Get the module
-    import genodownload
-    # Call the download Genotype Harmonizer command
-    genodownload.genotype_harmonizer()
+    # Call command
+    genodownload.todownload()
 
 # GenoQC: Update sex
-elif to_do == '6':
+elif to_do == '2':
     # Get name of genotype file
     geno_name = input("\u001b[32;1m Please enter the name of the plink genotype files you'd like to update sex in "
                       "(without bed/bim/fam extension: \u001b[0m")
-
     # Get name of file to be used for updating sex
-    update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file extension): \u001b[0m')
-
+    update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file '
+                                'extension): \u001b[0m')
     # Import module where this command is.
     import genoqc
-
     # Call UpdateSex command using geno name and update sex filename as input
     genoqc.update_sex(geno_name, update_sex_filename)
 
 # GenoQC: Clean dataset by missing call rate > 10%
-elif to_do == '7':
+elif to_do == '3':
     # Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
-
     # Import module and call command
     import genoqc
     genoqc.missing_call_rate(geno_name)
 
 # GenoRelatives: Run IBD
-elif to_do == '8':
+elif to_do == '4':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -164,13 +151,12 @@ elif to_do == '8':
 
     # Get name of genotype file
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files to run an IBD on (without bed/bim/fam extension: \u001b[0m')
-
     # Import module and call command.
     import genorelatives
     genorelatives.ibd(geno_name)
 
 # GenoRelatives: Update FID or IID
-elif to_do == '9':
+elif to_do == '5':
     # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating FID or IID should have four fields: \n"
           "1) Old FID\n"
@@ -188,7 +174,7 @@ elif to_do == '9':
     genorelatives.update_id(geno_name, update_id_filename)
 
 # GenoRelatives: Update parental IDs
-elif to_do == '10':
+elif to_do == '6':
     # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating parents should have four fields: \n"
           "1) FID\n"
@@ -201,13 +187,12 @@ elif to_do == '10':
     # Getting name of file to be used for update
     update_parents_filename = input('\u001b[34;1m Please enter the name of your text file for updating parents '
                                     '(with file extension): \u001b[0m')
-
     # Import module and call command.
     import genorelatives
     genorelatives.update_parental(geno_name, update_parents_filename)
 
 # GenoHarmonize: Harmonize with 1000G
-elif to_do == '11':
+elif to_do == '7':
     print("Before we harmonize your data, please make sure your genotype data are on GRCh37/hg19 by comparing some of "
           "the positions in your bim file to the position for that rsid on the UCSC Genome Browser: "
           "https://genome.ucsc.edu/cgi-bin/hgGateway You should search your risd after selecting Human and "
@@ -233,16 +218,15 @@ elif to_do == '11':
         sys.exit("Please answer 'yes' or 'no'. Exiting now.")
 
 # GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
-elif to_do == '12':
+elif to_do == '8':
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
                       'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
-
     # Call module and function.
     import genoqc
     genoqc.het(geno_name)
 
 # GenoMerge: Merge with 1000G
-elif to_do == '13':
+elif to_do == '9':
     # Ask user genotype names.
     geno_name = input('\u001b[34;1m Please enter the name of the genotype files you would like to merge with 1000G '
                       '(without bed/bim/fam extension: \u001b[0m')
@@ -261,12 +245,12 @@ elif to_do == '13':
 #   Harmonize with 1000G Phase 3
 #   Merge with 1000G
 #   Prepare for ADMIXTURE with k = 3..9
-elif to_do == '14':
+elif to_do == '10':
     # Make sure the reader knows what they're getting into.
     admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files "
                                     "for an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform "
                                     "this step:\n"
-                                    "1) You should perform the steps 6-10 BEFORE this one (in roughly that order).\n"
+                                    "1) You should perform the steps 2-9 BEFORE this one (in roughly that order).\n"
                                     "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
                                     "3) There should not be related individuals when you perform admixture. If you have"
                                     " related individuals in your sample, you should create set lists so that the "
@@ -374,11 +358,11 @@ elif to_do == '14':
         sys.exit('Please give a yes or no answer. Quitting now.')
 
 # GenoPhase: Run pre-phasing check; prepare and submit files for phasing.
-elif to_do == '15':
+elif to_do == '11':
     # Ask the user what to run the phasing check on.
     geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
                       'phasing check on (without bed/bim/fam extension). You should only do this after running steps '
-                      '5 - 11: \u001b[0m')
+                      '2-8: \u001b[0m')
 
     # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
     allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
@@ -387,16 +371,16 @@ elif to_do == '15':
     # Call function
     genophase.phase(geno_name, allocation_name)
 
-elif to_do == '16':
+elif to_do == '12':
     # The user should only do this after phasing.
     print("I will prepare files for imputation now. It is very important that you do this AFTER phasing.")
     # Import module
     import genoimpute
     # Call function
-    genoimpute.prep(haps_list, sample_list)
+    genoimpute.prep()
 
 # Nothing
-elif to_do == '17':
+elif to_do == '13':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
