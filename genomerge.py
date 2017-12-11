@@ -160,7 +160,7 @@ def merge1000g(geno_name, harmonized_path):
             sys.exit("\u001b[36;1m Unable to merge 1000G chromosome files. You should try to merge them on your own."
                      "\u001b[0m")
 
-### Merge of house data and 1000G ####
+        ### Merge of house data and 1000G ####
         # Copying harmonized to 1000G files to this folder.
         shutil.copy2(os.path.join(orig_wd, geno_name + '.bed'), os.getcwd())
         shutil.copy2(os.path.join(orig_wd, geno_name + '.bim'), os.getcwd())
