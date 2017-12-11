@@ -99,8 +99,8 @@ def phase(geno_name, allocation_name):
                                 range(1,24)]
     ind_me_names = ['Phasing/' + geno_name + '_PhaseCheck.chr%d.ind.me' % x for x in range(1, 24)]
     snp_me_names = ['Phasing/' + geno_name + '_PhaseCheck.chr%d.snp.me' % x for x in range(1, 24)]
-    output_max_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d' % x for x in range(1,24)]
-    output_log_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d' % x for x in range(1,24)]
+    output_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d' % x for x in range(1,24)]
+    output_vcf_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d.vcf' % x for x in range(1,24)]
 
     # Use plink to set mendel errors to missing.
     os.system(plink + ' --bfile ' + geno_name + ' --me 1 1 --set-me-missing --make-bed --out ' + geno_name)
@@ -246,8 +246,8 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
-                               + snp_exclude_name + ' --output-max ' + output_max_names[i] + ' --output-log '
-                               + output_log_names[i])
+                               + snp_exclude_name + ' --output-max ' + output_names[i] + ' --output-log '
+                               + output_names[i])
             # If snp_exclude_names isn't filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -267,7 +267,7 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
-                               + output_max_names[i] + ' --output-log ' + output_log_names[i])
+                               + output_names[i] + ' --output-log ' + output_names[i])
 
         # Need to phase chrX specially.
         if i == 22:
@@ -445,10 +445,10 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --exclude-ind ' + check_log_names[i] + '.ind.hh.exclude'
-                               + ' --output-max ' + output_max_names[i] + ' --output-log ' + output_log_names[i] + '\n'
+                               + ' --output-max ' + output_names[i] + ' --output-log ' + output_names[i] + '\n'
                                +
-                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
-                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
+                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
 
             # If only snp_exclude_name variable is filled, then we have snps to remove.
             elif 'snp_exclude_name' in locals():
@@ -469,10 +469,10 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
-                               + snp_exclude_name + ' --output-max ' + output_max_names[i] + ' --output-log '
-                               + output_log_names[i] + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
-                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
+                               + snp_exclude_name + ' --output-max ' + output_names[i] + ' --output-log '
+                               + output_names[i] + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If there are only people in ind_hh_exclude, then we have people to remove.
             elif len(ind_hh_exclude) > 0:
                 # Write pbs script
@@ -492,10 +492,10 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-ind '
-                               + check_log_names[i] + '.ind.hh.exclude' + ' --output-max ' + output_max_names[i]
-                               + ' --output-log ' + output_log_names[i] + '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
-                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
+                               + check_log_names[i] + '.ind.hh.exclude' + ' --output-max ' + output_names[i]
+                               + ' --output-log ' + output_names[i] + '\n' +
+                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If none of these are filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -515,9 +515,9 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
-                               + output_max_names[i] + ' --output-log ' + output_log_names[i] + '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_max_names[i]
-                               + '.haps' + output_max_names[i] + '.sample --output-vcf ' + output_max_names[i])
+                               + output_names[i] + ' --output-log ' + output_names[i] + '\n' +
+                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
 
     #I If the user is currently on the cluster, then submit the pbs files to start running.
     if on_cluster in ('y', 'yes'):
