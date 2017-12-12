@@ -4,6 +4,7 @@ def phase(geno_name, allocation_name):
     import sys
     import pandas as pd
     import numpy as np
+    import subprocess
 
     # If it doesn't exist, create Phasing folder
     if not os.path.exists('Phasing'):
@@ -103,24 +104,27 @@ def phase(geno_name, allocation_name):
     output_vcf_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d.vcf' % x for x in range(1,24)]
 
     # Use plink to set mendel errors to missing.
-    os.system(plink + ' --bfile ' + geno_name + ' --me 1 1 --set-me-missing --make-bed --out ' + geno_name)
+    subprocess.check_output(plink + ' --bfile ' + geno_name + ' --me 1 1 --set-me-missing --make-bed --out '
+                            + geno_name)
     # Remove old files
-    os.system('rm *~')
+    subprocess.call('rm *~')
 
     # Perform phasing check per chromosome.
     for i in range(0,23):
         # Split the geno file into separate chromosomes and put it in the Phasing folder.
-        os.system(plink + ' --bfile ' + geno_name + ' --chr ' + str(i + 1) + ' --make-bed --out Phasing/'
-                  + geno_name + '.chr' + str(i + 1))
+        subprocess.check_output(plink + ' --bfile ' + geno_name + ' --chr ' + str(i + 1) + ' --make-bed --out Phasing/'
+                                + geno_name + '.chr' + str(i + 1))
         # If on autosomes
         if i < 22:
             # Perform phasing check. We are telling it to ignore the pedigree information for now because we don't want
             # it to error out when it encounters a pedigree and I'm going to use the --duohmm flag later.
-            os.system(os.path.join(shapeit_path,'shapeit') + ' -check --input-bed ' + geno_bed_names[i] + ' '
-                      + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --noped --input-map '
-                      + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
-                      + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
-                      + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log ' + check_log_names[i])
+            subprocess.check_output(os.path.join(shapeit_path,'shapeit') + ' -check --input-bed ' + geno_bed_names[i]
+                                    + ' ' + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --noped --input-map '
+                                    + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
+                                    + os.path.join(ref_path, hap_names[i]) + ' '
+                                    + os.path.join(ref_path, legend_names[i]) + ' '
+                                    + os.path.join(ref_path, '1000GP_Phase3.sample')
+                                    + ' --output-log ' + check_log_names[i])
         # If working on the X chromosome
         if i == 22:
             # In the 1000G sample file, need to change male to 1 and female to 2.
@@ -134,11 +138,13 @@ def phase(geno_name, allocation_name):
 
             # Perform phasing check. Phasing chrX specifically considers all people unrelated. They might change this
             # later.
-            os.system(os.path.join(shapeit_path, 'shapeit') + ' -check --chrX --input-bed ' + geno_bed_names[i] + ' '
-                      + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --input-map '
-                      + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
-                      + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i]) + ' '
-                      + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-log ' + check_log_names[i])
+            subprocess.check_output(os.path.join(shapeit_path, 'shapeit') + ' -check --chrX --input-bed '
+                                    + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' ' + geno_fam_names[i]
+                                    + ' --input-map '+ os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
+                                    + os.path.join(ref_path, hap_names[i]) + ' '
+                                    + os.path.join(ref_path, legend_names[i]) + ' '
+                                    + os.path.join(ref_path, '1000GP_Phase3.sample')
+                                    + ' --output-log ' + check_log_names[i])
 
     # Now that check is performed, we're on the lookout for these files:
         #  myLogFile.snp.strand.exclude that  gives a list of the physical positions of all Case1 and Case3 problems
@@ -523,7 +529,7 @@ def phase(geno_name, allocation_name):
     if on_cluster in ('y', 'yes'):
         for i in range(0,23):
             # Submit to cluster
-            os.system('qsub Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs')
+            subprocess.check_output('qsub Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs')
     elif on_cluster in ('no', 'no'):
         sys.exit('Since you are not on the Penn State cluster right now, you should transfer the genotype files, 1000G '
                  'genetic maps, 1000G legend files, 1000G hap files, and 1000G sample file, shapeit, and the phasing '
@@ -594,7 +600,7 @@ def impute():
             bcftools_path = input("\u001b[36;1m Please tell me the path where you have the bcftools program. "
                                  "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\bcftools\\ \u001b[0m")
             # Setting path of where bcftools is since it's hard to use it without this.
-            os.system('export PATH=$PATH:' + bcftools_path)
+            subprocess.check_output('export PATH=$PATH:' + bcftools_path)
         # If no, download and unpack bcftools.
         elif bcftools_exists in ('no', 'n'):
             import genodownload
@@ -621,7 +627,7 @@ def impute():
             vcftools_path = input("\u001b[36;1m Please tell me the path where you have the vcftools program. "
                                   "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ \u001b[0m")
             # Setting path of where vcftools is since it's hard to use it without this.
-            os.system('export PATH=$PATH:' + vcftools_path)
+            subprocess.check_output('export PATH=$PATH:' + vcftools_path)
         # If no, download and unpack vcftools.
         elif vcftools_exists in ('no', 'n'):
             import genodownload
@@ -667,36 +673,38 @@ def impute():
 
     # Use bcftools and bgzip to zip the vcf files so that they stop taking up space.
     for file in vcf_list:
-        os.system('bgzip -c ' + file + ' > ' + file + '.vcf.gz')
+        subprocess.check_output('bgzip -c ' + file + ' > ' + file + '.vcf.gz')
 
     # Appending gz to the vcf_list names because we just gzipped them all.
     vcf_gz_list = [name + '.gz' for name in vcf_list]
 
     # Use bcftools to concatenate the per chromosome phased vcf files. Save this in SangerImputation and Phasing
-    os.system('bcftools concat -Oz ' + print(" ".join(str(x) for x in vcf_gz_list)) + ' > SangerImputation/' + vcf_name
+    subprocess.check_output('bcftools concat -Oz ' + print(" ".join(str(x) for x in vcf_gz_list))
+                            + ' > SangerImputation/' + vcf_name
               + '.vcf.gz')
     # Save in phasing too.
-    os.system('cp SangerImputation/' + vcf_name + '.vcf.gz Phasing/' + vcf_name + '.vcf.gz')
+    subprocess.check_output('cp SangerImputation/' + vcf_name + '.vcf.gz Phasing/' + vcf_name + '.vcf.gz')
 
     # Use bcftools to change the chromosome names, if needed. Save this in SangerImputation.
     urllib.request.urlretrieve('https://imputation.sanger.ac.uk/www/plink2ensembl.txt',
                                'SangerImputation/plink2ensembl.txt')
-    os.system('bcftools annotate -Oz --rename-chrs plink2ensembl.txt ' + vcf_name + '.vcf.gz > ' + vcf_name + '.vcf.gz')
+    subprocess.check_output('bcftools annotate -Oz --rename-chrs plink2ensembl.txt ' + vcf_name + '.vcf.gz > '
+                            + vcf_name + '.vcf.gz')
 
     # Check VCF is sorted:
-    os.system('bcftools index ' + vcf_name + '.vcf.gz')
+    subprocess.check_output('bcftools index ' + vcf_name + '.vcf.gz')
 
     # Check that our data matches the reference allele of 1000G Phase 3. Fix those that do not match.
-    os.system('bcftools norm -check-ref ws --fasta-ref ' + os.path.join(fasta_path,'human_g1k_v37.fasta.gz') + vcf_name
-              + '.vcf.gz')
+    subprocess.check_output('bcftools norm -check-ref ws --fasta-ref '
+                            + os.path.join(fasta_path,'human_g1k_v37.fasta.gz') + vcf_name + '.vcf.gz')
 
     # Double check sex and fix ploidy
-    os.system('bcftools +guess-ploidy -g hg19 ' + vcf_name + '.vcf.gz > ' + vcf_name + '_SexEst.txt')
-    os.system('bcftools +fixploidy ' + vcf_name + '.vcf.gz -Oz -o ' + vcf_name + '_SexUpdated.vcf.gz -- -s '
-              + vcf_name + '_SexEst.txt')
+    subprocess.check_output('bcftools +guess-ploidy -g hg19 ' + vcf_name + '.vcf.gz > ' + vcf_name + '_SexEst.txt')
+    subprocess.check_output('bcftools +fixploidy ' + vcf_name + '.vcf.gz -Oz -o ' + vcf_name
+                            + '_SexUpdated.vcf.gz -- -s ' + vcf_name + '_SexEst.txt')
 
     # Check that you have a valid vcf
-    os.system('vcf-validator ' + vcf_name + '_SexUpdated.vcf.gz')
+    subprocess.check_output('vcf-validator ' + vcf_name + '_SexUpdated.vcf.gz')
 
     sys.exit("Your vcf has been checked and is ready for imputation on the Sanger Imputation Server. Please follow the "
              "directions here (https://imputation.sanger.ac.uk/?instructions=1) for uploading your data. The file is "

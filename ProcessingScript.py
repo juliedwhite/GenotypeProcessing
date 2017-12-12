@@ -129,7 +129,8 @@ elif to_do == '2':
 # GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '3':
     # Get name of genotype file
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension: \u001b[0m')
+    geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension:'
+                      ' \u001b[0m')
     # Import module and call command
     import genoqc
     genoqc.missing_call_rate(geno_name)
@@ -197,7 +198,7 @@ elif to_do == '7':
           "the positions in your bim file to the position for that rsid on the UCSC Genome Browser: "
           "https://genome.ucsc.edu/cgi-bin/hgGateway You should search your risd after selecting Human and "
           "Feb. 2009 (GRCh37/hg19). Your snp position should be directly in the middle of the snp ranges it gives when "
-          "you search (i.e. rs1042522 at chr17:7579472-7579472. If you find that your snps don't match, then you "
+          "you search (i.e. rs1042522 at chr17:7579472-7579472). If you find that your snps don't match, then you "
           "should figure out what GRCh/hg version your snps are on and use the LiftOver tool "
           "(https://genome.ucsc.edu/cgi-bin/hgLiftOver) to change the coordinates to GRCh37/hg19.")
 
