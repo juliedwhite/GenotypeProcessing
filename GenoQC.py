@@ -1,30 +1,30 @@
-import os
-
-
 def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
     #   1) FID
     #   2) IID
     #   3) Sex (1 = M, 2 = F, 0 = missing)
-    os.system('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out ' + geno_name
-              + '_SexUpdated')
+    import subprocess
+
+    subprocess.check_output('plink --bfile ' + geno_name + ' --update-sex ' + update_sex_filename + ' --make-bed --out '
+                            + geno_name + '_SexUpdated')
 
     # Checks the sex listed in the file against the chromosomal sex.
-    os.system('plink --bfile ' + geno_name + '_SexUpdated --indep-pairphase 20000 2000 0.5 --out ' + geno_name
-              + '_SexUpdated')
-    os.system('plink --bfile ' + geno_name + '_SexUpdated --exclude ' + geno_name
-              + '_SexUpdated.prune.out --check-sex ycount ' + geno_name + '_SexUpdated')
+    subprocess.check_output('plink --bfile ' + geno_name + '_SexUpdated --indep-pairphase 20000 2000 0.5 --out '
+                            + geno_name + '_SexUpdated')
+    subprocess.check_output('plink --bfile ' + geno_name + '_SexUpdated --exclude ' + geno_name
+                            + '_SexUpdated.prune.out --check-sex ycount 0.3 0.8 0 0 --out ' + geno_name + '_SexUpdated')
 
     print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name "
           + geno_name + "_SexUpdated. I also ran a sex check on your sample, which will have the name "
-          + geno_name + "_SexUpdated.sexcheck. You should check this file against "
-          + update_sex_filename + " to make sure that they match. \u001b[0m")
+          + geno_name + "_SexUpdated.sexcheck. You should check this file for any problems and decide if you want to "
+                        "re-update your file. \u001b[0m")
 
 
 def missing_call_rate(geno_name):
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
-    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out '
-              + geno_name + '_geno0.1_mind0.1')
+    import subprocess
+    subprocess.check_output('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --make-bed --out ' + geno_name
+                            + '_geno0.1_mind0.1')
 
 
 def het(geno_name):
@@ -32,9 +32,10 @@ def het(geno_name):
     # Getting extra required modules
     import pandas as pd
     import numpy as np
+    import subprocess
 
     # Use plink to calculate the heterozygosity, paying attention to geno and mind.
-    os.system('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --het --out ' + geno_name)
+    subprocess.check_output('plink --bfile ' + geno_name + ' --geno 0.1 --mind 0.1 --het --out ' + geno_name)
 
     # Read het file into pandas
     het_file = pd.read_csv(geno_name + '.het', sep='\s+', header=0)
@@ -57,8 +58,8 @@ def het(geno_name):
     het_keep[['FID', 'IID']].to_csv(geno_name + '_KeptAfterHetCheck.txt', sep='\t', header=False, index=False)
 
     # Make new plink file with people passing het check.
-    os.system('plink --bfile ' + geno_name + '--keep ' + geno_name + '_KeptAfterHetCheck.txt --geno 0.1 --make-bed '
-                                                                     '--out ' + geno_name + '_HetChecked')
+    subprocess.check_output('plink --bfile ' + geno_name + '--keep ' + geno_name
+                            + '_KeptAfterHetCheck.txt --geno 0.1 --make-bed --out ' + geno_name + '_HetChecked')
 
     print("Done. Your new file of people with non-extreme heterozygosity values will be called "
           + geno_name + "_HetChecked")

@@ -1,7 +1,7 @@
 def todownload():
     import sys
 
-    item = input('\u001b[31;1m What would you like to download?\n'
+    item = input('\u001b[32;1m What would you like to download?\n'
                  '1) Python 3.6.3\n'
                  '2) Plink 1.9\n'
                  '3) 1000G Phase 3 VCF\n'
@@ -52,6 +52,7 @@ def python3():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -63,19 +64,19 @@ def python3():
         if not os.path.exists(os.path.join(home,'software')):
             os.makedirs(os.path.join(home,'software'))
 
-        print("\u001b[36;1m Downloading python3 to " + os.path.join(home,'software') + " now. \u001b[0m")
+        print("Downloading python3 to " + os.path.join(home,'software') + " now.")
         urllib.request.urlretrieve('https://www.python.org/ftp/python/3.6.3/Python-3.6.3.tgz',
                                    os.path.join(home,'software/Python-3.6.3.tgz'))
         # Unpacking
-        os.system('tar -zxvf Python-3.6.3.tgz -C ' + os.path.join(home,'software'))
+        subprocess.check_output('tar -zxvf Python-3.6.3.tgz -C ' + os.path.join(home,'software'))
         # Moving into the bcftools folder
         os.chdir(os.path.join(home,'software/Python-3.6.3'))
         # Running configuration and installation steps
-        os.system('./configure --prefix=' + os.path.join(home,'software/'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
-        os.system('export PYTHONPATH=' + os.path.join(home,'software/Python-3.6.3/'))
+        subprocess.check_output('./configure --prefix=' + os.path.join(home,'software/'))
+        subprocess.check_output('make')
+        subprocess.check_output('make install')
+        subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
+        subprocess.check_output('export PYTHONPATH=' + os.path.join(home,'software/Python-3.6.3/'))
 
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -85,15 +86,15 @@ def python3():
 
     # If they are running this on a windows machine
     elif system_check == "Windows":
-        sys.exit("\u001b[35;1m I've detected that you are working on a Windows computer. Your best bet is to follow "
+        sys.exit("I've detected that you are working on a Windows computer. Your best bet is to follow "
                  "these directions (http://docs.python-guide.org/en/latest/starting/install3/win/) and download "
                  "python3 mnaually. As a word of warning, you can do many functions of this script on a Windows "
                  "computer, but some (admixture, phasing, imputation) requires access to a linux based computational "
-                 "cluster (like the Penn State ACI-B system) \u001b[0m")
+                 "cluster (like the Penn State ACI-B system)")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 
 def plink():
@@ -111,9 +112,9 @@ def plink():
 
     if system_check == "Linux":
         if architecture_check == '64bit':
-            # Download 64 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_linux_x86_64.zip
+            # Download 64 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_linux_x86_64.zip
             print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_linux_x86_64.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171204/plink_linux_x86_64.zip',
                                        'Plink_1.9_Linux64.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Linux64')
@@ -124,9 +125,9 @@ def plink():
             shutil.copy2('Plink_1.9_Linux64/plink', os.getcwd())
 
         elif architecture_check == '32bit':
-            # Download 32 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_linux_i686.zip
+            # Download 32 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_linux_i686.zip
             print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_linux_i686.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171204/plink_linux_i686.zip',
                                        'Plink_1.9_Linux32.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Linux32')
@@ -140,9 +141,9 @@ def plink():
             sys.exit("I'm sorry, I could not determine what Linux Plink version to download.")
 
     elif system_check == "Darwin":
-        # Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_mac.zip
+        # Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_mac.zip
         print("Downloading Mac Plink 1.9 to this directory now.")
-        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_mac.zip',
+        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171204/plink_mac.zip',
                                    'Plink_1.9_Mac.zip')
         # Making directory to store program
         os.makedirs('Plink_1.9_Mac')
@@ -154,9 +155,9 @@ def plink():
 
     elif system_check == "Windows":
         if architecture_check == '64bit':
-            # Download 64 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_win64.zip
+            # Download 64 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_win64.zip
             print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_win64.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171204/plink_win64.zip',
                                        'Plink_1.9_Win64.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Win64')
@@ -167,9 +168,9 @@ def plink():
             shutil.copy2('Plink_1.9_Win64/plink.exe', os.getcwd())
 
         elif architecture_check == '32bit':
-            # Download 32 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171114/plink_win32.zip
+            # Download 32 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_win32.zip
             print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171114/plink_win32.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171204/plink_win32.zip',
                                        'Plink_1.9_Win32.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Win32')
@@ -262,6 +263,9 @@ def hls_1000g_phase3():
 
 
 def fasta_1000G_hg19():
+    import os
+    import ftplib
+
     print('Downloading 1000G hg19 fasta file now, putting it in the "1000G_hg19_fasta" folder.')
 
     # Create folder:
@@ -284,7 +288,7 @@ def genotype_harmonizer():
     import urllib.request
     import zipfile
 
-    print('\u001b[36;1m Downloading genotype harmonizer now. \u001b[0m')
+    print('Downloading genotype harmonizer now.')
     # Download genotype harmonizer zip file
     urllib.request.urlretrieve(
         'http://www.molgenis.org/downloads/GenotypeHarmonizer/GenotypeHarmonizer-1.4.20-dist.zip',
@@ -296,20 +300,24 @@ def genotype_harmonizer():
 
 
 def pip():
-    import os
     import urllib.request
-    import warnings
+    import platform
+    import subprocess
 
-    print('\u001b[36;1m Downloading pip now. \u001b[0m')
+
+    print('Downloading pip now')
     # Getting get-pip module
     urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')
-    with warnings.simplefilter("ignore"):
-        try:
-            os.system('python get-pip.py')
-        except:
-            # Run it and install pip into user directory.
-            os.system('python get-pip.py --user')
-            os.system('PATH=$PATH:~/.local/bin')
+    try:
+        subprocess.check_output('python get-pip.py')
+    except:
+        # Run it and install pip into user directory.
+        subprocess.check_output('python get-pip.py --user')
+        system_check = platform.system()
+        if system_check in ("Linxu", "Darwin"):
+            subprocess.check_output('PATH=$PATH:~/.local/bin')
+        elif system_check == "Windows":
+            subprocess.check_output('set PATH=%PATH%;~/.local/bin')
 
 
 def snpflip():
@@ -328,23 +336,24 @@ def shapeit():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     # Since shapeit only works on linux or mac, we need to first check what system they are on.
     system_check = platform.system()
 
     if system_check == "Linux":
-        print('\u001b[36;1m Downloading shapeit now. \u001b[0m')
+        print('Downloading shapeit now.')
         urllib.request.urlretrieve(
             'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz',
             'shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz')
         # Making directory to store program
         os.makedirs('Shapeit_v2.12_Linux_Static')
         # Unpacking
-        os.system('tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz -C Shapeit_v2.12_Linux_Static/')
+        subprocess.check_output('tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz -C Shapeit_v2.12_Linux_Static/')
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        print('\u001b[35;1m Downloading shapeit now. \u001b[0m')
+        print('Downloading shapeit now.')
         # Download shapeit
         urllib.request.urlretrieve(
             'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz',
@@ -352,17 +361,17 @@ def shapeit():
         # Create directory for shapeit.
         os.makedirs('Shapeit_v2.20_Mac')
         # Untar shapeit to that directory.
-        os.system('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C Shapeit_v2.20_Mac/')
+        subprocess.check_output('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C Shapeit_v2.20_Mac/')
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
-        sys.exit("\u001b[35;1m I'm sorry, I've detected that you're working on a Windows computer and shapeit is a "
-                 "linux or unix program only. . If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux). \u001b[0m")
+        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and shapeit is a "
+                 "linux or unix program only. If you have access to the Penn State clusters, you should run this "
+                 "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 
 def vcftools():
@@ -370,6 +379,7 @@ def vcftools():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -379,37 +389,38 @@ def vcftools():
     system_check = platform.system()
 
     if system_check == "Linux":
-        print('\u001b[36;1m Downloading vcftools now. \u001b[0m')
+        print('Downloading vcftools now.')
         if not os.path.exists(os.path.join(home,'software')):
             os.makedirs(os.path.join(home,"software"))
         urllib.request.urlretrieve('https://github.com/vcftools/vcftools/tarball/master',
                                    os.path.join(home,'software/vcftools.tgz'))
         # Unpacking
-        os.system('tar -xvf ' + os.path.join(home, '/software/vcftools.tgz') + ' -C ' + os.path.join(home, 'software'))
+        subprocess.check_output('tar -xvf ' + os.path.join(home, '/software/vcftools.tgz') + ' -C '
+                                + os.path.join(home, 'software'))
         # Moving into the vcftools folder
-        os.system('cd ' + os.path.join(home, 'software/vcftools'))
+        subprocess.check_output('cd ' + os.path.join(home, 'software/vcftools'))
         # Running configuration and installation steps
-        os.system('./autogen.sh')
-        os.system('./configure --prefix=' + os.path.join(home,'software'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home,'software/bin'))
+        subprocess.check_output('./autogen.sh')
+        subprocess.check_output('./configure --prefix=' + os.path.join(home,'software'))
+        subprocess.check_output('make')
+        subprocess.check_output('make install')
+        subprocess.check_output('export PATH=$PATH:' + os.path.join(home,'software/bin'))
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit('\u001b[35;1m To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
+        sys.exit('To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
               'https://brew.sh/ then download vcftools by typing "brew install homebrew/science/vcftools" in your '
-              'command terminal. Then, follow the directions in the README file for configuring. \u001b[0m')
+              'command terminal. Then, follow the directions in the README file for configuring.')
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
-        sys.exit("\u001b[35;1m I'm sorry, I've detected that you're working on a Windows computer and vcftools is a "
-                 "linux or unix program only. . If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux). \u001b[0m")
+        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and vcftools is a "
+                 "linux or unix program only. If you have access to the Penn State clusters, you should run this "
+                 "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 
 def bcftools():
@@ -417,6 +428,7 @@ def bcftools():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -426,38 +438,38 @@ def bcftools():
     system_check = platform.system()
 
     if system_check == "Linux":
-        print('\u001b[36;1m Downloading bcftools now. \u001b[0m')
+        print('Downloading bcftools now.')
         if not os.path.exists(os.path.join(home,'software')):
             os.mkdir(os.path.join(home,'software'))
         urllib.request.urlretrieve('https://github.com/samtools/bcftools/releases/download/1.6/bcftools-1.6.tar.bz2',
                                    os.path.join(home,'software/bcftools-1.6.tar.bz2'))
         # Unpacking
-        os.system('tar -xvjf ' + os.path.join(home,'software/bcftools-1.6.tar.bz2') + ' -C '
-                  + os.path.join(home,'software'))
+        subprocess.check_output('tar -xvjf ' + os.path.join(home,'software/bcftools-1.6.tar.bz2') + ' -C '
+                                + os.path.join(home,'software'))
         # Moving into the bcftools folder
         os.chdir(os.path.join(home,'software/bcftools-1.6/'))
         # Running configuration and installation steps
-        os.system('./configure --prefix=' + os.path.join(home,'software'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
+        subprocess.check_output('./configure --prefix=' + os.path.join(home,'software'))
+        subprocess.check_output('make')
+        subprocess.check_output('make install')
+        subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit("\u001b[35;1m It's possible to install bcftools on a Mac, but it might require that you install other "
+        sys.exit("It's possible to install bcftools on a Mac, but it might require that you install other "
             "libraries too. You can try following this tutorial "
             "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew (if you haven't "
-            "already) and xcode. Then run brew install homebrew/science/bcftools. \u001b[0m")
+            "already) and xcode. Then run brew install homebrew/science/bcftools.")
 
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
-        sys.exit("\u001b[35;1m I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
+        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
                  "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux). \u001b[0m")
+                 "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 
 def htslib():
@@ -465,6 +477,7 @@ def htslib():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -474,7 +487,7 @@ def htslib():
     system_check = platform.system()
 
     if system_check == "Linux":
-        print('\u001b[36;1m Downloading htslib now. \u001b[0m')
+        print('Downloading htslib now.')
         if not os.path.exists(os.path.join(home,'software')):
             os.mkdir(os.path.join(home,'software'))
         urllib.request.urlretrieve('https://github.com/samtools/htslib/releases/download/1.6/htslib-1.6.tar.bz2',
@@ -482,30 +495,30 @@ def htslib():
         # Making directory to store program
         # os.makedirs(os.path.join(home,'software/htslib_1.6'))
         # Unpacking
-        os.system('tar -xvjf ' + os.path.join(home,'software/htslib-1.6.tar.bz2') + ' -C '
-                  + os.path.join(home,'software'))
+        subprocess.check_output('tar -xvjf ' + os.path.join(home,'software/htslib-1.6.tar.bz2') + ' -C '
+                                + os.path.join(home,'software'))
         # Moving into the htslib folder
-        os.system('cd ' + os.path.join(home, 'software/htslib-1.6/'))
+        subprocess.check_output('cd ' + os.path.join(home, 'software/htslib-1.6/'))
         # Running configuration and installation steps
-        os.system('./configure --prefix=' + os.path.join(home, 'software'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home,'software/bin'))
+        subprocess.check_output('./configure --prefix=' + os.path.join(home, 'software'))
+        subprocess.check_output('make')
+        subprocess.check_output('make install')
+        subprocess.check_output('export PATH=$PATH:' + os.path.join(home,'software/bin'))
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit("\u001b[35;1m It's possible to install htslib on a Mac, but it might require that you install other "
+        sys.exit("It's possible to install htslib on a Mac, but it might require that you install other "
             "libraries too. You can try following this tutorial "
             "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew (if you haven't "
-            "already) and xcode. Then run brew install homebrew/science/htslib. \u001b[0m")
+            "already) and xcode. Then run brew install homebrew/science/htslib.")
 
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
         sys.exit(
-            "\u001b[35;1m I'm sorry, I've detected that you're working on a Windows computer and htslib is a "
+            "I'm sorry, I've detected that you're working on a Windows computer and htslib is a "
             "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-            "script from there (they are linux). \u001b[0m")
+            "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
