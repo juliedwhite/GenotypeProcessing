@@ -116,7 +116,7 @@ if to_do == '1':
 # GenoQC: Update sex
 elif to_do == '2':
     # Get name of genotype file
-    geno_name = input("\u001b[32;1m Please enter the name of the plink genotype files you'd like to update sex in "
+    geno_name = input("\u001b[32;1m Please enter the name of the genotype files you'd like to update sex in "
                       "(without bed/bim/fam extension: \u001b[0m")
     # Get name of file to be used for updating sex
     update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file '
@@ -368,9 +368,9 @@ elif to_do == '11':
     # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
     allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
     # Import module
-    import genophase
+    import genophaseimpute
     # Call function
-    genophase.phase(geno_name, allocation_name)
+    genophaseimpute.phase(geno_name, allocation_name)
 
 elif to_do == '12':
     # The user should only do this after phasing.
