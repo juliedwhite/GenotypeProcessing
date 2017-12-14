@@ -56,9 +56,13 @@ def het(geno_name):
     het_keep = het_file[het_file['HET_Filter'] == 'Keep']
     # Write this file so that we can use it later to filter people out.
     het_keep[['FID', 'IID']].to_csv(geno_name + '_KeptAfterHetCheck.txt', sep='\t', header=False, index=False)
+    # Make a list of the people who fail the filter.
+    het_rem = het_file[het_file['HET_Filter'] == 'Remove']
+    # Write this to file so we have the record.
+    het_rem.to_csv(geno_name + '_RemAfterHetCheck.txt', sep='\t', header = True, index=False)
 
     # Make new plink file with people passing het check.
-    subprocess.check_output('plink --bfile ' + geno_name + '--keep ' + geno_name
+    subprocess.check_output('plink --bfile ' + geno_name + ' --keep ' + geno_name
                             + '_KeptAfterHetCheck.txt --geno 0.1 --make-bed --out ' + geno_name + '_HetChecked')
 
     print("Done. Your new file of people with non-extreme heterozygosity values will be called "
