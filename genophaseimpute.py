@@ -2,9 +2,36 @@ def phase(geno_name, allocation_name):
     import platform
     import os
     import sys
-    import pandas as pd
-    import numpy as np
     import subprocess
+    try:
+        import pandas as pd
+    except ImportError:
+        try:
+            import pip
+            # Use pip to install pandas and it's dependencies.
+            pip.main(['install', 'pandas'])
+            import pandas as pd
+        except ImportError:
+            import genodownload
+            genodownload.pip()
+            import pip
+            pip.main(['install', 'pandas'])
+            import pandas as pd
+    try:
+        import numpy as np
+    except ImportError:
+        try:
+            import pip
+            # Use pip to install numpy and it's dependencies.
+            pip.main(['install', 'numpy'])
+            import numpy as np
+        except ImportError:
+            import genodownload
+            genodownload.pip()
+            import pip
+            pip.main(['install', 'numpy'])
+            import numpy as np
+
 
     # If it doesn't exist, create Phasing folder
     if not os.path.exists('Phasing'):
@@ -42,7 +69,7 @@ def phase(geno_name, allocation_name):
         if shapeit_exists in ('yes', 'y'):
             # Ask where shapeit is located.
             shapeit_path = input("\u001b[35;1m Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
+                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ : \u001b[0m")
         elif shapeit_exists in ('no', 'n'):
             # Get genodownload module
             import genodownload
@@ -83,7 +110,7 @@ def phase(geno_name, allocation_name):
 
     # Ask if the user is on the cluster right now to determine if we should submit the files for them
     on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
-                       ' for you. If not, you will need to submit the files yourself').lower()
+                       ' for you. If not, you will need to submit the files yourself. (y/n): ').lower()
 
     # Names of files needed.
     genetic_map_names = ['genetic_map_chr%d_combined_b37.txt' % x for x in range(1, 23)]
@@ -104,8 +131,7 @@ def phase(geno_name, allocation_name):
     output_vcf_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d.vcf' % x for x in range(1,24)]
 
     # Use plink to set mendel errors to missing.
-    subprocess.check_output(plink + ' --bfile ' + geno_name + ' --me 1 1 --set-me-missing --make-bed --out '
-                            + geno_name)
+    os.system(plink + ' --bfile ' + geno_name + ' --me 1 1 --set-me-missing --make-bed --out ' + geno_name)
     # Remove old files
     subprocess.call('rm *~')
 
@@ -341,7 +367,7 @@ def phase(geno_name, allocation_name):
                 pass
 
             # If a *.ind.hh file is produced, see if there are males with high haploid heterozygosity rate.
-            if os.path.exists(check_log_names[i] + '.ind.hh')
+            if os.path.exists(check_log_names[i] + '.ind.hh'):
                 # Read in file of people to check.
                 ind_hh_file = pd.read_csv(check_log_names[i] + '.ind.hh', sep = " ", header = None, skiprows=1,
                                           dtype={0: str, 1: int, 2: float, 3: float})
