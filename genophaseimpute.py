@@ -134,7 +134,7 @@ def phase(geno_name, allocation_name):
     subprocess.check_output([plink,'--bfile',geno_name,'--me','1','1','--set-me-missing','--make-bed','--out',
                              geno_name])
     # Remove old files
-    subprocess.call(['rm','*~'])
+    subprocess.call('rm *~', shell=True)
 
     # Perform phasing check per chromosome.
     for i in range(0,23):
@@ -150,6 +150,7 @@ def phase(geno_name, allocation_name):
                                      os.path.join(ref_path, genetic_map_names[i]),'--input-ref',
                                      os.path.join(ref_path, hap_names[i]),os.path.join(ref_path, legend_names[i]),
                                      os.path.join(ref_path, '1000GP_Phase3.sample'),'--output-log',check_log_names[i]])
+
         # If working on the X chromosome
         if i == 22:
             # In the 1000G sample file, need to change male to 1 and female to 2.
@@ -159,7 +160,7 @@ def phase(geno_name, allocation_name):
             # Replace male with 1
             ref_sample.iloc[:,3].replace('male', '1', inplace=True)
             # Write file
-            ref_sample.to_csv(os.path.join(ref_path, '1000GP_Phase3.sample'))
+            ref_sample.to_csv(os.path.join(ref_path, '1000GP_Phase3.sample'), sep = " ", header = True, index = False)
 
             # Perform phasing check. Phasing chrX specifically considers all people unrelated. They might change this
             # later.
@@ -216,7 +217,7 @@ def phase(geno_name, allocation_name):
                 # Create mendel error column where we see which snps have a error rate of > 0.05
                 snp_me_file['MendelError'] = np.where((snp_me_file[2] / snp_me_file[3]) > 0.05, 'Yes', 'No')
                 # Create new dataframe with only the positions where Mendel Error was yes
-                me_exclude = snp_me_file[snp_me_file[1]['MendelError'] == 'Yes']
+                me_exclude = snp_me_file[snp_me_file['MendelError'][1] == 'Yes']
                 # If this is non-empty, make note.
                 if len(me_exclude) > 0:
                     log.extend(['b'])
@@ -336,7 +337,7 @@ def phase(geno_name, allocation_name):
                 # Create mendel error column where we see which snps have a error rate of > 0.05
                 snp_me_file['MendelError'] = np.where((snp_me_file[2] / snp_me_file[3]) > 0.05, 'Yes', 'No')
                 # Create new dataframe with only the positions where Mendel Error was yes
-                me_exclude = snp_me_file[snp_me_file[1]['MendelError'] == 'Yes']
+                me_exclude = snp_me_file[snp_me_file['MendelError'][1] == 'Yes']
                 # If this is non-empty, make note.
                 if len(me_exclude) > 0:
                     log.extend(['b'])
@@ -349,12 +350,12 @@ def phase(geno_name, allocation_name):
             # If a *.snp.hh file is produced, see if there are snps with high haploid heterozygosity rate.
             if os.path.exists(check_log_names[i] + '.snp.hh'):
                 # Read in haploid het file
-                snp_hh_file = pd.read_csv(check_log_names[i] + '.snp.hh', sep=" ", header=None, skiprows=1,
+                snp_hh_file = pd.read_csv(check_log_names[i] + '.snp.hh', sep='\t', header=None, skiprows=1,
                                           dtype={0: str, 1: int, 2: float, 3: float})
                 # Create a new column with 'Yes' for snps with mendel error > 1%
                 snp_hh_file['HHError'] = np.where((snp_hh_file[2] / snp_hh_file[3]) > 0.01, 'Yes', 'No')
                 # Create new dataframe with only the positions with high HH rates
-                snp_hh_exclude = snp_hh_file[snp_hh_file[1]['HHError'] == 'Yes']
+                snp_hh_exclude = snp_hh_file[snp_hh_file['HHError'][1] == 'Yes']
                 # If this is non-empty, make note:
                 if len(snp_hh_exclude) > 0:
                     log.extend(['c'])
@@ -367,12 +368,12 @@ def phase(geno_name, allocation_name):
             # If a *.ind.hh file is produced, see if there are males with high haploid heterozygosity rate.
             if os.path.exists(check_log_names[i] + '.ind.hh'):
                 # Read in file of people to check.
-                ind_hh_file = pd.read_csv(check_log_names[i] + '.ind.hh', sep = " ", header = None, skiprows=1,
+                ind_hh_file = pd.read_csv(check_log_names[i] + '.ind.hh', sep = '\t', header = None, skiprows=1,
                                           dtype={0: str, 1: int, 2: float, 3: float})
                 # Create new column with info on whether the ind has mendel error > 1%
                 ind_hh_file['HHError'] = np.where((ind_hh_file[2] / ind_hh_file[3]) > 0.01, 'Yes', 'No')
                 # Create new dataframe of people with high mendel errors.
-                ind_hh_exclude = ind_hh_file[ind_hh_file[1]['HHError'] == 'Yes']
+                ind_hh_exclude = ind_hh_file[ind_hh_file['HHError'][1] == 'Yes']
                 # If this list is non-zero, write file of individuals to exclude.
                 if len(ind_hh_exclude) > 0:
                     ind_hh_exclude.to_csv(check_log_names[i] + '.ind.hh.exclude')
