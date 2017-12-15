@@ -198,10 +198,10 @@ def phase(geno_name, allocation_name):
             # investigate these people. Could indicate that their family assignments are incorrect.
             if os.path.exists(ind_me_names[i]):
                 # Read in ind file.
-                snp_ind_file = pd.read_csv(ind_me_names[i], sep='\t', header = 1, dtype = {0:str,1:str,2:float,3:str,
+                ind_me_file = pd.read_csv(ind_me_names[i], sep='\t', header = 0, dtype = {0:str,1:str,2:float,3:str,
                                                                                            4:float,5:float,6:int})
-                father_me_errors = snp_ind_file[snp_ind_file[2] > 0]
-                mother_me_errors = snp_ind_file[snp_ind_file[4] > 0]
+                father_me_errors = ind_me_file[ind_me_file['father_mendel'] > 0]
+                mother_me_errors = ind_me_file[ind_me_file['mother_mendel'] > 0]
                 if (len(father_me_errors) > 0) or (len(mother_me_errors) > 0):
                     print("\u001b[31;1m Your files have people with non-zero mendel errors. You should investigate "
                           "the " + ind_me_names[i] + ' file and take a careful look at the people with high values in '
@@ -283,7 +283,7 @@ def phase(geno_name, allocation_name):
                                + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If snp_exclude_names isn't filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -306,7 +306,7 @@ def phase(geno_name, allocation_name):
                                + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
 
             print("Done preparing chr" + str(i + 1) + " for phasing")
 
@@ -324,15 +324,13 @@ def phase(geno_name, allocation_name):
             # investigate these people. Could indicate that their family assignments are incorrect.
             if os.path.exists(ind_me_names[i]):
                 # Read in ind file.
-                snp_ind_file = pd.read_csv(ind_me_names[i], sep='\t', header=1,
-                                           dtype={0: str, 1: str, 2: float, 3: str,
-                                                  4: float, 5: float, 6: int})
-                father_me_errors = snp_ind_file[snp_ind_file[2] > 0]
-                mother_me_errors = snp_ind_file[snp_ind_file[4] > 0]
+                ind_me_file = pd.read_csv(ind_me_names[i], sep='\t', header=0,
+                                           dtype={0: str, 1: str, 2: float, 3: str, 4: float, 5: float, 6: int})
+                father_me_errors = ind_me_file[ind_me_file['father_mendel'] > 0]
+                mother_me_errors = ind_me_file[ind_me_file['mother_mendel'] > 0]
                 if (len(father_me_errors) > 0) or (len(mother_me_errors) > 0):
                     print("\u001b[31;1m Your files have people with non-zero mendel errors. You should investigate "
-                          "the " + ind_me_names[
-                              i] + ' file and take a careful look at the people with high values in '
+                          "the " + ind_me_names[i] + ' file and take a careful look at the people with high values in '
                                    'the father_mendel & mother_mendel column. This result suggests '
                                    'that your paternity/maternity assignment could be incorrect. '
                                    '\u001b[0m')
@@ -489,7 +487,7 @@ def phase(geno_name, allocation_name):
                                + ' --output-max ' + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
 
             # If only snp_exclude_name variable is filled, then we have snps to remove.
             elif 'snp_exclude_name' in locals():
@@ -538,7 +536,7 @@ def phase(geno_name, allocation_name):
                                + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If none of these are filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -561,7 +559,7 @@ def phase(geno_name, allocation_name):
                                + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
 
             print("Done preparing chr" + str(i+1) + " for phasing")
 
