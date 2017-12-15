@@ -52,6 +52,7 @@ def python3():
     import urllib2
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -69,8 +70,8 @@ def python3():
             code.write(f.read())
 
         # Unpacking
-        os.system(
-            'tar -xzvf ' + os.path.join(home, 'software/Python-3.6.3.tgz') + ' -C ' + os.path.join(home, 'software'))
+        subprocess.check_output(['tar','-xzvf',os.path.join(home, 'software/Python-3.6.3.tgz'),'-C',
+                                 os.path.join(home, 'software')])
 
         # Moving into the Python folder
         os.chdir(os.path.join(home, 'software/Python-3.6.3'))
@@ -118,6 +119,7 @@ def plink():
     import shutil
     import urllib.request
     import sys
+    import subprocess
 
     # Get what system the user is using
     system_check = platform.system()
@@ -155,7 +157,7 @@ def plink():
             sys.exit("I'm sorry, I could not determine what Linux Plink version to download.")
 
         if os.path.exists('plink'):
-            os.system('chmod 777 plink')
+            subprocess.check_output(['chmod', '777', 'plink'])
 
     elif system_check == "Darwin":
         # Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_mac.zip
@@ -320,21 +322,21 @@ def genotype_harmonizer():
 def pip():
     import urllib.request
     import platform
-    import os
+    import subprocess
 
     print('Downloading pip now')
     # Getting get-pip module
     urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')
     try:
-        os.system('python get-pip.py')
+        subprocess.check_output(['python','get-pip.py'])
     except:
         # Run it and install pip into user directory.
-        os.system('python get-pip.py --user')
+        subprocess.check_output(['python','get-pip.py','--user'])
         system_check = platform.system()
-        if system_check in ("Linxu", "Darwin"):
-            os.system('PATH=$PATH:~/.local/bin')
+        if system_check in ("Linux", "Darwin"):
+            subprocess.check_output(['export','PATH=$PATH:~/.local/bin'])
         elif system_check == "Windows":
-            os.system('set PATH=%PATH%;~/.local/bin')
+            subprocess.check_output(['set','PATH=%PATH%;~/.local/bin'])
 
 
 def snpflip():
@@ -353,6 +355,7 @@ def shapeit():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     # Since shapeit only works on linux or mac, we need to first check what system they are on.
     system_check = platform.system()
@@ -365,7 +368,8 @@ def shapeit():
         # Making directory to store program
         os.makedirs('Shapeit_v2.12_Linux_Static')
         # Unpacking
-        os.system('tar -xzvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz -C Shapeit_v2.12_Linux_Static/')
+        subprocess.check_output(['tar','-xzvf','shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz','-C',
+                                 'Shapeit_v2.12_Linux_Static/'])
 
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -377,7 +381,7 @@ def shapeit():
         # Create directory for shapeit.
         os.makedirs('Shapeit_v2.20_Mac')
         # Untar shapeit to that directory.
-        os.system('tar -zxvf shapeit.v2.r837.MacOSX.tgz -C Shapeit_v2.20_Mac/')
+        subprocess.check_output(['tar','-zxvf','shapeit.v2.r837.MacOSX.tgz','-C','Shapeit_v2.20_Mac/'])
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
@@ -395,6 +399,7 @@ def vcftools():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -410,16 +415,16 @@ def vcftools():
         urllib.request.urlretrieve('https://github.com/vcftools/vcftools/tarball/master',
                                    os.path.join(home, 'software/vcftools.tgz'))
         # Unpacking
-        os.system('tar -xvf ' + os.path.join(home, '/software/vcftools.tgz') + ' -C '
-                                + os.path.join(home, 'software'))
+        subprocess.check_output(['tar -xvf ' + os.path.join(home, '/software/vcftools.tgz') + ' -C '
+                                + os.path.join(home, 'software')])
         # Moving into the vcftools folder
-        os.system('cd ' + os.path.join(home, 'software/vcftools'))
+        subprocess.check_output(['cd', os.path.join(home, 'software/vcftools')])
         # Running configuration and installation steps
-        os.system('./autogen.sh')
-        os.system('./configure --prefix=' + os.path.join(home, 'software'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
+        subprocess.check_output('./autogen.sh')
+        subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output('make')
+        subprocess.check_output(['make','install'])
+        subprocess.check_output(['export','PATH=$PATH:' + os.path.join(home, 'software/bin')])
 
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -443,6 +448,7 @@ def bcftools():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -458,15 +464,15 @@ def bcftools():
         urllib.request.urlretrieve('https://github.com/samtools/bcftools/releases/download/1.6/bcftools-1.6.tar.bz2',
                                    os.path.join(home, 'software/bcftools-1.6.tar.bz2'))
         # Unpacking
-        os.system('tar -xvjf ' + os.path.join(home, 'software/bcftools-1.6.tar.bz2') + ' -C '
-                                + os.path.join(home, 'software'))
+        subprocess.check_output(['tar', '-xvjf', os.path.join(home, 'software/bcftools-1.6.tar.bz2'), '-C',
+                                 os.path.join(home, 'software')])
         # Moving into the bcftools folder
         os.chdir(os.path.join(home, 'software/bcftools-1.6/'))
         # Running configuration and installation steps
-        os.system('./configure --prefix=' + os.path.join(home, 'software'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
+        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output('make')
+        subprocess.check_output(['make','install'])
+        subprocess.check_output(['export','PATH=$PATH:' + os.path.join(home, 'software/bin')])
 
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -491,6 +497,7 @@ def htslib():
     import urllib.request
     import os
     import sys
+    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -508,15 +515,15 @@ def htslib():
         # Making directory to store program
         # os.makedirs(os.path.join(home,'software/htslib_1.6'))
         # Unpacking
-        os.system('tar -xvjf ' + os.path.join(home, 'software/htslib-1.6.tar.bz2') + ' -C '
-                                + os.path.join(home, 'software'))
+        subprocess.check_output(['tar','-xvjf',os.path.join(home, 'software/htslib-1.6.tar.bz2'),'-C',
+                                 os.path.join(home, 'software')])
         # Moving into the htslib folder
-        os.system('cd ' + os.path.join(home, 'software/htslib-1.6/'))
+        subprocess.check_output(['cd', os.path.join(home, 'software/htslib-1.6/')])
         # Running configuration and installation steps
-        os.system('./configure --prefix=' + os.path.join(home, 'software'))
-        os.system('make')
-        os.system('make install')
-        os.system('export PATH=$PATH:' + os.path.join(home, 'software/bin'))
+        subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output('make')
+        subprocess.check_output(['make','install'])
+        subprocess.check_output(['export','PATH=$PATH:' + os.path.join(home, 'software/bin')])
 
     # If the user is on a mac
     elif system_check == "Darwin":
