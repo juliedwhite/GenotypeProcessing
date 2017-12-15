@@ -142,13 +142,14 @@ def phase(geno_name, allocation_name):
                                  'Phasing/' + geno_name + '.chr' + str(i+1)])
         # If on autosomes
         if i < 22:
-            # Perform phasing check. We are telling it to ignore the pedigree information for now because we don't want
-            # it to error out when it encounters a pedigree and I'm going to use the --duohmm flag later.
-            subprocess.check_output([os.path.join(shapeit_path,'shapeit'),'-check','--input-bed',geno_bed_names[i],
-                                     geno_bim_names[i],geno_fam_names[i],'--noped','--input-map',
-                                     os.path.join(ref_path, genetic_map_names[i]),'--input-ref',
-                                     os.path.join(ref_path, hap_names[i]),os.path.join(ref_path, legend_names[i]),
-                                     os.path.join(ref_path, '1000GP_Phase3.sample'),'--output-log',check_log_names[i]])
+            # Perform phasing check.
+            subprocess.call([os.path.join(shapeit_path,'shapeit'),'-check','--input-bed',geno_bed_names[i],
+                             geno_bim_names[i],geno_fam_names[i],'--input-map',
+                             os.path.join(ref_path, genetic_map_names[i]),'--input-ref',
+                             os.path.join(ref_path, hap_names[i]),os.path.join(ref_path, legend_names[i]),
+                             os.path.join(ref_path, '1000GP_Phase3.sample'),'--output-log',check_log_names[i]])
+
+            print("Pre-phasing check done on chr" + str(i + 1))
 
         # If working on the X chromosome
         if i == 22:
@@ -169,6 +170,8 @@ def phase(geno_name, allocation_name):
                                      os.path.join(ref_path, hap_names[i]), os.path.join(ref_path, legend_names[i]),
                                      os.path.join(ref_path, '1000GP_Phase3.sample'), '--output-log',
                                      check_log_names[i]])
+
+            print("Pre-phasing check done on chr" + str(i +1))
 
     # Now that check is performed, we're on the lookout for these files:
         #  myLogFile.snp.strand.exclude that  gives a list of the physical positions of all Case1 and Case3 problems
@@ -216,7 +219,7 @@ def phase(geno_name, allocation_name):
                 # Create mendel error column where we see which snps have a error rate of > 0.05
                 snp_me_file['MendelError'] = np.where((snp_me_file[2] / snp_me_file[3]) > 0.05, 'Yes', 'No')
                 # Create new dataframe with only the positions where Mendel Error was yes
-                me_exclude = snp_me_file[snp_me_file['MendelError'][1] == 'Yes']
+                me_exclude = snp_me_file[snp_me_file['MendelError'] == 'Yes'][1]
                 # If this is non-empty, make note.
                 if len(me_exclude) > 0:
                     log.extend(['b'])
@@ -277,7 +280,10 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --output-max ' + output_names[i] + ' --output-log '
-                               + output_names[i])
+                               + output_names[i]
+                               + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If snp_exclude_names isn't filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -297,7 +303,12 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
-                               + output_names[i] + ' --output-log ' + output_names[i])
+                               + output_names[i] + ' --output-log ' + output_names[i]
+                               + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+
+            print("Done preparing chr" + str(i + 1) + " for phasing")
 
         # Need to phase chrX specially.
         if i == 22:
@@ -336,7 +347,7 @@ def phase(geno_name, allocation_name):
                 # Create mendel error column where we see which snps have a error rate of > 0.05
                 snp_me_file['MendelError'] = np.where((snp_me_file[2] / snp_me_file[3]) > 0.05, 'Yes', 'No')
                 # Create new dataframe with only the positions where Mendel Error was yes
-                me_exclude = snp_me_file[snp_me_file['MendelError'][1] == 'Yes']
+                me_exclude = snp_me_file[snp_me_file['MendelError'] == 'Yes'][1]
                 # If this is non-empty, make note.
                 if len(me_exclude) > 0:
                     log.extend(['b'])
@@ -354,7 +365,7 @@ def phase(geno_name, allocation_name):
                 # Create a new column with 'Yes' for snps with mendel error > 1%
                 snp_hh_file['HHError'] = np.where((snp_hh_file[2] / snp_hh_file[3]) > 0.01, 'Yes', 'No')
                 # Create new dataframe with only the positions with high HH rates
-                snp_hh_exclude = snp_hh_file[snp_hh_file['HHError'][1] == 'Yes']
+                snp_hh_exclude = snp_hh_file[snp_hh_file['HHError'] == 'Yes'][1]
                 # If this is non-empty, make note:
                 if len(snp_hh_exclude) > 0:
                     log.extend(['c'])
@@ -372,7 +383,7 @@ def phase(geno_name, allocation_name):
                 # Create new column with info on whether the ind has mendel error > 1%
                 ind_hh_file['HHError'] = np.where((ind_hh_file[2] / ind_hh_file[3]) > 0.01, 'Yes', 'No')
                 # Create new dataframe of people with high mendel errors.
-                ind_hh_exclude = ind_hh_file[ind_hh_file['HHError'][1] == 'Yes']
+                ind_hh_exclude = ind_hh_file[ind_hh_file['HHError'] == 'Yes'][1]
                 # If this list is non-zero, write file of individuals to exclude.
                 if len(ind_hh_exclude) > 0:
                     ind_hh_exclude.to_csv(check_log_names[i] + '.ind.hh.exclude')
@@ -475,9 +486,9 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --exclude-ind ' + check_log_names[i] + '.ind.hh.exclude'
-                               + ' --output-max ' + output_names[i] + ' --output-log ' + output_names[i] + '\n'
-                               +
-                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + ' --output-max ' + output_names[i] + ' --output-log ' + output_names[i]
+                               + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
                                + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
 
             # If only snp_exclude_name variable is filled, then we have snps to remove.
@@ -500,7 +511,8 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --output-max ' + output_names[i] + ' --output-log '
-                               + output_names[i] + '\n'
+                               + output_names[i]
+                               + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
                                + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If there are only people in ind_hh_exclude, then we have people to remove.
@@ -523,8 +535,9 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-ind '
                                + check_log_names[i] + '.ind.hh.exclude' + ' --output-max ' + output_names[i]
-                               + ' --output-log ' + output_names[i] + '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + ' --output-log ' + output_names[i]
+                               + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
                                + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
             # If none of these are filled, then phase with all SNPs.
             else:
@@ -545,9 +558,12 @@ def phase(geno_name, allocation_name):
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
-                               + output_names[i] + ' --output-log ' + output_names[i] + '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
+                               + output_names[i] + ' --output-log ' + output_names[i]
+                               + '\n'
+                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
                                + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+
+            print("Done preparing chr" + str(i+1) + " for phasing")
 
     #I If the user is currently on the cluster, then submit the pbs files to start running.
     if on_cluster in ('y', 'yes'):
@@ -564,6 +580,7 @@ def phase(geno_name, allocation_name):
                  "files, and 1000G sample file, shapeit, and the phasing pbs files to the cluster. You can submit the "
                  "files by using qsub name_of_file.pbs")
 
+    print("Done")
 
 def impute():
     '''
