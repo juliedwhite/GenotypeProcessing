@@ -243,9 +243,10 @@ def hls_1000g_phase3():
     import os
     import urllib.request
     import tarfile
+    import subprocess
 
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
-          'This will create a ~12G folder on your computer and WILL take a while.')
+          'This will create a ~12G folder on your computer and will take a little while.')
 
     orig_wd = os.getcwd()
 
@@ -267,15 +268,11 @@ def hls_1000g_phase3():
         # Change directory where tgz files are
         os.chdir('1000G_Phase3_HapLegendSample')
         # Unpack tar files
-        tar = tarfile.open('1000GP_Phase3.tgz', 'r:gz')
-        for item in tar:
-            tar.extract(item)
-            print('Done extracting' + str(item))
-        # Unpack tar files
-        tar = tarfile.open('1000GP_Phase3_chrX.tgz', 'r:gz')
-        for item in tar:
-            tar.extract(item)
-            print('Done extracting' + str(item))
+        subprocess.check_output(['tar', '-xvf', '1000GP_Phase3.tgz', '--strip-components', '1'])
+        subprocess.check_output(['tar', '-xvf', '1000GP_Phase3_chrX.tgz'])
+
+        # Print when done.
+        print('Done extracting 1000G_Phase3_HapLegendSample')
 
         # Change back to original working directory.
         os.chdir(orig_wd)
