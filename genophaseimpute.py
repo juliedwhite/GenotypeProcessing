@@ -32,6 +32,9 @@ def phase(geno_name, allocation_name):
             pip.main(['install', 'numpy'])
             import numpy as np
 
+    # Ask if the user is on the cluster right now to determine if we should submit the files for them
+    on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
+                       ' for you. If not, you will need to submit the files yourself. (y/n): ').lower()
 
     # If it doesn't exist, create Phasing folder
     if not os.path.exists('Phasing'):
@@ -107,10 +110,6 @@ def phase(geno_name, allocation_name):
     # If user gives non-recognized answer.
     else:
         sys.exit('Please answer yes or no. Quitting now because no hap/legend/sample files.')
-
-    # Ask if the user is on the cluster right now to determine if we should submit the files for them
-    on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
-                       ' for you. If not, you will need to submit the files yourself. (y/n): ').lower()
 
     # Names of files needed.
     genetic_map_names = ['genetic_map_chr%d_combined_b37.txt' % x for x in range(1, 23)]
