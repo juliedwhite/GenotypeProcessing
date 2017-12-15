@@ -20,15 +20,16 @@ def ibd(geno_name):
         os.makedirs('IBD_Calculations')
 
     # Use plink to prune for LD
-    subprocess.check_output('plink --bfile ' + geno_name + ' --indep 50 5 2 --out IBD_Calculations/' + geno_name)
+    subprocess.check_output(['plink', '--bfile', geno_name, '--indep', '50', '5', '2', '--out',
+                             'IBD_Calculations/' + geno_name])
     # Perform IBD calculation, filtering for a minimum of 0.1875. This is the halfway point between 2nd and 3rd degree
     # relatives.
-    subprocess.check_output('plink --bfile ' + geno_name + ' --exclude IBD_Calculations/' + geno_name
-                            + '.prune.out --genome --min 0.1875 --out IBD_Calculations/' + geno_name)
+    subprocess.check_output(['plink','--bfile', geno_name, '--exclude', 'IBD_Calculations/' + geno_name + '.prune.out',
+                             '--genome', '--min', '0.1875', '--out', 'IBD_Calculations/' + geno_name])
     # Change separator of IBD file from space to tab separated. Comment out this line if you prefer whitespace
     # delimited files
     subprocess.check_output('sed -r "s/\s+/\t/g" IBD_Calculations/' + geno_name + '.genome > IBD_Calculations/'
-                            + geno_name + '.tab.genome')
+                            + geno_name + '.tab.genome', shell=True)
     # Finished
     print("\u001b[36;1m Analysis finished. Your IBD results in a tab delimited file will have the name "
           + geno_name + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate "
@@ -47,8 +48,8 @@ def update_id(geno_name, update_id_filename):
     #  4) New IID
     import subprocess
 
-    subprocess.check_output('plink --bfile ' + geno_name + ' --update-ids ' + update_id_filename + ' --make-bed --out '
-                            + geno_name + '_IDUpdated')
+    subprocess.check_output(['plink', '--bfile', geno_name, '--update-ids', update_id_filename, '--make-bed', '--out',
+                             geno_name + '_IDUpdated'])
     print("\u001b[36;1m Finished. Your genotype files with the ID updated will have the name "
           + geno_name + "_IDUpdated \u001b[0m")
 
@@ -61,7 +62,7 @@ def update_parental(geno_name, update_parents_filename):
     #   4) New maternal IID
     import subprocess
 
-    subprocess.check_output('plink --bfile ' + geno_name + ' --update-parents ' + update_parents_filename
-                            + ' --make-bed --out ' + geno_name + '_ParentsUpdated')
+    subprocess.check_output(['plink', '--bfile', geno_name, '--update-parents', update_parents_filename, '--make-bed',
+                             '--out', geno_name + '_ParentsUpdated'])
     print("\u001b[36;1m Finished. Your genotype files with parents updated will have the name "
           + geno_name + "_ParentsUpdated \u001b[0m")
