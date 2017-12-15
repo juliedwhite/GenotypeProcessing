@@ -15,7 +15,8 @@ def prep(admix_name):
 
     # We want the LD correction to be the same for all sets, so do this on the full genotype file and put it in the
     # Admixture file.
-    subprocess.check_output('plink --bfile ' + admix_name + ' --indep-pairwise 50 10 2 --out Admixture/' + admix_name)
+    subprocess.check_output(['plink', '--bfile', admix_name, '--indep-pairwise', '50', '10', '2', '--out',
+                             'Admixture/' + admix_name])
 
     if relative_check in ('y', 'yes'):
         # If they have relatives in their sample, get a list of the filenames for each set of people.
@@ -37,9 +38,9 @@ def prep(admix_name):
 
             # For each set, extract those people from the working genotype file and remove SNPs in LD. These files are
             # what the user should put on the cluster.
-            subprocess.check_output('plink --bfile ' + admix_name + ' --keep ' + set_list[i] + ' --extract Admixture/'
-                                    + admix_name + '.prune.in --make-bed --out Admixture/' + admix_name + '_Set'
-                                    + set_name + '_LDPruned')
+            subprocess.check_output(['plink', '--bfile', admix_name, '--keep', set_list[i], '--extract',
+                                     'Admixture/' + admix_name + '.prune.in', '--make-bed', '--out',
+                                     'Admixture/' + admix_name + '_Set' + set_name + '_LDPruned'])
 
             # For each set, write a pbs script for admixture k = 3..6
             with open('Admixture/' + admix_name + '_Set' + set_name + '_Admixture_k3to6.pbs', 'w') as file:
@@ -80,8 +81,9 @@ def prep(admix_name):
     # If there's no relatives, we can do all of this on the full genotype file.
     elif relative_check in ('n', 'no'):
         # For all people, create file that is LD pruned.
-        subprocess.check_output('plink --bfile ' + admix_name + ' --extract Admixture/' + admix_name
-                                + '.prune.in --make-bed --out Admixture/' + admix_name + '_LDPruned')
+        subprocess.check_output(['plink', '--bfile', admix_name, '--extract',
+                                 'Admixture/' + admix_name + '.prune.in', '--make-bed', '--out',
+                                 'Admixture/' + admix_name + '_LDPruned'])
 
         # For all people, create a pbs file for admixture k = 3..6
         with open ('Admixture/' + admix_name + '_Admixture_k3to6.pbs', 'w') as file:
