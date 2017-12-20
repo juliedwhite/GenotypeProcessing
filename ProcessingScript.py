@@ -376,9 +376,9 @@ elif to_do == '12':
     # The user should only do this after phasing.
     print("I will prepare files for imputation now. It is very important that you do this AFTER phasing.")
     # Import module
-    import genoimpute
+    import genophaseimpute
     # Call function
-    genoimpute.prep()
+    genophaseimpute.impute()
 
 # Nothing
 elif to_do == '13':
