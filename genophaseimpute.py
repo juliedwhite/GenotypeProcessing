@@ -128,6 +128,7 @@ def phase(geno_name, allocation_name):
     snp_me_names = ['Phasing/' + geno_name + '_PhaseCheck.chr%d.snp.me' % x for x in range(1, 24)]
     output_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d' % x for x in range(1,24)]
     output_vcf_names = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d.vcf' % x for x in range(1,24)]
+    output_vcf_log = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d.vcf.log' % x for x in range(1,24)]
 
     # Use plink to set mendel errors to missing.
     subprocess.check_output([plink,'--bfile',geno_name,'--me','1','1','--set-me-missing','--make-bed','--out',
@@ -283,7 +284,8 @@ def phase(geno_name, allocation_name):
                                + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + ' --output-log ' + output_vcf_log[i])
             # If snp_exclude_names isn't filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -306,7 +308,8 @@ def phase(geno_name, allocation_name):
                                + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + ' --output-log ' + output_vcf_log[i])
 
             print("Done preparing chr" + str(i + 1) + " for phasing")
 
@@ -487,7 +490,8 @@ def phase(geno_name, allocation_name):
                                + ' --output-max ' + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + ' --output-log ' + output_vcf_log[i])
 
             # If only snp_exclude_name variable is filled, then we have snps to remove.
             elif 'snp_exclude_name' in locals():
@@ -512,7 +516,8 @@ def phase(geno_name, allocation_name):
                                + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + ' --output-log ' + output_vcf_log[i])
             # If there are only people in ind_hh_exclude, then we have people to remove.
             elif len(ind_hh_exclude) > 0:
                 # Write pbs script
@@ -536,7 +541,8 @@ def phase(geno_name, allocation_name):
                                + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + ' --output-log ' + output_vcf_log[i])
             # If none of these are filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -559,7 +565,8 @@ def phase(geno_name, allocation_name):
                                + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i])
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + ' --output-log ' + output_vcf_log[i])
 
             print("Done preparing chr" + str(i+1) + " for phasing")
 
@@ -600,46 +607,65 @@ def impute():
     import glob
     import urllib.request
     import subprocess
+    from subprocess import Popen, PIPE
+    import shutil
     try:
         import pip
     except ImportError:
         import genodownload
         genodownload.pip()
+    import re
 
+    # Needed for sorting lists by numeric instead of string.
+    def sorted_nicely(list):
+        convert = lambda text: int(text) if text.isdigit() else text
+        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+        return sorted(list, key=alphanum_key)
+
+    # Ask user what they want the eventual file to be named.
     vcf_name = input("Please tell me what you would like your phased VCF file to be called. I'm going to concatenate "
                       "all of the phased per chromosomes into one whole genome file and give it this name.: ")
 
     # Use glob to find files ending with the endings set in geno phase.
-    vcf_list = glob.glob('Phasing/*_PhasedTo1000G.chr*.vcf')
+    raw_vcf_list = glob.glob('Phasing/*_PhasedTo1000G.chr*.vcf')
 
     # If glob wasn't able to find files ending in the above, ask the user where the phased files are.
-    if vcf_list == []:
+    if raw_vcf_list == []:
         # Get path to phased files
         vcf_path = input("Please tell me where your phased vcf and haps/sample files are. Make sure they are in their "
                          "own folder, as this part of the script looks for anything with the ending '.vcf' "
                           "(i.e. C:\\Users\\Julie White\\Box Sync\\Genotypes\\Phasing\\ etc.): ")
         # Make list of anything with .vcf ending
-        vcf_list = glob.glob(os.path.join(vcf_path,'*.vcf'))
+        raw_vcf_list = glob.glob(os.path.join(vcf_path,'*.vcf'))
     else:
-        pass
+        vcf_path = 'Phasing'
+
+    # Sort the vcf_list by numeric instead of string.
+    vcf_list = sorted_nicely(raw_vcf_list)
 
     # If it doesn't exist, create SangerImputationFolder
     if not os.path.exists('SangerImputation'):
         os.makedirs('SangerImputation')
 
-    # Since bcftools only works on linux or mac, we need to first check what system they are on.
+    # Since the programs we need only work on linux or mac, we need to first check what system they are on.
     system_check = platform.system()
 
+    # Bcftools
     if system_check in ("Linux", "Darwin"):
         # Now we need to know where they have bcftools, if they have it.
         bcftools_exists = input("\u001b[35;1m Do you already have the program bcftools unpacked and installed? (y/n): "
                                 "\u001b[0m").lower()
         # If yes, then ask for path of program
         if bcftools_exists in ('yes', 'y'):
-            bcftools_path = input("\u001b[36;1m Please tell me the path where you have the bcftools program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\bcftools\\ \u001b[0m")
-            # Setting path of where bcftools is since it's hard to use it without this.
-            subprocess.check_output(['export', 'PATH=$PATH:' + bcftools_path])
+            in_path = input("Do you already have the bcftools location in your $PATH? If not, I will add it for you. "
+                            "(y/n): ").lower()
+            if in_path in ('yes', 'y'):
+                pass
+            elif in_path in ('no', 'n'):
+                bcftools_path = input("\u001b[36;1m Please tell me the path where you have the bcftools program. "
+                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\bcftools\\ \u001b[0m")
+                # Setting path of where bcftools is since it's hard to use it without this.
+                subprocess.check_output('export PATH=$PATH:' + bcftools_path, shell=True)
         # If no, download and unpack bcftools.
         elif bcftools_exists in ('no', 'n'):
             import genodownload
@@ -647,26 +673,61 @@ def impute():
         else:
             sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had bcftools. Exiting now. '
                      '\u001b[0m')
-
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == ("Windows"):
         sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
                  "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
-
     # If I cannot detect what system they're on, force exit.
     else:
         sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
 
+    # Samtools
+    if system_check in ("Linux", "Darwin"):
+        # Now we need to know where they have samtools, if they have it.
+        samtools_exists = input("\u001b[35;1m Do you already have the program samtools unpacked and installed? (y/n): "
+                                "\u001b[0m").lower()
+        # If yes, then ask for path of program
+        if samtools_exists in ('yes', 'y'):
+            in_path = input("Do you already have the samtools location in your $PATH? If not, I will add it for you. "
+                            "(y/n): ").lower()
+            if in_path in ('yes', 'y'):
+                pass
+            elif in_path in ('no', 'n'):
+                samtools_path = input("\u001b[36;1m Please tell me the path where you have the samtools program. "
+                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\samtools\\ \u001b[0m")
+                # Setting path of where bcftools is since it's hard to use it without this.
+                subprocess.check_output('export PATH=$PATH:' + samtools_path, shell=True)
+        # If no, download and unpack bcftools.
+        elif samtools_exists in ('no', 'n'):
+            import genodownload
+            genodownload.samtools()
+        else:
+            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had samtools. Exiting now. '
+                     '\u001b[0m')
+    # If they are running this on a windows machine, they cannot proceed because samtools is *nix only.
+    elif system_check == ("Windows"):
+        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
+                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+    # If I cannot detect what system they're on, force exit.
+    else:
+        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+
+    # Vcftools
     if system_check in ("Linux", "Darwin"):
         # Now we need to know where they have vcftools, if they have it.
         vcftools_exists = input("\u001b[35;1m Do you already have the program vcftools unpacked and installed? (y/n): "
                                 "\u001b[0m").lower()
         # If yes, then ask for path of program
         if vcftools_exists in ('yes', 'y'):
-            vcftools_path = input("\u001b[36;1m Please tell me the path where you have the vcftools program. "
-                                  "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ \u001b[0m")
-            # Setting path of where vcftools is since it's hard to use it without this.
-            subprocess.check_output(['export', 'PATH=$PATH:' + vcftools_path])
+            in_path = input("Do you already have the vcftools location in your $PATH? If not, I will add it for you. "
+                            "(y/n): ").lower()
+            if in_path in ('yes', 'y'):
+                pass
+            elif in_path in ('no', 'n'):
+                vcftools_path = input("\u001b[36;1m Please tell me the path where you have the vcftools program. "
+                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ \u001b[0m")
+                # Setting path of where vcftools is since it's hard to use it without this.
+                subprocess.check_output('export PATH=$PATH:' + vcftools_path, shell=True)
         # If no, download and unpack vcftools.
         elif vcftools_exists in ('no', 'n'):
             import genodownload
@@ -675,19 +736,17 @@ def impute():
         else:
             sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had vcftools. Exiting now. '
                      '\u001b[0m')
-
     # If they are running this on a windows machine, they cannot proceed because vcftools is *nix only.
     elif system_check == ("Windows"):
         sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
                  "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
-
     # If I cannot detect what system they're on, force exit.
     else:
         sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
 
-    # Ask if they have the hg19 fasta files.
-    fasta_exists = input('\u001b[34;1m Have you already downloaded the 1000G hg19 fasta file? (y/n): \u001b[0m').lower()
-
+    # hg19 fasta files.
+    fasta_exists = input('\u001b[34;1m Have you already downloaded the human_g1k_v37.fasta file? (y/n): '
+                         '\u001b[0m').lower()
     if fasta_exists in ('y', 'yes'):
         # Ask the user where the fasta file is.
         fasta_path = input('\u001b[34;1m Please enter the pathname of where the your 1000G hg19 fasta file is '
@@ -704,47 +763,132 @@ def impute():
         sys.exit('Please answer yes or no. Quitting now because no fasta file.')
 
     # See if the user already has htslib installed, if not, install it.
-    try:
-        subprocess.call(['bgzip'])
-    except OSError:
+    p = Popen('bgzip', stdout = PIPE, stderr = PIPE)
+    if p.returncode == None:
+        pass
+    if p.returncode != None:
         import genodownload
         genodownload.htslib()
 
-    # Use bcftools and bgzip to zip the vcf files so that they stop taking up space.
-    for file in vcf_list:
-        subprocess.check_output(['bgzip', '-c', file, '>' ,file + '.vcf.gz'])
+    # Need to add a contig tag to all of the vcf files for bcftools to use them.
+    # awk '{printf("##contig=<ID=%s,length=%d>\\n",$1,$2);}' ref.fai
+    awkstatement = str('{printf("##contig=<ID=%s,length=%d\\n",$1,$2);}')
+    # If the fasta file is already indexed, create the contig file from that, then add the contigs to the vcf files.
+    fai_name = glob.glob(os.path.join(fasta_path, '*.fai'))
+    if fai_name:
+        print(fai_name[0])
+        f = open(os.path.join(vcf_path, "Contigs.txt"), "w")
+        subprocess.call(['awk', awkstatement, fai_name[0]], stdout = f)
+        # Replace X with 23 in Contigs.txt file.
+        sedstatement = str('s/ID=X/ID=23/g')
+        subprocess.call(['sed', '-i', sedstatement, os.path.join(vcf_path, "Contigs.txt")])
+        # For each vcf, add header. Zip these files while we're at it.
+        for vcf in vcf_list:
+            subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf, '-Ov',
+                                     '-o', vcf + '.contigs'])
+    # If the fasta index file does't exist, need to use samtools to create it. First see if the command is going to
+    # work, then actually run it.
+    elif os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')):
+        p = Popen(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')], stdout = PIPE,
+                  stderr = PIPE)
+        if p.returncode == None:
+            subprocess.check_output(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+            # Write the contig file.
+            f = open(os.path.join(vcf_path, "Contigs.txt"), "w")
+            subprocess.call(['awk', awkstatement, os.path.join(fasta_path, 'human_g1k_v37.fasta.gz.fai')], stdout=f)
+            # Replace X with 23 in Contigs.txt file.
+            sedstatement = str('s/ID=X/ID=23/g')
+            subprocess.call(['sed', '-i', sedstatement, os.path.join(vcf_path, "Contigs.txt")])
+            # Use bcftools to add contigs to each vcf.
+            for vcf in vcf_list:
+                subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf,
+                                         '-Ov', '-o', vcf + '.contigs'])
+        elif p.returncode != None:
+            print(p.returncode)
+            print("Unzipping with gunzip")
+            # Unzip human_g1k_v37 file because samtools cannot index things that were indexed using gzip
+            subprocess.check_output(['gunzip', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+            # Rezip using bgzip
+            print("Rezipping with bgzip")
+            subprocess.check_output(['bgzip', os.path.join(fasta_path, 'human_g1k_v37.fasta')])
+            # Create fasta.fai file.
+            print("Create fasta.fai file")
+            subprocess.check_output(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+            # Write the contig file.
+            f = open(os.path.join(vcf_path, "Contigs.txt"), "w")
+            subprocess.call(['awk', awkstatement, os.path.join(fasta_path, 'human_g1k_v37.fasta.gz.fai')], stdout=f)
+            # Replace X with 23 in Contigs.txt file.
+            sedstatement = str('s/ID=X/ID=23/g')
+            subprocess.call(['sed', '-i', sedstatement, os.path.join(vcf_path, "Contigs.txt")])
+            # Use bcftools to add contigs to each vcf.
+            for vcf in vcf_list:
+                subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf,
+                                         '-Ov', '-o', vcf + '.contigs'])
 
-    # Appending gz to the vcf_list names because we just gzipped them all.
-    vcf_gz_list = [name + '.gz' for name in vcf_list]
+    # Rename the .contigs vcf to be normal vcf names.
+    for vcf in vcf_list:
+        subprocess.call(['mv', vcf + '.contigs', vcf])
 
-    # Use bcftools to concatenate the per chromosome phased vcf files. Save this in SangerImputation and Phasing
-    subprocess.check_output(['bcftools','concat','-Oz',print(" ".join(str(x) for x in vcf_gz_list)),'>',
-                             'SangerImputation/' + vcf_name + '.vcf.gz'])
+    # Use bcftools to concatenate the per chromosome phased vcf files. Save this in SangerImputation
+    concat_vcf_list = str(" ".join(str(x) for x in vcf_list))
+    subprocess.call('bcftools concat -Ov ' + concat_vcf_list + ' > SangerImputation/' + vcf_name + '.vcf', shell=True)
 
-    # Save in phasing too.
-    subprocess.check_output(['cp','SangerImputation/' + vcf_name + '.vcf.gz','Phasing/' + vcf_name + '.vcf.gz'])
-
-    # Use bcftools to change the chromosome names, if needed. Save this in SangerImputation.
-    urllib.request.urlretrieve('https://imputation.sanger.ac.uk/www/plink2ensembl.txt',
-                               'SangerImputation/plink2ensembl.txt')
-    subprocess.check_output(['bcftools','annotate','-Oz','--rename-chrs','plink2ensembl.txt', vcf_name + '.vcf.gz','>',
-                             vcf_name + '.vcf.gz'])
+    # Bgzip this file
+    subprocess.check_output('bgzip ' + os.path.join('SangerImputation', vcf_name + '.vcf'), shell=True)
 
     # Check VCF is sorted:
-    subprocess.check_output(['bcftools','index', vcf_name + '.vcf.gz'])
+    subprocess.check_output(['bcftools', 'index', os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
+
+    # Save in phasing too.
+    shutil.copy2('SangerImputation/' + vcf_name + '.vcf.gz', 'Phasing/' + vcf_name + '.vcf.gz')
+
+    # Use bcftools and bgzip to zip the vcf files so that they stop taking up space.
+    for file in vcf_list:
+        subprocess.check_output('bgzip --index ' + file, shell=True)
+
+    # Use bcftools to change the chromosome names, if needed.
+    urllib.request.urlretrieve('https://imputation.sanger.ac.uk/www/plink2ensembl.txt',
+                               'SangerImputation/plink2ensembl.txt')
+    subprocess.check_output(['bcftools','annotate','--rename-chrs','SangerImputation/plink2ensembl.txt', '-Oz', '-o',
+                             os.path.join('SangerImputation', vcf_name + '_ChrUpdated.vcf.gz'),
+                             os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
+    print("Done checking chromosome names")
+    subprocess.call(['mv', os.path.join('SangerImputation', vcf_name + '_ChrUpdated.vcf.gz'),
+                     os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
+    # Reindex VCF file cause we just changed it:
+    subprocess.check_output(['bcftools', 'index', os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
 
     # Check that our data matches the reference allele of 1000G Phase 3. Fix those that do not match.
-    subprocess.check_output(['bcftools','norm','-check-ref','ws','--fasta-ref',
-                             os.path.join(fasta_path,'human_g1k_v37.fasta.gz'), vcf_name + '.vcf.gz'])
+    subprocess.check_output(['bcftools','norm','--check-ref','ws','--rm-dup', 'both', '--fasta-ref',
+                             os.path.join(fasta_path,'human_g1k_v37.fasta.gz'), '-Oz', '-o',
+                             os.path.join('SangerImputation', vcf_name + '_RefChecked.vcf.gz'),
+                             os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
+    print("Done checking if reference allele matches 1000G Phase3 and fixing those that don't match")
+    subprocess.call(['mv', os.path.join('SangerImputation', vcf_name + '_RefChecked.vcf.gz'),
+                     os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
+    # Reindex VCF file cause we just changed it:
+    subprocess.check_output(['bcftools', 'index', os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
 
     # Double check sex and fix ploidy
-    subprocess.check_output(['bcftools','+guess-ploidy','-g','hg19',vcf_name + '.vcf.gz','>', vcf_name + '_SexEst.txt'])
-    subprocess.check_output(['bcftools','+fixploidy', vcf_name + '.vcf.gz','-Oz','-o', vcf_name + '_SexUpdated.vcf.gz',
-                             '--','-s', vcf_name + '_SexEst.txt'])
+    subprocess.call('bcftools +guess-ploidy --genome b37 --tag GT '
+                    + os.path.join('SangerImputation', vcf_name + '.vcf.gz') + ' > '
+                    + os.path.join('SangerImputation', vcf_name + '_SexEst.txt'), shell=True)
+
+    subprocess.check_output(['bcftools','+fixploidy', '-Oz','-o',
+                             os.path.join('SangerImputation', vcf_name + '_PloidyChecked.vcf.gz'),
+                             os.path.join('SangerImputation', vcf_name + '.vcf.gz'),
+                             '--', '--sex', os.path.join('SangerImputation', vcf_name + '_SexEst.txt')])
+    print("Done checking for sex and fixing ploidy")
+    subprocess.call(['mv', os.path.join('SangerImputation', vcf_name + '_PloidyChecked.vcf.gz'),
+                     os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
+    # Reindex VCF file cause we just changed it:
+    subprocess.check_output(['bcftools', 'index', os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
 
     # Check that you have a valid vcf
-    subprocess.check_output(['vcf-validator', vcf_name + '_SexUpdated.vcf.gz'])
+    print("Checking to see if you have a valid vcf now.")
+    subprocess.check_output(['vcf-validator', os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
 
     sys.exit("Your vcf has been checked and is ready for imputation on the Sanger Imputation Server. Please follow the "
              "directions here (https://imputation.sanger.ac.uk/?instructions=1) for uploading your data. The file is "
-             "called " + vcf_name + "_SexUpdated.vcf.gz")
+             "called " + vcf_name + ".vcf.gz")
+
