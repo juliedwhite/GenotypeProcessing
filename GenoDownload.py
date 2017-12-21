@@ -436,6 +436,8 @@ def vcftools():
         # Running configuration and installation steps
         subprocess.check_output('./autogen.sh')
         subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output('export PERL5LIB=' + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl')
+                                + "'", shell=True)
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
         subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'), shell = True)
