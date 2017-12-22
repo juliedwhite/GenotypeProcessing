@@ -14,7 +14,8 @@ def todownload():
                  '10) vcftools\n'
                  '11) bcftools\n'
                  '12) htslib\n'
-                 '13) Nothing\n'
+                 '13) samtools\n'
+                 '14) Nothing\n'
                  'Please enter a number (i.e. 2): \u001b[0m')
 
     if item == '1':
@@ -42,6 +43,8 @@ def todownload():
     elif item == '12':
         htslib()
     elif item == '13':
+        samtools()
+    elif item == '14':
         sys.exit("Exiting now")
     else:
         sys.exit("Quitting because you did not give a recognizable number when asked what to download.")
