@@ -2,6 +2,7 @@
 
 This suite of modules is meant to ease the babysitting load for routinely processing genotype files to ADMIXTURE or imputation.  
 * Requires Python 3.6.3, but will identify Python version and update if needed.  
+* Starts from plink bed/bim/fam files. I'll eventually add other file formats.  
 
 # Modules
 ## genoprocess
