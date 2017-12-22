@@ -40,6 +40,7 @@ genoprocess task | Short description | System requirements | Notes
   10. vcftools
   11. bcftools
   12. htslib
+  13. samtools
 
 ## genoqc  
 Update sex  
