@@ -32,8 +32,11 @@ def update_sex(geno_name, update_sex_filename):
 def missing_call_rate(geno_name):
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
     import subprocess
-    subprocess.check_output([plink, '--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--make-bed', '--out',
+    subprocess.check_output([plink, '--bfile', geno_name, '--geno', '0.1', '--make-bed', '--out',
+                             geno_name + '_geno0.1'])
+    subprocess.check_output([plink, '--bfile', geno_name + '_geno0.1', '--mind', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1_mind0.1'])
+    subprocess.call('rm ' + geno_name + '_geno0.1.*', shell=True)
 
 
 def het(geno_name):
