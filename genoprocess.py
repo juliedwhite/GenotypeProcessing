@@ -26,7 +26,7 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '9) Merge with 1000G\n'
               '10) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
               '11) Run a phasing check and prepare files for phasing using SHAPEIT\n'
-              '12) Prepare for imputation on the sanger imputation server\n'
+              '12) Prepare for imputation on the Sanger Imputation Server\n'
               '13) Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
