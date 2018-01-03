@@ -1,3 +1,12 @@
+import platform
+# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+system_check = platform.system()
+if system_check in ("Linux", "Darwin"):
+    plink = "./plink"
+elif system_check == "Windows":
+    plink = 'plink.exe'
+
+
 def prep(admix_name):
     import os
     import subprocess
@@ -15,7 +24,7 @@ def prep(admix_name):
 
     # We want the LD correction to be the same for all sets, so do this on the full genotype file and put it in the
     # Admixture file.
-    subprocess.check_output(['plink', '--bfile', admix_name, '--indep-pairwise', '50', '10', '2', '--out',
+    subprocess.check_output([plink, '--bfile', admix_name, '--indep-pairwise', '50', '10', '2', '--out',
                              'Admixture/' + admix_name])
 
     if relative_check in ('y', 'yes'):
@@ -38,7 +47,7 @@ def prep(admix_name):
 
             # For each set, extract those people from the working genotype file and remove SNPs in LD. These files are
             # what the user should put on the cluster.
-            subprocess.check_output(['plink', '--bfile', admix_name, '--keep', set_list[i], '--extract',
+            subprocess.check_output([plink, '--bfile', admix_name, '--keep', set_list[i], '--extract',
                                      'Admixture/' + admix_name + '.prune.in', '--make-bed', '--out',
                                      'Admixture/' + admix_name + '_Set' + set_name + '_LDPruned'])
 
@@ -81,7 +90,7 @@ def prep(admix_name):
     # If there's no relatives, we can do all of this on the full genotype file.
     elif relative_check in ('n', 'no'):
         # For all people, create file that is LD pruned.
-        subprocess.check_output(['plink', '--bfile', admix_name, '--extract',
+        subprocess.check_output([plink, '--bfile', admix_name, '--extract',
                                  'Admixture/' + admix_name + '.prune.in', '--make-bed', '--out',
                                  'Admixture/' + admix_name + '_LDPruned'])
 

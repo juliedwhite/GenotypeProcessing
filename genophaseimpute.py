@@ -1,3 +1,11 @@
+import platform
+# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+system_check = platform.system()
+if system_check in ("Linux", "Darwin"):
+    plink = "./plink"
+elif system_check == "Windows":
+    plink = 'plink.exe'
+
 def phase(geno_name, allocation_name):
     import platform
     import os
@@ -45,7 +53,6 @@ def phase(geno_name, allocation_name):
 
     if system_check == "Linux":
         # Now we need to know where they have shapeit, if they have it.
-        plink = './plink'
         shapeit_exists = input("\u001b[35;1m Do you already have the linux shapeit program unpacked? (y/n):  "
                                "\u001b[0m").lower()
         # If yes, then ask for path of program
@@ -66,7 +73,6 @@ def phase(geno_name, allocation_name):
     # If the user is on a mac
     elif system_check == "Darwin":
         # Ask if they already have shapeit
-        plink = './plink'
         shapeit_exists = input("\u001b[34;1m Do you already have the mac shapeit program unpacked? (y/n):  "
                                "\u001b[0m").lower()
         if shapeit_exists in ('yes', 'y'):

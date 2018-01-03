@@ -1,3 +1,12 @@
+import platform
+# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+system_check = platform.system()
+if system_check in ("Linux", "Darwin"):
+    plink = "./plink"
+elif system_check == "Windows":
+    plink = 'plink.exe'
+
+
 def merge1000g(geno_name, harmonized_path):
     import os
     import sys
@@ -71,7 +80,7 @@ def merge1000g(geno_name, harmonized_path):
 
         # Convert vcf files to plink format.
         for i in range(0, len(ref_file_names)):
-            subprocess.check_output(['plink','--vcf', os.path.join(vcf_path, ref_file_names[i]), '--double-id',
+            subprocess.check_output([plink,'--vcf', os.path.join(vcf_path, ref_file_names[i]), '--double-id',
                                      '--biallelic-only', 'strict', '--vcf-require-gt', '--extract',
                                      'SNPs_Kept_List.txt', '--make-bed', '--out', chr_1000G_Phase3_names[i]])
         subprocess.call('rm *~', shell=True)
@@ -82,7 +91,7 @@ def merge1000g(geno_name, harmonized_path):
             wr.writerow(chr_1000G_Phase3_names)
 
         # Use plink to merge those files into one large file.
-        subprocess.check_output(['plink', '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed', '--out',
+        subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed', '--out',
                                  '1000G_Phase3'])
 
         # Read in log file from merge.
@@ -111,13 +120,13 @@ def merge1000g(geno_name, harmonized_path):
                                                             header=False, index=False)
                 # Remove these snps from plink files and create new plink files.
                 for i in range(0, len(chr_1000G_Phase3_names)):
-                    subprocess.check_output(['plink', '--bfile', chr_1000G_Phase3_names[i], '--exclude',
+                    subprocess.check_output([plink, '--bfile', chr_1000G_Phase3_names[i], '--exclude',
                                              '1000G_warnings_missnp.txt', '--geno', '0.01', '--make-bed', '--out',
                                              chr_1000G_Phase3_names[i]])
                 # Remove old plink files.
                 subprocess.call('rm *~', shell=True)
                 # Retry the merge
-                subprocess.check_output(['plink', '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
+                subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # The merge should be successful this time, but the user should double check.
                 print("\u001b[36;1m Successfully merged 1000G, though you should double-check the log file to be sure "
@@ -126,13 +135,13 @@ def merge1000g(geno_name, harmonized_path):
             else:  # If only merge warnings exist, exclude from 1000G completely
                 # Use plink to exclude the merge warning snps.
                 for i in range(0, len(chr_1000G_Phase3_names)):
-                    subprocess.check_output(['plink', '--bfile', chr_1000G_Phase3_names[i], '--exclude',
+                    subprocess.check_output([plink, '--bfile', chr_1000G_Phase3_names[i], '--exclude',
                                              '1000G_MergeWarnings.txt', '--geno', '0.01', '--make-bed', '--out',
                                              chr_1000G_Phase3_names[i]])
                 # Remove old plink files.
                 subprocess.call('rm *~', shell=True)
                 # Try merge again.
-                subprocess.check_output(['plink', '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
+                subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # Merge should be successful this time, but the user should double check.
                 print("\u001b[36;1m Successfully merged 1000G, though you should double-check the log file to be sure "
@@ -142,13 +151,13 @@ def merge1000g(geno_name, harmonized_path):
         elif os.path.exists('1000G_Phase3-merge.missnp') and os.path.getsize('1000G_MergeWarnings.txt') == 0:
             # Use plink to remove the missnps
             for i in range(0, len(chr_1000G_Phase3_names)):
-                subprocess.check_output(['plink', '--bfile', chr_1000G_Phase3_names[i], '--exclude',
+                subprocess.check_output([plink, '--bfile', chr_1000G_Phase3_names[i], '--exclude',
                                          '1000G_Phase3-merge.missnp', '--geno', '0.01', '--make-bed', '--out',
                                          chr_1000G_Phase3_names[i]])
             # Remove old plink files
             subprocess.call('rm *~', shell=True)
             # Retry the merge
-            subprocess.check_output(['plink', '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
+            subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                      '--out', '1000G_Phase3'])
             # Merge should be successful this time, but the user should double check.
             print("\u001b[36;1m Successfully merged 1000G, though you should double check the log file to be sure. "
@@ -172,7 +181,7 @@ def merge1000g(geno_name, harmonized_path):
         shutil.copy2(os.path.join(orig_wd, geno_name + '.fam'), os.getcwd())
 
         # Perform initial merge
-        subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
+        subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                  '--make-bed', '--out', geno_name + '_1000G'])
 
         # Read in log file to see if anything went wrong
@@ -194,43 +203,43 @@ def merge1000g(geno_name, harmonized_path):
             if os.path.exists(geno_name + '_1000G-merge.missnp'): #and if there are triallelic snps that need to be
                 # flipped (missnp)
                 # If merge warnings and missnps exist, exclude warning snps from both 1000G and house dataset
-                subprocess.check_output(['plink', '--bfile', '1000G_Phase3', '--exclude',
+                subprocess.check_output([plink, '--bfile', '1000G_Phase3', '--exclude',
                                          geno_name + '_1000G_MergeWarnings.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # Flip missnps in house dataset.
-                subprocess.check_output(['plink', '--bfile', geno_name, '--exclude',
+                subprocess.check_output([plink, '--bfile', geno_name, '--exclude',
                                          geno_name + '_1000G_MergeWarnings.txt', '--flip',
                                          geno_name + '_1000G-merge.missnp', '--geno', '0.01', '--make-bed', '--out',
                                          geno_name])
                 # Remove old files.
                 subprocess.call('rm *~', shell=True)
                 # Retry merge.
-                subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
+                subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                          '--make-bed', '--out', geno_name + '_1000G_merge2'])
 
             else:  # If only mergewarnings exists, exclude warning snps from both 1000G and house dataset.
-                subprocess.check_output(['plink', '--bfile', '1000G_Phase3', '--exclude',
+                subprocess.check_output([plink, '--bfile', '1000G_Phase3', '--exclude',
                                          geno_name + '_1000G_MergeWarnings.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # Exclude warning snps from house dataset.
-                subprocess.check_output(['plink', '--bfile', geno_name, '--exclude',
+                subprocess.check_output([plink, '--bfile', geno_name, '--exclude',
                                          geno_name + '_1000G_MergeWarnings.txt', '--geno', '0.01', '--make-bed',
                                          '--out', geno_name])
                 # Remove old plink files.
                 subprocess.call('rm *~', shell=True)
                 # Retry merge
-                subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
+                subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                          '--make-bed', '--out', geno_name + '_1000G_merge2'])
         # If only the missnps exist, flip them in the house dataset.
         elif os.path.exists(geno_name + '_1000G-merge.missnp') \
                 and not os.path.exists(geno_name + '_1000G_MergeWarnings.txt'):
             # Flip in house dataset.
-            subprocess.check_output(['plink', '--bfile', geno_name, '--flip', geno_name + '_1000G-merge.missnp',
+            subprocess.check_output([plink, '--bfile', geno_name, '--flip', geno_name + '_1000G-merge.missnp',
                                      '--geno', '0.01', '--make-bed', '--out', geno_name])
             # Remove old plink files.
             subprocess.call('rm *~', shell=True)
             # Retry the merge.
-            subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
+            subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                      '--make-bed', '--out', geno_name + '_1000G_merge2'])
 
         elif os.path.exists(geno_name + '_1000G.bim'):
@@ -280,48 +289,48 @@ def merge1000g(geno_name, harmonized_path):
                     warnings_missnp[1].dropna(how='any').to_csv(geno_name + '_1000G_merge2_warnings_missnp.txt',
                                                                 sep='\t', header=False, index=False)
                     # Remove all of these snps from 1000G dataset.
-                    subprocess.check_output(['plink', '--bfile', '1000G_Phase3', '--exclude',
+                    subprocess.check_output([plink, '--bfile', '1000G_Phase3', '--exclude',
                                              geno_name + '_1000G_merge2_warnings_missnp.txt', '--geno', '0.01',
                                              '--make-bed', '--out', '1000G_Phase3'])
                     # Remove all of these snps from house dataset.
-                    subprocess.check_output(['plink', '--bfile', geno_name, '--exclude',
+                    subprocess.check_output([plink, '--bfile', geno_name, '--exclude',
                                              geno_name + '_1000G_merge2_warnings_missnp.txt', '--geno', '0.01',
                                              '--make-bed', '--out', geno_name])
                     # Remove old plink files.
                     subprocess.call('rm *~', shell=True)
                     # Try merge a third time.
-                    subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno',
+                    subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno',
                                              '0.01', '--make-bed','--out', geno_name + '_1000G_merge3'])
 
                 else:  # If only merge warnings still exist, exclude from both 1000G and house dataset.
                     # Exclude from 1000G dataset.
-                    subprocess.check_output(['plink', '--bfile', '1000G_Phase3', '--exclude',
+                    subprocess.check_output([plink, '--bfile', '1000G_Phase3', '--exclude',
                                              geno_name + '_1000G_merge2_warnings.txt', '--geno', '0.01', '--make-bed',
                                              '--out', '1000G_Phase3'])
                     # Exclude from house dataset
-                    subprocess.check_output(['plink', '--bfile', geno_name, '--exclude',
+                    subprocess.check_output([plink, '--bfile', geno_name, '--exclude',
                                              geno_name + '_1000G_merge2_warnings.txt', '--geno', '0.01', '--make-bed',
                                              '--out', geno_name])
                     # Remove old plink files.
                     subprocess.call('rm *~', shell=True)
                     # Retry merge a third time.
-                    subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno',
+                    subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno',
                                              '0.01', '--make-bed', '--out', geno_name + '_1000G_merge3'])
             # If only the missnps still exist, remove them in both datasets.
             elif os.path.exists(geno_name + '_1000G_merge2-merge.missnp') \
                     and not os.path.exists(geno_name + '_1000G_merge2_warnings.txt'):
                 # Exclude from house dataset.
-                subprocess.check_output(['plink', '--bfile', geno_name, '--exclude',
+                subprocess.check_output([plink, '--bfile', geno_name, '--exclude',
                                          geno_name + '_1000G_merge2-merge.missnp', '--geno', '0.01', '--make-bed',
                                          '--out', geno_name])
                 # Exclude from 1000G dataset.
-                subprocess.check_output(['plink', '--bfile', '1000G_Phase3', '--exclude',
+                subprocess.check_output([plink, '--bfile', '1000G_Phase3', '--exclude',
                                          geno_name + '_1000G_merge2-merge.missnp', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # Remove old files.
                 subprocess.call('rm *~', shell=True)
                 # Retry merge a third time.
-                subprocess.check_output(['plink', '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
+                subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                          '--make-bed', '--out', geno_name + '_1000G_merge3'])
             # If we don't find warnings or missnps
             elif os.path.exists(geno_name + '_1000G_merge2.bim'):

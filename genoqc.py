@@ -1,3 +1,11 @@
+import platform
+# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+system_check = platform.system()
+if system_check in ("Linux", "Darwin"):
+    plink = "./plink"
+elif system_check == "Windows":
+    plink = 'plink.exe'
+
 def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
     #   1) FID
@@ -5,13 +13,13 @@ def update_sex(geno_name, update_sex_filename):
     #   3) Sex (1 = M, 2 = F, 0 = missing)
     import subprocess
 
-    subprocess.check_output(['plink', '--bfile', geno_name, '--update-sex', update_sex_filename, '--make-bed', '--out',
+    subprocess.check_output([plink, '--bfile', geno_name, '--update-sex', update_sex_filename, '--make-bed', '--out',
                              geno_name + '_SexUpdated'])
 
     # Checks the sex listed in the file against the chromosomal sex.
-    subprocess.check_output(['plink', '--bfile', geno_name + '_SexUpdated', '--indep-pairphase', '20000', '2000', '0.5',
+    subprocess.check_output([plink, '--bfile', geno_name + '_SexUpdated', '--indep-pairphase', '20000', '2000', '0.5',
                              '--out', geno_name + '_SexUpdated'])
-    subprocess.check_output(['plink', '--bfile', geno_name + '_SexUpdated', '--exclude',
+    subprocess.check_output([plink, '--bfile', geno_name + '_SexUpdated', '--exclude',
                              geno_name + '_SexUpdated.prune.out', '--check-sex', 'ycount', '0.3', '0.8', '0', '0',
                              '--out', geno_name + '_SexUpdated'])
 
@@ -24,7 +32,7 @@ def update_sex(geno_name, update_sex_filename):
 def missing_call_rate(geno_name):
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
     import subprocess
-    subprocess.check_output(['plink', '--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--make-bed', '--out',
+    subprocess.check_output([plink, '--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1_mind0.1'])
 
 
@@ -36,7 +44,7 @@ def het(geno_name):
     import subprocess
 
     # Use plink to calculate the heterozygosity, paying attention to geno and mind.
-    subprocess.check_output(['plink','--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--het', '--out',
+    subprocess.check_output([plink,'--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--het', '--out',
                              geno_name])
 
     # Read het file into pandas
@@ -64,7 +72,7 @@ def het(geno_name):
     het_rem.to_csv(geno_name + '_RemAfterHetCheck.txt', sep='\t', header = True, index=False)
 
     # Make new plink file with people passing het check.
-    subprocess.check_output(['plink', '--bfile', geno_name, '--keep', geno_name + '_KeptAfterHetCheck.txt', '--geno',
+    subprocess.check_output([plink, '--bfile', geno_name, '--keep', geno_name + '_KeptAfterHetCheck.txt', '--geno',
                              '0.1', '--make-bed', '--out', geno_name + '_HetChecked'])
 
     print("Done. Your new file of people with non-extreme heterozygosity values will be called "

@@ -1,3 +1,12 @@
+import platform
+# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+system_check = platform.system()
+if system_check in ("Linux", "Darwin"):
+    plink = "./plink"
+elif system_check == "Windows":
+    plink = 'plink.exe'
+
+
 def harmonize_with_1000g(geno_name):
     # Using 1000 Genomes as a reference(based off Perl script by W.Rayner, 2015, wrayner @ well.ox.ac.uk)
     #   -Removes SNPs with MAF < 5% in study dataset
@@ -162,7 +171,7 @@ def harmonize_with_1000g(geno_name):
         elif i == 22:
             # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and
             # convert the 23 to X before harmonizing
-            subprocess.check_output(['plink', '--bfile', geno_name, '--chr', 'X', '--make-bed', '--out',
+            subprocess.check_output([plink, '--bfile', geno_name, '--chr', 'X', '--make-bed', '--out',
                                      geno_name + '_chr23'])
             # Read chrX file into pandas
             bim_file = pd.read_csv(geno_name + '_chr23.bim', sep='\t', header=None)
@@ -219,7 +228,7 @@ def harmonize_with_1000g(geno_name):
     # same number of variants as the bim file.
     for i in range(0, len(harmonized_geno_names)):
         # Create plink file
-        subprocess.check_output(['plink', '--bfile', harmonized_geno_names[i], '--freq', '--out',
+        subprocess.check_output([plink, '--bfile', harmonized_geno_names[i], '--freq', '--out',
                                  harmonized_geno_names[i]])
         # Read freq file into python
         freq_file = pd.read_csv(freq_file_names[i], sep='\s+', header=0, usecols=[0, 1, 2, 3, 4],
@@ -347,7 +356,7 @@ def harmonize_with_1000g(geno_name):
         final_snps_by_chr[i]['SNP'].to_csv(final_snp_lists[i], sep='\t', header=False, index=False)
 
         # Make plink files for each chromosomes. Need bed file for merging
-        subprocess.check_output(['plink', '--bfile', harmonized_geno_names[i], '--extract', final_snp_lists[i],
+        subprocess.check_output([plink, '--bfile', harmonized_geno_names[i], '--extract', final_snp_lists[i],
                                  '--make-bed', '--out', af_checked_names[i]])
 
         # Remove extra files that we don't need anymore. These were files that were harmonized, but not checked for
@@ -388,7 +397,7 @@ def harmonize_with_1000g(geno_name):
     with open("HouseMergeList.txt", "w") as f:
         wr = csv.writer(f, delimiter="\n")
         wr.writerow(af_checked_names)
-    subprocess.check_output(['plink', '--merge-list', 'HouseMergeList.txt', '--geno', '0.01', '--make-bed', '--out',
+    subprocess.check_output([plink, '--merge-list', 'HouseMergeList.txt', '--geno', '0.01', '--make-bed', '--out',
                              geno_name + '_HarmonizedTo1000G'])
 
     if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
@@ -454,12 +463,12 @@ def harmonize_with_1000g(geno_name):
     # Currently ignores snps that are ambiguous, since I already removed those that would be hard to phase. Could change
     # this later.
     if os.path.getsize(geno_name + '_HarmonizedTo1000G.reverse') > 0:
-        subprocess.check_output(['plink', '--bfile', geno_name + '_HarmonizedTo1000G', '--flip',
+        subprocess.check_output([plink, '--bfile', geno_name + '_HarmonizedTo1000G', '--flip',
                                  geno_name + '_HarmonizedTo1000G.reverse', '--make-bed', '--out',
                                  geno_name + '_HarmonizedTo1000G_StrandChecked'])
     # If .reverve doesn't exist, still make a new file to signify that you've done the strand check.
     else:
-        subprocess.check_output(['plink', '--bfile', geno_name + '_HarmonizedTo1000G', '--make-bed', '--out',
+        subprocess.check_output([plink, '--bfile', geno_name + '_HarmonizedTo1000G', '--make-bed', '--out',
                                  geno_name + '_HarmonizedTo1000G_StrandChecked'])
 
     # Finished
