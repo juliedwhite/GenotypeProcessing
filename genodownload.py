@@ -249,7 +249,6 @@ def vcf_1000g_phase3():
 def hls_1000g_phase3():
     import os
     import urllib.request
-    import tarfile
     import subprocess
 
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
@@ -341,11 +340,17 @@ def pip():
     except:
         # Run it and install pip into user directory.
         subprocess.check_output(['python','get-pip.py','--user'])
+
+        # Tell the user that they should add the following folders to their PATH:
         system_check = platform.system()
         if system_check in ("Linux", "Darwin"):
-            subprocess.check_output('export PATH=$PATH:~/.local/bin', shell=True)
+            print("\u001b[31;1m Because I couldn't use root access, I installed pip into a local directory. You should "
+                  "type '$PATH' to check that '~/.local/bin' is in your $PATH variable. IF it isn't, then type "
+                  "'export PATH=$PATH:~/.local/bin' to add it.\u001b[0m")
         elif system_check == "Windows":
-            subprocess.check_output('set PATH=%PATH%;~/.local/bin', shell=True)
+            print("\u001b[31;1m Because I couldn't use root access, I installed pip into a local directory. You should "
+                  "type 'PATH' to check that '~/.local/bin' is in your PATH variable. IF it isn't, then type "
+                  "'set PATH=%PATH%;~/.local/bin' to add it.\u001b[0m")
 
     print("Done downloading pip")
 
@@ -443,7 +448,11 @@ def vcftools():
                                 + "'", shell=True)
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'), shell = True)
+        # Tell the user that they should add the following folders to their PATH:
+        print("\u001b[31;1m I installed vcftools into " + os.path.join(home,'software/bin')
+              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
+              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
+              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
 
         print("Done downloading vcftools")
 
@@ -451,7 +460,8 @@ def vcftools():
     elif system_check == "Darwin":
         sys.exit('To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
                  'https://brew.sh/ then download vcftools by typing "brew install homebrew/science/vcftools" in your '
-                 'command terminal. Then, follow the directions in the README file for configuring.')
+                 'command terminal. Then, follow the directions in the README file for configuring. Then make sure the'
+                 'install folder is in your PATH variable.')
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
@@ -493,16 +503,22 @@ def bcftools():
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'), shell=True)
+        # Tell the user that they should add the following folders to their PATH:
+        print("\u001b[31;1m I installed bcftools into " + os.path.join(home, 'software/bin')
+              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
+              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
+              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
 
         print("Done downloading bcftools")
 
     # If the user is on a mac
     elif system_check == "Darwin":
         sys.exit("It's possible to install bcftools on a Mac, but it might require that you install other "
-                 "libraries too. You can try following this tutorial "
-                 "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew (if you haven't "
-                 "already) and xcode. Then run brew install homebrew/science/bcftools.")
+                 "libraries too. You can try following this tutorial (not for bcftools specifically, but related "
+                 "programs) http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
+                 "(if you haven't already) and xcode. Then run brew install homebrew/science/bcftools and install using"
+                 " the directions in the README file. You should also add the install location to your PATH if it is "
+                 "not already there.")
 
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
@@ -546,15 +562,19 @@ def htslib():
         subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'), shell=True)
+        print("\u001b[31;1m I installed htslib into " + os.path.join(home, 'software/bin')
+              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
+              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
+              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
 
     # If the user is on a mac
     elif system_check == "Darwin":
         sys.exit("It's possible to install htslib on a Mac, but it might require that you install other "
-                 "libraries too. You can try following this tutorial "
-                 "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew (if you haven't "
-                 "already) and xcode. Then run brew install homebrew/science/htslib.")
-
+                 "libraries too. You can try following this tutorial (not for htslib specifically, but related "
+                 "programs) http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
+                 "(if you haven't already) and xcode. Then run brew install homebrew/science/htslib and install using"
+                 " the directions in the README file. You should also add the install location to your PATH if it is "
+                 "not already there.")
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
         sys.exit(
@@ -599,7 +619,10 @@ def samtools():
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        subprocess.check_output('export PATH=$PATH:' + os.path.join(home, 'software/bin'), shell=True)
+        print("\u001b[31;1m I installed samtools into " + os.path.join(home, 'software/bin')
+              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
+              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
+              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
 
         print("Done downloading samtools")
 
@@ -607,8 +630,9 @@ def samtools():
     elif system_check == "Darwin":
         sys.exit("It's possible to install samtools on a Mac, but it might require that you install other "
                  "libraries too. You can try following this tutorial "
-                 "http://www.danielecook.com/installing-tabix-and-bcftools-on-mac/ and download homebrew (if you "
-                 "haven't already) and xcode. Then run brew install homebrew/science/samtools.")
+                 "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
+                 "(if you haven't already) and xcode. You should also add the install location to your PATH if it is "
+                 "not already there.")
 
     # If they are running this on a windows machine, they cannot proceed because samtools is *nix only.
     elif system_check == "Windows":
