@@ -150,7 +150,6 @@ def harmonize_with_1000g(geno_name):
     final_snp_lists = ['chr%d_SNPsKept.txt' % x for x in range(1, 24)]
     af_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1, 24)]
 
-    
     # Harmonize for each chromosome
     for i in range(0, len(vcf_file_names)):
         # Call genotype harmonizer for autosomes
@@ -161,7 +160,6 @@ def harmonize_with_1000g(geno_name):
                                     + ' --hweFilter 0.01 --mafFilter 0.05 --update-id --debug --mafAlign 0 '
                                       '--update-reference-allele --outputType PLINK_BED --output '
                                     + harmonized_geno_names[i], shell=True)
-
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr':str, 'pos':int, 'originalId':str, 'newId':str})
             snp_logs[i] = pd.read_table(snp_log_names[i], sep='\t', header=0,
@@ -187,7 +185,7 @@ def harmonize_with_1000g(geno_name):
                                       '--mafAlign 0 --update-reference-allele --outputType PLINK_BED --output '
                                     + harmonized_geno_names[i], shell=True)
             subprocess.call('rm ' + geno_name + '_chr23.*', shell=True)
-            
+
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
             snp_logs[i] = pd.read_csv(snp_log_names[i], sep='\t', header=0,
@@ -431,12 +429,15 @@ def harmonize_with_1000g(geno_name):
     else:
         sys.exit("Quitting because I cannot find the fasta file.")
 
+    from os.path import expanduser
+    home = expanduser("~")
+
     try:
         # Find where snpflip is.
-        for r, d, f in os.walk("C:\\"):
+        for r, d, f in os.walk(home):
             for files in f:
                 if files == "snpflip":
-                    snpflip_path = (os.path.join(r, files))
+                    snpflip_path = os.path.join(r, files)
         # Perform flip check.
         subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
                                 + os.path.join(fasta_path, 'human_g1k_v37.fasta')
@@ -449,10 +450,10 @@ def harmonize_with_1000g(geno_name):
         # Download snpflip
         genodownload.snpflip()
         # Find where snpflip is:
-        for r, d, f in os.walk("C:\\"):
+        for r, d, f in os.walk(home):
             for files in f:
                 if files == "snpflip":
-                    snpflip_path = (os.path.join(r, files))
+                    snpflip_path = os.path.join(r, files)
         # Re do
         subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
                                 + os.path.join(fasta_path, 'human_g1k_v37.fasta') + '" --bim-file ' + geno_name
@@ -466,7 +467,7 @@ def harmonize_with_1000g(geno_name):
         subprocess.check_output([plink, '--bfile', geno_name + '_HarmonizedTo1000G', '--flip',
                                  geno_name + '_HarmonizedTo1000G.reverse', '--make-bed', '--out',
                                  geno_name + '_HarmonizedTo1000G_StrandChecked'])
-    # If .reverve doesn't exist, still make a new file to signify that you've done the strand check.
+    # If .reverse doesn't exist, still make a new file to signify that you've done the strand check.
     else:
         subprocess.check_output([plink, '--bfile', geno_name + '_HarmonizedTo1000G', '--make-bed', '--out',
                                  geno_name + '_HarmonizedTo1000G_StrandChecked'])
@@ -476,6 +477,7 @@ def harmonize_with_1000g(geno_name):
     shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.bim', orig_wd)
     shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.fam', orig_wd)
 
+    print("Finished with harmonization")
     # Change back to original working directory.
     os.chdir(orig_wd)
 
