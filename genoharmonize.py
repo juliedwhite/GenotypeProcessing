@@ -77,7 +77,7 @@ def harmonize_with_1000g(geno_name):
 
     if fasta_exists in ('y', 'yes'):
         # Ask the user where the fasta file is.
-        fasta_path = input('\u001b[33;1m Please enter the pathname of where the your 1000G hg19 fasta file is '
+        fasta_path = input('\u001b[34;1m Please enter the pathname of where the your 1000G hg19 fasta file is '
                            '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): '
                            '\u001b[0m')
     elif fasta_exists in ('n', 'no'):

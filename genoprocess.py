@@ -130,7 +130,7 @@ elif to_do == '7':
 
     if coord_check in ('yes', 'y'):
         # Get name of genotypes.
-        geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize with '
+        geno_name = input('\u001b[34;1m Please enter the name of the genotype file you would like to harmonize with '
                           '1000G Phase 3 (without bed/bim/fam extension: \u001b[0m')
         # Harmonize with 1000G Phase 3
         import genoharmonize
@@ -198,7 +198,7 @@ elif to_do == '10':
 
     if admixture_proceed_check in ('y', 'yes'):
         # Ask the user if they've already harmonized their data.
-        harmonize_check = input('\u001b[33;1m Have you already harmonized your data with 1000G Phase 3? (y/n): '
+        harmonize_check = input('\u001b[34;1m Have you already harmonized your data with 1000G Phase 3? (y/n): '
                                 '\u001b[0m').lower()
         # If yes
         if harmonize_check in ('y', 'yes'):
@@ -212,7 +212,7 @@ elif to_do == '10':
             # If no, merge the data.
             elif merge_check in ('n','no'):
                 # Ask for name of harmonized genotype files, which we will use to merge.
-                geno_name = input('\u001b[33;1m Please enter the name of your harmonized genotype files that you would '
+                geno_name = input('\u001b[34;1m Please enter the name of your harmonized genotype files that you would '
                                   'like to merge with 1000G (without bed/bim/fam extension): \u001b[0m')
                 # Ask the user where their harmonized files are.
                 harmonized_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files '
@@ -240,7 +240,7 @@ elif to_do == '10':
         # If they haven't harmonized, then harmonize and merge.
         elif harmonize_check in ('n', 'no'):
             # Ask for name of genotype file, which we will use to harmonize and then merge.
-            geno_name = input('\u001b[33;1m Please enter the name of the genotype file you would like to harmonize, '
+            geno_name = input('\u001b[34;1m Please enter the name of the genotype file you would like to harmonize, '
                               'merge, then prepare for ADMIXTURE (without bed/bim/fam extension): \u001b[0m')
 
             # Harmonize with 1000G Phase 3
