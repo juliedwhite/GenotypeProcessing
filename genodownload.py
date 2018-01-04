@@ -228,6 +228,7 @@ def vcf_1000g_phase3():
                       range(1, 23)]
     vcf_file_names.extend(['ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz',
                            'ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz'])
+    tbi_file_names = [s + '.tbi' for s in vcf_file_names]
 
     # Open ftp connection
     ftp = ftplib.FTP('ftp.1000genomes.ebi.ac.uk')
@@ -236,6 +237,11 @@ def vcf_1000g_phase3():
 
     # Download files and put them in 1000G_Phase3_VCF folder.
     for filename in vcf_file_names:
+        local_filename = os.path.join(os.getcwd(), '1000G_Phase3_VCF', filename)
+        file = open(local_filename, 'wb')
+        ftp.retrbinary('RETR ' + filename, file.write)
+        file.close()
+    for filename in tbi_file_names:
         local_filename = os.path.join(os.getcwd(), '1000G_Phase3_VCF', filename)
         file = open(local_filename, 'wb')
         ftp.retrbinary('RETR ' + filename, file.write)
