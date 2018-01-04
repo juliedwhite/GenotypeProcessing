@@ -450,16 +450,15 @@ def vcftools():
         # Running configuration and installation steps
         subprocess.check_output('./autogen.sh')
         subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
-        subprocess.check_output('export PERL5LIB=' + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl')
-                                + "'", shell=True)
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
         # Tell the user that they should add the following folders to their PATH:
         print("\u001b[31;1m I installed vcftools into " + os.path.join(home,'software/bin')
               + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
               + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
-
+              + os.path.join(home, 'software/bin')
+              + " to add it. You should also type in the following to set your PERL5LIB: 'export PERL5LIB="
+              + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl') + "\u001b[0m)")
         print("Done downloading vcftools")
 
     # If the user is on a mac
