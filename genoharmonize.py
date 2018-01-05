@@ -168,20 +168,21 @@ def harmonize_with_1000g(geno_name):
 
         elif i == 22:
             # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and
-            # convert the 23 to X before harmonizing
-            subprocess.check_output([plink, '--bfile', geno_name, '--chr', 'X', '--make-bed', '--out',
-                                     geno_name + '_chr23'])
+            # convert the 23 to X before harmonizing. Also remove snps with HWE filter here, because genotype
+            # harmonizer's chrX HWE filter is wonky.
+            subprocess.check_output([plink, '--bfile', geno_name, '--chr', 'X', '--hardy', '--hwe', '0.01',
+                                     '--make-bed', '--out', geno_name + '_chr23'])
             # Read chrX file into pandas
             bim_file = pd.read_csv(geno_name + '_chr23.bim', sep='\t', header=None)
             # Replace '23' with 'X', which is how genotype harmonizer calls X
             bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
             # Write new genotype
             bim_file.to_csv(geno_name + '_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
-            # Call genotype harmonizer for X chromosome.
+            # Call genotype harmonizer for X chromosome, .
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
                                     + geno_name + '_chr23 --ref "'
                                     + os.path.join(vcf_path, vcf_file_names[i])
-                                    + '" --refType VCF --hweFilter 0.01 --mafFilter 0.05 --update-id --debug '
+                                    + '" --refType VCF --mafFilter 0.05 --update-id --debug '
                                       '--mafAlign 0 --update-reference-allele --outputType PLINK_BED --output '
                                     + harmonized_geno_names[i], shell=True)
             subprocess.call('rm ' + geno_name + '_chr23.*', shell=True)
