@@ -648,3 +648,16 @@ def samtools():
     # If I cannot detect what system they're on, force exit.
     else:
         sys.exit("I cannot detect the system you are working on. Exiting now.")
+
+
+def installmatplotlib():
+    try:
+        import pip
+        # Use pip to install snpflip and it's dependencies.
+        pip.main(['install', 'matplotlib'])
+    except ImportError:
+        pip()
+        import pip
+        pip.main(['install', 'matplotlib'])
+
+    print("Done installing matplotlib")
