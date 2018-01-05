@@ -975,3 +975,82 @@ def getinfo(imputed_path, geno_name):
         sys.exit("You didn't answer 'yes' or 'no' when I asked whether you were on the cluster or not, so I don't know "
                  "how to proceed. Exiting now.")
 
+
+# Make plots of imputation quality score.
+def qualscoreplot(info_path):
+    import os
+    import glob
+    import sys
+    import pandas as pd
+    import re
+    import numpy as np
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+    except ImportError:
+        try:
+            import pip
+            # Use pip to install matplotlib and it's dependencies.
+            pip.main(['install', 'matplotlib'])
+            import matplotlib
+            matplotlib.use('Agg')
+        except ImportError:
+            import genodownload
+            genodownload.pip()
+            import pip
+            pip.main(['install', 'matplotlib'])
+            import matplotlib
+            matplotlib.use('Agg')
+
+    import matplotlib.pyplot as plt
+
+    # Needed for sorting lists by numeric instead of string.
+    def sorted_nicely(list):
+        convert = lambda text: int(text) if text.isdigit() else text
+        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+        return sorted(list, key=alphanum_key)
+
+
+    # Use glob to find files ending with the ending .INFO
+    info_list = glob.glob(os.path.join(info_path, '*.INFO'))
+
+    # If list is empty, exit.
+    if not info_list:
+        sys.exit("I can't find any .INFO files in the path that you specified. Please double check that they are there "
+                 "and have the ending .INFO and try again.")
+
+    sorted_info_list = sorted_nicely(info_list)
+
+    # First need to combine all of the .INFO files.
+    pandas_info = ['INFO_%d' % x for x in range(1, 24)]
+    for i in range(0, len(sorted_info_list)):
+        if i < 22:
+            pandas_info[i] = pd.read_csv(sorted_info_list[i], sep='\t', header=0,
+                                         dtype={'CHROM': int, 'POS': int, 'REF': str, 'ALT': str, 'INFO': float,
+                                                'RefPanelAF': float})
+        elif i == 22:
+            pandas_info[i] = pd.read_csv(sorted_info_list[i], sep='\t', header=0,
+                                         dtype={'CHROM': str, 'POS': int, 'REF': str, 'ALT': str, 'INFO': float,
+                                                'RefPanelAF': float})
+            pandas_info[i].iloc[:, 0].replace('X', 23, inplace=True)
+            #pandas_info[i]['CHROM'] = pandas_info[i]['CHROM'].astype(int)
+
+    # Concatenate all of the id updates into one file.
+    combined_info = pd.concat([pandas_info[0], pandas_info[1], pandas_info[2], pandas_info[3], pandas_info[4],
+                               pandas_info[5], pandas_info[6], pandas_info[7], pandas_info[8], pandas_info[9],
+                               pandas_info[10], pandas_info[11], pandas_info[12], pandas_info[13], pandas_info[14],
+                               pandas_info[15], pandas_info[16], pandas_info[17], pandas_info[18], pandas_info[19],
+                               pandas_info[20], pandas_info[21], pandas_info[22]])
+
+    INFO = np.asarray(combined_info)[:,4]
+
+    f = plt.figure()
+    hist, bins = np.histogram(INFO, bins = 100)
+    width = np.diff(bins)
+    center = (bins[:-1] + bins[1:]) / 2
+    plt.bar(center, hist, width = width, color = "green", edgecolor = "black")
+    plt.xlabel('Imputation Quality Score')
+    plt.ylabel('Number of SNPs')
+    plt.title('Histogram of Genome-Wide Imputation Quality Scores', y = 1.08)
+    plt.show()
+    f.savefig("ImputationQualScores_Hist.pdf")

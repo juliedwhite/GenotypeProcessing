@@ -29,7 +29,8 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '12) Prepare for imputation on the Sanger Imputation Server\n'
               '13) Extract imputation quality score and reference allele frequency from Sanger Imputation Server VCF '
               'files\n'
-              '14) Nothing. \n'
+              '14) Plot imputation quality scores\n'
+              '15) Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
 # Use genodownload to figure out what to download.
@@ -321,8 +322,21 @@ elif to_do == '13':
     # Call function
     genophaseimpute.getinfo(imputed_path, geno_name)
 
-# Nothing
+# Make plots of imputation quality scores.
 elif to_do == '14':
+    info_path = input("Please tell me where your .INFO files produced by step #13 are. Make sure they are in a folder "
+                 "with no other .INFO files, as this part of the script looks for anything with the ending '.INFO' "
+                 "(e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\ etc.): ")
+
+    # Import module
+    import genophaseimpute
+
+    # Call function
+    genophaseimpute.qualscoreplot(info_path)
+
+
+# Nothing
+elif to_do == '15':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:
