@@ -959,8 +959,10 @@ def getinfo(imputed_path, geno_name):
                        'for i in {1..23}; do ' + vcftools + ' --gzvcf ' + geno_name
                        + '_chr$i.vcf.gz --get-INFO INFO --get-INFO RefPanelAF --out ' + geno_name
                        + '_chr$[i]_InfoScoreAF; done')
+        # Change directory into imputed path
+        os.chdir(imputed_path)
         # Submit to cluster
-        subprocess.check_output(['qsub', os.path.join(imputed_path, 'GetImputationInfo.pbs')])
+        subprocess.check_output(['qsub', 'GetImputationInfo.pbs'])
     # If they aren't on the cluster, then try to run this from their computer.
     elif on_cluster in ('no', 'n'):
         subprocess.check_output('for i in {1..23}; do ' + vcftools + ' --gzvcf '
