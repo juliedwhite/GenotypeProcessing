@@ -152,14 +152,14 @@ def harmonize_with_1000g(geno_name):
 
     # Remove all SNPs with HWE p-value < 0.01 and SNPs with MAF < 0.05
     subprocess.check_output([plink, '--bfile', geno_name, '--hardy', '--hwe', '0.01', '--maf', '0.05', '--make-bed',
-                             '--out', geno_name + '_hweFilter'])
+                             '--out', geno_name + '_MAF_HWE_Filter'])
 
     # Harmonize for each chromosome
     for i in range(0, len(vcf_file_names)):
         # Call genotype harmonizer for autosomes
         if i < 22:
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
-                                    + geno_name + '_hweFilter --ref "' + os.path.join(vcf_path, vcf_file_names[i])
+                                    + geno_name + '_MAF_HWE_Filter --ref "' + os.path.join(vcf_path, vcf_file_names[i])
                                     + '" --refType VCF --chrFilter ' + str(i+1)
                                     + ' --update-id --debug --mafAlign 0 --update-reference-allele --outputType '
                                       'PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
@@ -173,19 +173,21 @@ def harmonize_with_1000g(geno_name):
             # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and
             # convert the 23 to X before harmonizing.
             # Read chrX file into pandas
-            bim_file = pd.read_csv(geno_name + '_chr23.bim', sep='\t', header=None)
+            subprocess.check_output([plink, '--bfile', geno_name + '_MAF_HWE_Filter', '--chr', 'X', '--make-bed',
+                                     '--out', geno_name + '_MAF_HWE_Filter_chr23'])
+            bim_file = pd.read_csv(geno_name + '_MAF_HWE_Filter_chr23.bim', sep='\t', header=None)
             # Replace '23' with 'X', which is how genotype harmonizer calls X
             bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
             # Write new genotype
-            bim_file.to_csv(geno_name + '_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
+            bim_file.to_csv(geno_name + '_MAF_HWE_Filter_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
             # Call genotype harmonizer for X chromosome, .
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
-                                    + geno_name + '_chr23 --ref "'
+                                    + geno_name + '_MAF_HWE_Filter_chr23 --ref "'
                                     + os.path.join(vcf_path, vcf_file_names[i])
                                     + '" --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele '
                                       '--outputType PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
+            subprocess.call('rm ' + geno_name + '_MAF_HWE_Filter_chr23.*', shell=True)
 
-            subprocess.call('rm ' + geno_name + '_chr23.*', shell=True)
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
             snp_logs[i] = pd.read_csv(snp_log_names[i], sep='\t', header=0,
