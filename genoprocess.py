@@ -27,7 +27,9 @@ to_do = input('\u001b[31;1m What would you like to do?\n'
               '10) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
               '11) Run a phasing check and prepare files for phasing using SHAPEIT\n'
               '12) Prepare for imputation on the Sanger Imputation Server\n'
-              '13) Nothing. \n'
+              '13) Extract imputation quality score and reference allele frequency from Sanger Imputation Server VCF '
+              'files\n'
+              '14) Nothing. \n'
               'Please enter a number (i.e. 2): \u001b[0m')
 
 # Use genodownload to figure out what to download.
@@ -304,8 +306,23 @@ elif to_do == '12':
     # Call function
     genophaseimpute.impute()
 
-# Nothing
 elif to_do == '13':
+    imputed_path = input('\u001b[32;1m Please enter the path for your Sanger Imputed VCF files '
+                         '(e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\) : \u001b[0m')
+
+    geno_name = input('\u001b[32;1m Please enter the name of the imputed VCF files that you would like to extract '
+                      'imputation quality scores and reference allele frequency from. The VCF file names should be in '
+                      'the format YourStudy_chr1, YourStudy_chr2...YourStudy_chr23" and I would like to know what '
+                      '"YourStudy" is, I will fill in the _chr# in the script.: \u001b[0m')
+
+    # Import module
+    import genophaseimpute
+
+    # Call function
+    genophaseimpute.getinfo(imputed_path, geno_name)
+
+# Nothing
+elif to_do == '14':
     sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
 
 else:

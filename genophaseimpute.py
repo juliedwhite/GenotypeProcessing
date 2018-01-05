@@ -581,7 +581,7 @@ def phase(geno_name, allocation_name):
         for i in range(0,23):
             # Submit to cluster
             subprocess.check_output(['qsub', 'Phasing/' + geno_name + '_PhaseScript.chr' + str(i+1) + '.pbs'])
-    elif on_cluster in ('no', 'no'):
+    elif on_cluster in ('n', 'no'):
         sys.exit('Since you are not on the Penn State cluster right now, you should transfer the genotype files, 1000G '
                  'genetic maps, 1000G legend files, 1000G hap files, and 1000G sample file, shapeit, and the phasing '
                  'pbs files to the cluster. You can submit the files by using qsub name_of_file.pbs')
@@ -897,4 +897,79 @@ def impute():
     sys.exit("Your vcf has been checked and is ready for imputation on the Sanger Imputation Server. Please follow the "
              "directions here (https://imputation.sanger.ac.uk/?instructions=1) for uploading your data. The file is "
              "called " + vcf_name + ".vcf.gz")
+
+
+# Extract the info quality scores from your imputed VCF files.
+def getinfo(imputed_path, geno_name):
+    import sys
+    import os
+    import subprocess
+
+    # Vcftools
+    if system_check in ("Linux", "Darwin"):
+        # We need to know where they have vcftools, if they have it.
+        vcftools_exists = input("\u001b[35;1m Do you already have the program vcftools unpacked and installed? (y/n): "
+                                "\u001b[0m").lower()
+        # If yes, then ask for path of program
+        if vcftools_exists in ('yes', 'y'):
+            in_path = input("Do you already have the vcftools location in your $PATH?"
+                            "(y/n): ").lower()
+            if in_path in ('yes', 'y'):
+                vcftools = 'vcftools'
+            elif in_path in ('no', 'n'):
+                vcftools_path = input("\u001b[36;1m Please tell me the path where you have the vcftools program. "
+                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ \u001b[0m")
+                vcftools = os.path.join(vcftools_path, 'vcftools')
+        # If no, download and unpack vcftools.
+        elif vcftools_exists in ('no', 'n'):
+            import genodownload
+            # Download vcftools
+            genodownload.vcftools()
+        else:
+            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had vcftools. Exiting now. '
+                     '\u001b[0m')
+    # If they are running this on a windows machine, they cannot proceed because vcftools is *nix only.
+    elif system_check == ("Windows"):
+        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
+                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+    # If I cannot detect what system they're on, force exit.
+    else:
+        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+
+    # Ask the user if they are running this from the PSU cluster. This is the preferred way to go, since this takes a
+    # while and will clog their computer's RAM if they try to do it from their personal computer.
+    on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
+                       ' for you. If not, I will try to run this using your local RAM, but this might make your computer'
+                       ' very slow and will probably take several hours. (y/n): ').lower()
+
+    if on_cluster in ("yes", "y"):
+        # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
+        allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
+        # Write pbs file
+        with open(os.path.join(imputed_path, 'GetImputationInfo.pbs'), 'w') as file:
+            file.write('#!/bin/bash\n'
+                       '#PBS -l walltime=30:00:00\n'
+                       '#PBS -l nodes=1:ppn=8\n'
+                       '#PBS -l pmem=7gb\n'
+                       '#PBS -A ' + allocation_name +
+                       '\n'
+                       '#PBS -j oe\n'
+                       'cd $PBS_O_WORKDIR\n'
+                       '\n' +
+                       'for i in {1..23}; do ' + vcftools + ' --gzvcf ' + geno_name
+                       + '_chr$i.vcf.gz --get-INFO INFO --get-INFO RefPanelAF --out ' + geno_name
+                       + '_chr$[i]_InfoScoreAF; done')
+        # Submit to cluster
+        subprocess.check_output(['qsub', os.path.join(imputed_path, 'GetImputationInfo.pbs')])
+    # If they aren't on the cluster, then try to run this from their computer.
+    elif on_cluster in ('no', 'n'):
+        subprocess.check_output('for i in {1..23}; do ' + vcftools + ' --gzvcf '
+                                + os.path.join(imputed_path, geno_name + '_chr$i.vcf.gz')
+                                + ' --get-INFO INFO --get-INFO RefPanelAF --out '
+                                + os.path.join(imputed_path, geno_name + '_chr$[i]_InfoScoreAF') + '; done', shell=True)
+        print("Done. Your files have the ending .INFO and are in " + imputed_path)
+
+    else:
+        sys.exit("You didn't answer 'yes' or 'no' when I asked whether you were on the cluster or not, so I don't know "
+                 "how to proceed. Exiting now.")
 
