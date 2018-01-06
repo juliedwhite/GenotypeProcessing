@@ -522,7 +522,7 @@ def phase(geno_name, allocation_name):
                                + output_names[i]
                                + '\n'
                                + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
+                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
                                + ' --output-log ' + output_vcf_log[i])
             # If there are only people in ind_hh_exclude, then we have people to remove.
             elif len(ind_hh_exclude) > 0:
