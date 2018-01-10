@@ -3,8 +3,10 @@ import platform
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
     plink = "./plink"
+    rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
+    rm = "del "
 
 
 def harmonize_with_1000g(geno_name):
@@ -186,7 +188,7 @@ def harmonize_with_1000g(geno_name):
                                     + os.path.join(vcf_path, vcf_file_names[i])
                                     + '" --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele '
                                       '--outputType PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
-            subprocess.call('rm ' + geno_name + '_MAF_HWE_Filter_chr23.*', shell=True)
+            subprocess.call(rm + geno_name + '_MAF_HWE_Filter_chr23.*', shell=True)
 
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
@@ -208,7 +210,7 @@ def harmonize_with_1000g(geno_name):
     # Remove the clutter
     if os.path.getsize('Harmonization_ID_Updates.txt') > 0:
         for f in id_update_names:
-            subprocess.call(['rm', f])
+            subprocess.call([rm, f])
 
     all_snp_logs = pd.concat([snp_logs[0], snp_logs[1], snp_logs[2], snp_logs[3], snp_logs[4], snp_logs[5], snp_logs[6],
                               snp_logs[7], snp_logs[8], snp_logs[9], snp_logs[10], snp_logs[11], snp_logs[12],
@@ -220,7 +222,7 @@ def harmonize_with_1000g(geno_name):
     # Remove the clutter
     if os.path.getsize('Harmonization_SNP_Logs.txt') > 0:
         for f in snp_log_names:
-            subprocess.call(['rm', f])
+            subprocess.call([rm, f])
 
     # Now for each that was just harmonized, remove all SNPs with an allele (AF) difference > 0.2 since we are going to
     # use a global reference population between study dataset and all superpopulation allele frequencies. IF within 0.2
@@ -362,8 +364,8 @@ def harmonize_with_1000g(geno_name):
         # Remove extra files that we don't need anymore. These were files that were harmonized, but not checked for
         # allele frequency differences.
         if os.path.getsize(af_checked_names[i] + '.bim') > 0:
-            subprocess.call('rm ' + final_snp_lists[i], shell=True)
-            subprocess.call('rm ' + harmonized_geno_names[i] + '.*', shell=True)
+            subprocess.call(rm + final_snp_lists[i], shell=True)
+            subprocess.call(rm + harmonized_geno_names[i] + '.*', shell=True)
             
         # Done with one chromosome.
 
@@ -402,7 +404,7 @@ def harmonize_with_1000g(geno_name):
 
     if os.path.getsize(geno_name + '_HarmonizedTo1000G.bim') > 0:
         for i in range(0, len(af_checked_names)):
-            subprocess.call('rm ' + str(af_checked_names[i]) + '.*', shell=True)
+            subprocess.call(rm + str(af_checked_names[i]) + '.*', shell=True)
 
     else:
         sys.exit("\u001b[36;1m For some reason the house gentoypes did not merge. You should try it manually \u001b[0m")

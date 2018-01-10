@@ -3,8 +3,10 @@ import platform
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
     plink = "./plink"
+    rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
+    rm = "del "
 
 def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
@@ -36,7 +38,7 @@ def missing_call_rate(geno_name):
                              geno_name + '_geno0.1'])
     subprocess.check_output([plink, '--bfile', geno_name + '_geno0.1', '--mind', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1_mind0.1'])
-    subprocess.call('rm ' + geno_name + '_geno0.1.*', shell=True)
+    subprocess.call(rm + geno_name + '_geno0.1.*', shell=True)
 
 
 def het(geno_name):

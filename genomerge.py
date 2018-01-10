@@ -3,8 +3,10 @@ import platform
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
     plink = "./plink"
+    rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
+    rm = "del "
 
 
 def merge1000g(geno_name, harmonized_path):
@@ -83,7 +85,7 @@ def merge1000g(geno_name, harmonized_path):
             subprocess.check_output([plink,'--vcf', os.path.join(vcf_path, ref_file_names[i]), '--double-id',
                                      '--biallelic-only', 'strict', '--vcf-require-gt', '--extract',
                                      'SNPs_Kept_List.txt', '--make-bed', '--out', chr_1000G_Phase3_names[i]])
-        subprocess.call('rm *~', shell=True)
+        subprocess.call(rm + '*~', shell=True)
 
         # Create list of files to be merged into one large file.
         with open("1000GMergeList.txt", "w") as f:
@@ -124,7 +126,7 @@ def merge1000g(geno_name, harmonized_path):
                                              '1000G_warnings_missnp.txt', '--geno', '0.01', '--make-bed', '--out',
                                              chr_1000G_Phase3_names[i]])
                 # Remove old plink files.
-                subprocess.call('rm *~', shell=True)
+                subprocess.call(rm + '*~', shell=True)
                 # Retry the merge
                 subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
@@ -139,7 +141,7 @@ def merge1000g(geno_name, harmonized_path):
                                              '1000G_MergeWarnings.txt', '--geno', '0.01', '--make-bed', '--out',
                                              chr_1000G_Phase3_names[i]])
                 # Remove old plink files.
-                subprocess.call('rm *~', shell=True)
+                subprocess.call(rm + '*~', shell=True)
                 # Try merge again.
                 subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
@@ -155,7 +157,7 @@ def merge1000g(geno_name, harmonized_path):
                                          '1000G_Phase3-merge.missnp', '--geno', '0.01', '--make-bed', '--out',
                                          chr_1000G_Phase3_names[i]])
             # Remove old plink files
-            subprocess.call('rm *~', shell=True)
+            subprocess.call(rm + '*~', shell=True)
             # Retry the merge
             subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                      '--out', '1000G_Phase3'])
@@ -168,7 +170,7 @@ def merge1000g(geno_name, harmonized_path):
             print("\u001b[36;1m Successfully merged 1000G \u001b[0m")
             # Remove the per chromosome 1000G files, since they're just taking up space now.
             for i in range(0, len(chr_1000G_Phase3_names)):
-                subprocess.call('rm ' + chr_1000G_Phase3_names[i] + '.*', shell=True)
+                subprocess.call(rm + chr_1000G_Phase3_names[i] + '.*', shell=True)
 
         else: # If merge didn't work for reasons other than merge warnings and missnps.
             sys.exit("\u001b[36;1m Unable to merge 1000G chromosome files. You should try to merge them on your own."
@@ -212,7 +214,7 @@ def merge1000g(geno_name, harmonized_path):
                                          geno_name + '_1000G-merge.missnp', '--geno', '0.01', '--make-bed', '--out',
                                          geno_name])
                 # Remove old files.
-                subprocess.call('rm *~', shell=True)
+                subprocess.call(rm + '*~', shell=True)
                 # Retry merge.
                 subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                          '--make-bed', '--out', geno_name + '_1000G_merge2'])
@@ -226,7 +228,7 @@ def merge1000g(geno_name, harmonized_path):
                                          geno_name + '_1000G_MergeWarnings.txt', '--geno', '0.01', '--make-bed',
                                          '--out', geno_name])
                 # Remove old plink files.
-                subprocess.call('rm *~', shell=True)
+                subprocess.call(rm + '*~', shell=True)
                 # Retry merge
                 subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                          '--make-bed', '--out', geno_name + '_1000G_merge2'])
@@ -237,7 +239,7 @@ def merge1000g(geno_name, harmonized_path):
             subprocess.check_output([plink, '--bfile', geno_name, '--flip', geno_name + '_1000G-merge.missnp',
                                      '--geno', '0.01', '--make-bed', '--out', geno_name])
             # Remove old plink files.
-            subprocess.call('rm *~', shell=True)
+            subprocess.call(rm + '*~', shell=True)
             # Retry the merge.
             subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                      '--make-bed', '--out', geno_name + '_1000G_merge2'])
@@ -297,7 +299,7 @@ def merge1000g(geno_name, harmonized_path):
                                              geno_name + '_1000G_merge2_warnings_missnp.txt', '--geno', '0.01',
                                              '--make-bed', '--out', geno_name])
                     # Remove old plink files.
-                    subprocess.call('rm *~', shell=True)
+                    subprocess.call(rm + '*~', shell=True)
                     # Try merge a third time.
                     subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno',
                                              '0.01', '--make-bed','--out', geno_name + '_1000G_merge3'])
@@ -312,7 +314,7 @@ def merge1000g(geno_name, harmonized_path):
                                              geno_name + '_1000G_merge2_warnings.txt', '--geno', '0.01', '--make-bed',
                                              '--out', geno_name])
                     # Remove old plink files.
-                    subprocess.call('rm *~', shell=True)
+                    subprocess.call(rm + '*~', shell=True)
                     # Retry merge a third time.
                     subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno',
                                              '0.01', '--make-bed', '--out', geno_name + '_1000G_merge3'])
@@ -328,7 +330,7 @@ def merge1000g(geno_name, harmonized_path):
                                          geno_name + '_1000G_merge2-merge.missnp', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # Remove old files.
-                subprocess.call('rm *~', shell=True)
+                subprocess.call(rm + '*~', shell=True)
                 # Retry merge a third time.
                 subprocess.check_output([plink, '--bfile', geno_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
                                          '--make-bed', '--out', geno_name + '_1000G_merge3'])
