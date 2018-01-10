@@ -133,7 +133,7 @@ def plink():
         if architecture_check == '64bit':
             # Download 64 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_linux_x86_64.zip
             print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171220/plink_linux_x86_64.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_linux_x86_64.zip',
                                        'Plink_1.9_Linux64.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Linux64')
@@ -146,7 +146,7 @@ def plink():
         elif architecture_check == '32bit':
             # Download 32 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_linux_i686.zip
             print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171220/plink_linux_i686.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_linux_i686.zip',
                                        'Plink_1.9_Linux32.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Linux32')
@@ -165,7 +165,7 @@ def plink():
     elif system_check == "Darwin":
         # Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_mac.zip
         print("Downloading Mac Plink 1.9 to this directory now.")
-        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171220/plink_mac.zip',
+        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_mac.zip',
                                    'Plink_1.9_Mac.zip')
         # Making directory to store program
         os.makedirs('Plink_1.9_Mac')
@@ -179,7 +179,7 @@ def plink():
         if architecture_check == '64bit':
             # Download 64 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_win64.zip
             print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171220/plink_win64.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_win64.zip',
                                        'Plink_1.9_Win64.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Win64')
@@ -192,7 +192,7 @@ def plink():
         elif architecture_check == '32bit':
             # Download 32 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_win32.zip
             print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink171220/plink_win32.zip',
+            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_win32.zip',
                                        'Plink_1.9_Win32.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Win32')
@@ -458,7 +458,9 @@ def vcftools():
               + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
               + os.path.join(home, 'software/bin')
               + " to add it. You should also type in the following to set your PERL5LIB: 'export PERL5LIB="
-              + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl') + "\u001b[0m)")
+              + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl')
+              + ". I HIGHLY recommend you add both of these lines to your .bashrc file, or else you'll have to set this"
+                "path every time you open a new terminal window. \u001b[0m)")
         print("Done downloading vcftools")
 
     # If the user is on a mac
@@ -529,7 +531,7 @@ def bcftools():
     elif system_check == "Windows":
         sys.exit("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
                  "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux).")
+                 "script from there (they are linux).")~
 
     # If I cannot detect what system they're on, force exit.
     else:
