@@ -1,7 +1,10 @@
+from colorama import init, Fore, Back, Style
+init()
+
 def todownload():
     import sys
-
-    item = input('\u001b[34;1m What would you like to download?\n'
+    print(Fore.BLUE + Style.BRIGHT)
+    item = input('What would you like to download?\n'
                  '1) Python 3.6.3\n'
                  '2) Plink 1.9\n'
                  '3) 1000G Phase 3 VCF\n'
@@ -16,7 +19,8 @@ def todownload():
                  '12) htslib\n'
                  '13) samtools\n'
                  '14) Nothing\n'
-                 'Please enter a number (i.e. 2): \u001b[0m')
+                 'Please enter a number (i.e. 2): ')
+    print(Style.RESET_ALL)
 
     if item == '1':
         python3()
@@ -112,7 +116,7 @@ def python3():
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[34;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 
 def plink():
@@ -350,13 +354,18 @@ def pip():
         # Tell the user that they should add the following folders to their PATH:
         system_check = platform.system()
         if system_check in ("Linux", "Darwin"):
-            print("\u001b[31;1m Because I couldn't use root access, I installed pip into a local directory. You should "
-                  "type '$PATH' to check that '~/.local/bin' is in your $PATH variable. IF it isn't, then type "
-                  "'export PATH=$PATH:~/.local/bin' to add it.\u001b[0m")
+            print(Fore.RED + Style.BRIGHT)
+            print("Because I couldn't use root access, I installed pip into a local directory. You should type "
+                  "'echo $PATH' to check that '~/.local/bin' is in your $PATH variable. IF it isn't, then type you "
+                  "should add it to your .bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+
         elif system_check == "Windows":
-            print("\u001b[31;1m Because I couldn't use root access, I installed pip into a local directory. You should "
-                  "type 'PATH' to check that '~/.local/bin' is in your PATH variable. IF it isn't, then type "
-                  "'set PATH=%PATH%;~/.local/bin' to add it.\u001b[0m")
+            print(Fore.RED + Style.BRIGHT)
+            print("Because I couldn't use root access, I installed pip into a local directory. You should type 'PATH' "
+                  "to check that '~/.local/bin' is in your PATH variable. IF it isn't, then you should add it to your "
+                  "environment variables. If you won't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
 
     print("Done downloading pip")
 
@@ -453,14 +462,15 @@ def vcftools():
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
         # Tell the user that they should add the following folders to their PATH:
-        print("\u001b[31;1m I installed vcftools into " + os.path.join(home,'software/bin')
-              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
-              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
+        print("I installed vcftools into " + os.path.join(home,'software/bin')
+              + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
+              + " is in your $PATH variable. If it isn't, then type 'export PATH=$PATH:"
               + os.path.join(home, 'software/bin')
               + " to add it. You should also type in the following to set your PERL5LIB: 'export PERL5LIB="
               + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl')
-              + ". I HIGHLY recommend you add both of these lines to your .bashrc file, or else you'll have to set this"
-                "path every time you open a new terminal window. \u001b[0m)")
+              + ". I HIGHLY recommend you add both of these lines to your .bash_profile file, or else you'll have to "
+                "set this path every time you open a new terminal window.")
+
         print("Done downloading vcftools")
 
     # If the user is on a mac
@@ -511,10 +521,11 @@ def bcftools():
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
         # Tell the user that they should add the following folders to their PATH:
-        print("\u001b[31;1m I installed bcftools into " + os.path.join(home, 'software/bin')
+        print("I installed bcftools into " + os.path.join(home, 'software/bin')
               + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
               + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
+              + os.path.join(home, 'software/bin') + " to add it. I HIGHLY recommend that you add the export command to"
+                                                     "your .bash_profile.")
 
         print("Done downloading bcftools")
 
@@ -531,7 +542,7 @@ def bcftools():
     elif system_check == "Windows":
         sys.exit("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
                  "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux).")~
+                 "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
@@ -569,10 +580,11 @@ def htslib():
         subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        print("\u001b[31;1m I installed htslib into " + os.path.join(home, 'software/bin')
+        print("I installed htslib into " + os.path.join(home, 'software/bin')
               + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
               + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
+              + os.path.join(home, 'software/bin') + " to add it. I highly recommend that you add the export command to"
+                                                     "your .bash_profile.")
 
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -626,10 +638,11 @@ def samtools():
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        print("\u001b[31;1m I installed samtools into " + os.path.join(home, 'software/bin')
+        print("I installed samtools into " + os.path.join(home, 'software/bin')
               + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
               + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it.\u001b[0m")
+              + os.path.join(home, 'software/bin') + " to add it. I highly recommend that you add the export command to"
+                                                     " your .bash_profile.")
 
         print("Done downloading samtools")
 
@@ -652,7 +665,7 @@ def samtools():
         sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 
-def installmatplotlib():
+def getmatplotlib():
     try:
         import pip
         # Use pip to install snpflip and it's dependencies.
@@ -663,3 +676,13 @@ def installmatplotlib():
         pip.main(['install', 'matplotlib'])
 
     print("Done installing matplotlib")
+
+
+def getcolorama():
+    try:
+        import pip
+        pip.main(['install', 'colorama'])
+    except ImportError:
+        pip()
+        import pip
+        pip.main(['install', 'colorama'])
