@@ -1,10 +1,15 @@
+from colorama import init, Fore, Style
+init()
+
 import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
     plink = "./plink"
+    rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
+    rm = "del "
 
 def phase(geno_name, allocation_name):
     import platform
@@ -41,8 +46,10 @@ def phase(geno_name, allocation_name):
             import numpy as np
 
     # Ask if the user is on the cluster right now to determine if we should submit the files for them
+    print(Fore.BLUE + Style.BRIGHT)
     on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
                        ' for you. If not, you will need to submit the files yourself. (y/n): ').lower()
+    print(Style.RESET_ALL)
 
     # If it doesn't exist, create Phasing folder
     if not os.path.exists('Phasing'):
@@ -53,12 +60,16 @@ def phase(geno_name, allocation_name):
 
     if system_check == "Linux":
         # Now we need to know where they have shapeit, if they have it.
-        shapeit_exists = input("\u001b[35;1m Do you already have the linux shapeit program unpacked? (y/n):  "
-                               "\u001b[0m").lower()
+        print(Fore.MAGENTA + Style.BRIGHT)
+        shapeit_exists = input("Do you already have the linux shapeit program unpacked? (y/n): ").lower()
+        print(Style.RESET_ALL)
         # If yes, then ask for path of program
         if shapeit_exists in ('yes', 'y'):
-            shapeit_path = input("\u001b[36;1m Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ \u001b[0m")
+            print(Fore.GREEN)
+            shapeit_path = input("Please tell me the path where you have the shapeit program. "
+                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ : ")
+            print(Style.RESET_ALL)
+
         # If no, download and unpack shapeit.
         elif shapeit_exists in ('no', 'n'):
             # Get genodownload module
@@ -67,18 +78,22 @@ def phase(geno_name, allocation_name):
             # Since we just downloaded it, I know where the path is.
             shapeit_path = os.path.join(os.getcwd(),'Shapeit_v2.12_Linux_Static/bin/')
         else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had shapeit. Exiting now. '
-                     '\u001b[0m')
+            sys.exit('You did not answer "y" or "no" when asked if you had shapeit. Exiting now.')
 
     # If the user is on a mac
     elif system_check == "Darwin":
         # Ask if they already have shapeit
-        shapeit_exists = input("\u001b[34;1m Do you already have the mac shapeit program unpacked? (y/n):  "
-                               "\u001b[0m").lower()
+        print(Fore.MAGENTA + Style.BRIGHT)
+        shapeit_exists = input("Do you already have the mac shapeit program unpacked? (y/n): ").lower()
+        print(Style.RESET_ALL)
+
         if shapeit_exists in ('yes', 'y'):
             # Ask where shapeit is located.
-            shapeit_path = input("\u001b[35;1m Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ : \u001b[0m")
+            print(Fore.GREEN)
+            shapeit_path = input("Please tell me the path where you have the shapeit program. "
+                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ : ")
+            print(Style.RESET_ALL)
+
         elif shapeit_exists in ('no', 'n'):
             # Get genodownload module
             import genodownload
@@ -86,25 +101,31 @@ def phase(geno_name, allocation_name):
             # Since we just downloaded it, I know where the path is.
             shapeit_path = os.path.join(os.getcwd(), 'Shapeit_v2.20_Mac/bin/')
         else:
-            sys.exit('\u001b[35;1m You did not answer "y" or "no" when asked where shapeit was. Exiting now. \u001b[0m')
+            sys.exit('You did not answer "y" or "no" when asked where shapeit was. Exiting now.')
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == ("Windows"):
-        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+        print(Fore.RED + Style.BRIGHT)
+        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have "
+                 "access to the Penn State clusters, you should run this script from there (they are linux).")
+        print(Style.RESET_ALL)
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
     # Ask the user if they already have the 1000G Phase 3 Hap/Legend/Sample files.
-    ref_exists = input('\u001b[35;1m Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): '
-                       '\u001b[0m').lower()
+    print(Fore.CYAN)
+    ref_exists = input('Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): ').lower()
+    print(Style.RESET_ALL)
+
     # If yes
     if ref_exists in ('y', 'yes'):
         # Ask the user where the ref files are.
-        ref_path = input('\u001b[35;1m Please enter the pathname of where your 1000G hap/legend/sample files are '
-                         '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
+        print(Fore.BLUE + Style.BRIGHT)
+        ref_path = input('Please enter the pathname of where your 1000G hap/legend/sample files are '
+                         '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): ')
+        print(Style.RESET_ALL)
     # If no
     elif ref_exists in ('n', 'no'):
         # Get genodownload module
@@ -140,7 +161,7 @@ def phase(geno_name, allocation_name):
     subprocess.check_output([plink,'--bfile',geno_name,'--me','1','1','--set-me-missing','--make-bed','--out',
                              geno_name])
     # Remove old files
-    subprocess.call('rm *~', shell=True)
+    subprocess.call(rm + '*~', shell=True)
 
     # Perform phasing check per chromosome.
     for i in range(0,23):
@@ -210,11 +231,10 @@ def phase(geno_name, allocation_name):
                 father_me_errors = ind_me_file[ind_me_file['father_mendel'] > 0]
                 mother_me_errors = ind_me_file[ind_me_file['mother_mendel'] > 0]
                 if (len(father_me_errors) > 0) or (len(mother_me_errors) > 0):
-                    print("\u001b[31;1m Your files have people with non-zero mendel errors. You should investigate "
-                          "the " + ind_me_names[i] + ' file and take a careful look at the people with high values in '
-                                                     'the father_mendel & mother_mendel column. This result suggests '
-                                                     'that your paternity/maternity assignment could be incorrect. '
-                                                     '\u001b[0m')
+                    print("Your files have people with non-zero mendel errors. You should investigate the "
+                          + ind_me_names[i] + ' file and take a careful look at the people with high values in the '
+                                              'father_mendel & mother_mendel column. This result suggests that your '
+                                              'paternity/maternity assignment could be incorrect.')
             else:
                 pass
 
@@ -338,11 +358,10 @@ def phase(geno_name, allocation_name):
                 father_me_errors = ind_me_file[ind_me_file['father_mendel'] > 0]
                 mother_me_errors = ind_me_file[ind_me_file['mother_mendel'] > 0]
                 if (len(father_me_errors) > 0) or (len(mother_me_errors) > 0):
-                    print("\u001b[31;1m Your files have people with non-zero mendel errors. You should investigate "
-                          "the " + ind_me_names[i] + ' file and take a careful look at the people with high values in '
-                                   'the father_mendel & mother_mendel column. This result suggests '
-                                   'that your paternity/maternity assignment could be incorrect. '
-                                   '\u001b[0m')
+                    print("Your files have people with non-zero mendel errors. You should investigate the "
+                          + ind_me_names[i] + ' file and take a careful look at the people with high values in the '
+                                              'father_mendel & mother_mendel column. This result suggests that your '
+                                              'paternity/maternity assignment could be incorrect.')
                 else:
                     pass
 
@@ -468,9 +487,8 @@ def phase(geno_name, allocation_name):
             elif log == []:
                 pass
             else:
-                sys.exit(
-                    "I shouldn't have gotten here. There is something wrong with the way the script is checking "
-                    "for the phase check files.")
+                sys.exit("I shouldn't have gotten here. There is something wrong with the way the script is checking "
+                         "for the phase check files.")
 
             # If I just filled the snp_exclude_name variable, then we have snps to remove.
             # If there are people in ind_hh_exclude, then we have people to remove.
@@ -586,10 +604,10 @@ def phase(geno_name, allocation_name):
                  'genetic maps, 1000G legend files, 1000G hap files, and 1000G sample file, shapeit, and the phasing '
                  'pbs files to the cluster. You can submit the files by using qsub name_of_file.pbs')
     else:
-        sys.exit(" You didn't answer 'yes' or 'no' when I asked whether you were on the cluster or not, so I'm assuming "
-                 "you're not. You should transfer the genotype files, 1000G genetic maps, 1000G legend files, 1000G hap "
-                 "files, and 1000G sample file, shapeit, and the phasing pbs files to the cluster. You can submit the "
-                 "files by using qsub name_of_file.pbs")
+        sys.exit("You didn't answer 'yes' or 'no' when I asked whether you were on the cluster or not, so I'm assuming "
+                 "you're not. You should transfer the genotype files, 1000G genetic maps, 1000G legend files, 1000G "
+                 "hap files, and 1000G sample file, shapeit, and the phasing pbs files to the cluster. You can submit "
+                 "the files by using qsub name_of_file.pbs")
 
     print("Done")
 
@@ -629,8 +647,10 @@ def impute():
         return sorted(list, key=alphanum_key)
 
     # Ask user what they want the eventual file to be named.
+    print(Fore.BLUE + Style.BRIGHT)
     vcf_name = input("Please tell me what you would like your phased VCF file to be called. I'm going to concatenate "
                       "all of the phased per chromosomes into one whole genome file and give it this name.: ")
+    print(Style.RESET_ALL)
 
     # Use glob to find files ending with the endings set in geno phase.
     raw_vcf_list = glob.glob('Phasing/*_PhasedTo1000G.chr*.vcf')
@@ -638,9 +658,11 @@ def impute():
     # If glob wasn't able to find files ending in the above, ask the user where the phased files are.
     if raw_vcf_list == []:
         # Get path to phased files
+        print(Fore.MAGENTA + Style.BRIGHT)
         vcf_path = input("Please tell me where your phased vcf and haps/sample files are. Make sure they are in their "
                          "own folder, as this part of the script looks for anything with the ending '.vcf' "
                           "(i.e. C:\\Users\\Julie White\\Box Sync\\Genotypes\\Phasing\\ etc.): ")
+        print(Style.RESET_ALL)
         # Make list of anything with .vcf ending
         raw_vcf_list = glob.glob(os.path.join(vcf_path,'*.vcf'))
     else:
@@ -659,105 +681,127 @@ def impute():
     # Bcftools
     if system_check in ("Linux", "Darwin"):
         # Now we need to know where they have bcftools, if they have it.
-        bcftools_exists = input("\u001b[35;1m Do you already have the program bcftools unpacked and installed? (y/n): "
-                                "\u001b[0m").lower()
+        print(Fore.GREEN)
+        bcftools_exists = input("Do you already have the program bcftools unpacked and installed? (y/n): ").lower()
+        print(Style.RESET_ALL)
         # If yes, then ask for path of program
         if bcftools_exists in ('yes', 'y'):
-            in_path = input("Do you already have the bcftools location in your $PATH? If not, I will add it for you. "
+            print(Fore.CYAN)
+            in_path = input("Do you already have the bcftools location in your $PATH? This is HIGHLY recommended."
                             "(y/n): ").lower()
             if in_path in ('yes', 'y'):
                 pass
             elif in_path in ('no', 'n'):
-                bcftools_path = input("\u001b[36;1m Please tell me the path where you have the bcftools program. "
-                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\bcftools\\ \u001b[0m")
-                # Setting path of where bcftools is since it's hard to use it without this.
-                subprocess.check_output('export PATH=$PATH:' + bcftools_path, shell=True)
+                print(Fore.RED + Style.BRIGHT)
+                print('You should open a new terminal window and set your path to bcftools by typing export '
+                      'PATH=$PATH:/path/to/bcftools or by adding the pathname to your .bash_profile then typing '
+                      'source .bash_profile')
+                print(Style.RESET_ALL)
+
         # If no, download and unpack bcftools.
         elif bcftools_exists in ('no', 'n'):
             import genodownload
             genodownload.bcftools()
         else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had bcftools. Exiting now. '
-                     '\u001b[0m')
+            sys.exit('You did not answer "y" or "no" when asked if you had bcftools. Exiting now.')
+
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == ("Windows"):
-        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
+                 "the Penn State clusters, you should run this script from there (they are linux).")
+
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
     # Samtools
     if system_check in ("Linux", "Darwin"):
         # Now we need to know where they have samtools, if they have it.
-        samtools_exists = input("\u001b[35;1m Do you already have the program samtools unpacked and installed? (y/n): "
-                                "\u001b[0m").lower()
+        print(Fore.BLUE + Style.BRIGHT)
+        samtools_exists = input("Do you already have the program samtools unpacked and installed? (y/n): ").lower()
+        print(Style.RESET_ALL)
+
         # If yes, then ask for path of program
         if samtools_exists in ('yes', 'y'):
-            in_path = input("Do you already have the samtools location in your $PATH? If not, I will add it for you. "
-                            "(y/n): ").lower()
+            print(Fore.MAGENTA + Style.BRIGHT)
+            in_path = input("Do you already have the samtools location in your $PATH? (y/n): ").lower()
+            print(Style.RESET_ALL)
+
             if in_path in ('yes', 'y'):
                 pass
             elif in_path in ('no', 'n'):
-                samtools_path = input("\u001b[36;1m Please tell me the path where you have the samtools program. "
-                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\samtools\\ \u001b[0m")
-                # Setting path of where bcftools is since it's hard to use it without this.
-                subprocess.check_output('export PATH=$PATH:' + samtools_path, shell=True)
-        # If no, download and unpack bcftools.
+                print(Fore.RED + Style.BRIGHT)
+                print('You should open a new terminal window and set your path to samtools by typing export '
+                      'PATH=$PATH:/path/to/samtools or by adding the pathname to your .bash_profile then typing '
+                      'source .bash_profile')
+                print(Style.RESET_ALL)
+
+        # If no, download and unpack samtools.
         elif samtools_exists in ('no', 'n'):
             import genodownload
             genodownload.samtools()
         else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had samtools. Exiting now. '
-                     '\u001b[0m')
+            sys.exit('You did not answer "y" or "no" when asked if you had samtools. Exiting now.')
+
     # If they are running this on a windows machine, they cannot proceed because samtools is *nix only.
     elif system_check == ("Windows"):
-        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
+                 "the Penn State clusters, you should run this script from there (they are linux).")
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
     # Vcftools
     if system_check in ("Linux", "Darwin"):
         # Now we need to know where they have vcftools, if they have it.
-        vcftools_exists = input("\u001b[35;1m Do you already have the program vcftools unpacked and installed? (y/n): "
-                                "\u001b[0m").lower()
+        print(Fore.GREEN)
+        vcftools_exists = input("Do you already have the program vcftools unpacked and installed? (y/n): ").lower()
+        print(Style.RESET_ALL)
+
         # If yes, then ask for path of program
         if vcftools_exists in ('yes', 'y'):
+            print(Fore.CYAN)
             in_path = input("Do you already have the vcftools location in your $PATH? If not, I will add it for you. "
                             "(y/n): ").lower()
+            print(Style.RESET_ALL)
+
             if in_path in ('yes', 'y'):
                 pass
             elif in_path in ('no', 'n'):
-                vcftools_path = input("\u001b[36;1m Please tell me the path where you have the vcftools program. "
-                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ \u001b[0m")
-                # Setting path of where vcftools is since it's hard to use it without this.
-                subprocess.check_output('export PATH=$PATH:' + vcftools_path, shell=True)
+                print(Fore.RED + Style.BRIGHT)
+                print('You should open a new terminal window and set your path to vcftools by typing export '
+                      'PATH=$PATH:/path/to/vcftools or by adding the pathname to your .bash_profile then typing '
+                      'source .bash_profile')
+                print(Style.RESET_ALL)
+
         # If no, download and unpack vcftools.
         elif vcftools_exists in ('no', 'n'):
             import genodownload
             # Download vcftools
             genodownload.vcftools()
         else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had vcftools. Exiting now. '
-                     '\u001b[0m')
+            sys.exit('You did not answer "y" or "no" when asked if you had vcftools. Exiting now.')
+
     # If they are running this on a windows machine, they cannot proceed because vcftools is *nix only.
     elif system_check == ("Windows"):
-        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
+                 "the Penn State clusters, you should run this script from there (they are linux).")
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
     # hg19 fasta files.
-    fasta_exists = input('\u001b[34;1m Have you already downloaded the human_g1k_v37.fasta file? (y/n): '
-                         '\u001b[0m').lower()
+    print(Fore.BLUE + Style.BRIGHT)
+    fasta_exists = input('Have you already downloaded the human_g1k_v37.fasta file? (y/n): ').lower()
+    print(Style.RESET_ALL)
+
     if fasta_exists in ('y', 'yes'):
         # Ask the user where the fasta file is.
-        fasta_path = input('\u001b[34;1m Please enter the pathname of where the your 1000G hg19 fasta file is '
-                           '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): '
-                           '\u001b[0m')
+        print(Fore.MAGENTA + Style.BRIGHT)
+        fasta_path = input('Please enter the pathname of where the your 1000G hg19 fasta file is '
+                           '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): ')
+        print(Style.RESET_ALL)
+
     elif fasta_exists in ('n', 'no'):
         # Get geno download module
         import genodownload
@@ -908,43 +952,56 @@ def getinfo(imputed_path, geno_name):
     # Vcftools
     if system_check in ("Linux", "Darwin"):
         # We need to know where they have vcftools, if they have it.
-        vcftools_exists = input("\u001b[35;1m Do you already have the program vcftools unpacked and installed? (y/n): "
-                                "\u001b[0m").lower()
+        print(Fore.BLUE + Style.BRIGHT)
+        vcftools_exists = input("Do you already have the program vcftools unpacked and installed? (y/n): ").lower()
+        print(Style.RESET_ALL)
+
         # If yes, then ask for path of program
         if vcftools_exists in ('yes', 'y'):
-            in_path = input("Do you already have the vcftools location in your $PATH?"
-                            "(y/n): ").lower()
+            print(Fore.MAGENTA + Style.BRIGHT)
+            in_path = input("Do you already have the vcftools location in your $PATH? (y/n): ").lower()
+            print(Style.RESET_ALL)
+
             if in_path in ('yes', 'y'):
                 vcftools = 'vcftools'
+
             elif in_path in ('no', 'n'):
-                vcftools_path = input("\u001b[36;1m Please tell me the path where you have the vcftools program. "
-                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ \u001b[0m")
+                print(Fore.GREEN)
+                vcftools_path = input("Please tell me the path where you have the vcftools program. "
+                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ : ")
+                print(Style.RESET_ALL)
                 vcftools = os.path.join(vcftools_path, 'vcftools')
+
         # If no, download and unpack vcftools.
         elif vcftools_exists in ('no', 'n'):
             import genodownload
             # Download vcftools
             genodownload.vcftools()
         else:
-            sys.exit('\u001b[36;1m You did not answer "y" or "no" when asked if you had vcftools. Exiting now. '
-                     '\u001b[0m')
+            sys.exit('You did not answer "y" or "no" when asked if you had vcftools. Exiting now.')
+
     # If they are running this on a windows machine, they cannot proceed because vcftools is *nix only.
     elif system_check == ("Windows"):
-        sys.exit("\u001b[35;1m I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-                 "access to the Penn State clusters, you should run this script from there (they are linux). \u001b[0m")
+        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
+                 "the Penn State clusters, you should run this script from there (they are linux).")
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("\u001b[35;1m I cannot detect the system you are working on. Exiting now. \u001b[0m")
+        sys.exit("I cannot detect the system you are working on. Exiting now.")
 
     # Ask the user if they are running this from the PSU cluster. This is the preferred way to go, since this takes a
     # while and will clog their computer's RAM if they try to do it from their personal computer.
+    print(Fore.CYAN)
     on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
                        ' for you. If not, I will try to run this using your local RAM, but this might make your computer'
                        ' very slow and will probably take several hours. (y/n): ').lower()
+    print(Style.RESET_ALL)
 
     if on_cluster in ("yes", "y"):
         # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
-        allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
+        print(Fore.BLUE + Style.BRIGHT)
+        allocation_name = input('Please enter the name of your cluster allocation: ')
+        print(Style.RESET_ALL)
+
         # Write pbs file
         with open(os.path.join(imputed_path, 'GetImputationInfo.pbs'), 'w') as file:
             file.write('#!/bin/bash\n'
@@ -988,19 +1045,10 @@ def qualscoreplot(info_path):
         import matplotlib
         matplotlib.use('Agg')
     except ImportError:
-        try:
-            import pip
-            # Use pip to install matplotlib and it's dependencies.
-            pip.main(['install', 'matplotlib'])
-            import matplotlib
-            matplotlib.use('Agg')
-        except ImportError:
-            import genodownload
-            genodownload.pip()
-            import pip
-            pip.main(['install', 'matplotlib'])
-            import matplotlib
-            matplotlib.use('Agg')
+        import genodownload
+        genodownload.getmatplotlib()
+        import matplotlib
+        matplotlib.use('Agg')
 
     import matplotlib.pyplot as plt
 
@@ -1009,7 +1057,6 @@ def qualscoreplot(info_path):
         convert = lambda text: int(text) if text.isdigit() else text
         alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
         return sorted(list, key=alphanum_key)
-
 
     # Use glob to find files ending with the ending .INFO
     info_list = glob.glob(os.path.join(info_path, '*.INFO'))

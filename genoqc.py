@@ -8,6 +8,7 @@ elif system_check == "Windows":
     plink = 'plink.exe'
     rm = "del "
 
+
 def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
     #   1) FID
@@ -25,10 +26,10 @@ def update_sex(geno_name, update_sex_filename):
                              geno_name + '_SexUpdated.prune.out', '--check-sex', 'ycount', '0.3', '0.8', '0', '0',
                              '--out', geno_name + '_SexUpdated'])
 
-    print("\u001b[36;1m Finished. Your genotype files with sex updated will have the name "
-          + geno_name + "_SexUpdated. I also ran a sex check on your sample, which will have the name "
-          + geno_name + "_SexUpdated.sexcheck. You should check this file for any problems and decide if you want to "
-                        "re-update your file. \u001b[0m")
+    print("Finished. Your genotype files with sex updated will have the name " + geno_name
+          + "_SexUpdated. I also ran a sex check on your sample, which will have the name " + geno_name
+          + "_SexUpdated.sexcheck. You should check this file for any problems and decide if you want to re-update "
+            "your file.")
 
 
 def missing_call_rate(geno_name):

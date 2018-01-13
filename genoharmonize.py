@@ -1,3 +1,6 @@
+from colorama import init, Fore, Style
+init()
+
 import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
@@ -38,12 +41,16 @@ def harmonize_with_1000g(geno_name):
     
     # Getting required reference files and genotype harmonizer program
     # Ask the user if they already have the 1000G Phase 3 vcf files.
-    vcf_exists = input('\u001b[34;1m Have you already downloaded the 1000G Phase3 VCF files? (y/n): \u001b[0m').lower()
+    print(Fore.BLUE + Style.BRIGHT)
+    vcf_exists = input('Have you already downloaded the 1000G Phase3 VCF files? (y/n): ').lower()
+    print(Style.RESET_ALL)
 
     if vcf_exists in ('y', 'yes'):
         # Getting user's path to VCF files
-        vcf_path = input('\u001b[35;1m Please enter the pathname of where your 1000G VCF files are '
-                         '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): \u001b[0m')
+        print(Fore.MAGENTA + Style.BRIGHT)
+        vcf_path = input('Please enter the pathname of where your 1000G VCF files are '
+                         '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): ')
+        print(Style.RESET_ALL)
 
     elif vcf_exists in ('n', 'no'):
         # Get module where downloading instructions are.
@@ -56,13 +63,16 @@ def harmonize_with_1000g(geno_name):
         sys.exit("Please answer yes or no. Quitting now because no VCF files.")
 
     # Ask the user if they already have the 1000G Phase 3 Hap/Legend/Sample files.
-    legend_exists = input('\u001b[36;1m Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? '
-                          '(y/n): \u001b[0m').lower()
+    print(Fore.GREEN)
+    legend_exists = input('Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): ').lower()
+    print(Style.RESET_ALL)
 
     if legend_exists in ('y', 'yes'):
         # Ask the user where the Legend files are.
-        legend_path = input('\u001b[31;1m Please enter the pathname of where your 1000G legend files are '
-                            '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): \u001b[0m')
+        print(Fore.CYAN)
+        legend_path = input('Please enter the pathname of where your 1000G legend files are '
+                            '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): ')
+        print(Style.RESET_ALL)
 
     elif legend_exists in ('n', 'no'):
         # Get genodownload module
@@ -75,13 +85,17 @@ def harmonize_with_1000g(geno_name):
         sys.exit('Please answer yes or no. Quitting now because no legend files.')
     
     # Ask if they have the hg19 fasta files.
-    fasta_exists = input('\u001b[32;1m Have you already downloaded the 1000G hg19 fasta file? (y/n): \u001b[0m').lower()
+    print(Fore.BLUE + Style.BRIGHT)
+    fasta_exists = input('Have you already downloaded the 1000G hg19 fasta file? (y/n): ').lower()
+    print(Style.RESET_ALL)
 
     if fasta_exists in ('y', 'yes'):
         # Ask the user where the fasta file is.
-        fasta_path = input('\u001b[34;1m Please enter the pathname of where the your 1000G hg19 fasta file is '
-                           '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): '
-                           '\u001b[0m')
+        print(Fore.MAGENTA + Style.BRIGHT)
+        fasta_path = input('Please enter the pathname of where the your 1000G hg19 fasta file is '
+                           '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): ')
+        print(Style.RESET_ALL)
+
     elif fasta_exists in ('n', 'no'):
         # Get geno download module
         import genodownload
@@ -93,13 +107,16 @@ def harmonize_with_1000g(geno_name):
         sys.exit('Please answer yes or no. Quitting now because no fasta file.')
     
     # Ask if they have genotype harmonizer.
-    harmonizer_exists = input('\u001b[34;1m Have you already downloaded Genotype Harmonizer? (y/n): \u001b[0m').lower()
+    print(Fore.GREEN)
+    harmonizer_exists = input('Have you already downloaded Genotype Harmonizer? (y/n): ').lower()
+    print(Style.RESET_ALL)
 
     if harmonizer_exists in ('y', 'yes'):
         # Ask the user where genotype harmonizer is.
-        harmonizer_path = input('\u001b[35;1m Please enter the pathname of where the Genotype Harmonizer folder is '
-                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): '
-                                '\u001b[0m')
+        print(Fore.CYAN)
+        harmonizer_path = input('Please enter the pathname of where the Genotype Harmonizer folder is '
+                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): ')
+        print(Style.RESET_ALL)
 
     elif harmonizer_exists in ('n', 'no'):
         import genodownload
@@ -108,7 +125,7 @@ def harmonize_with_1000g(geno_name):
         harmonizer_path = os.path.join(os.getcwd(), 'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
 
     else:
-        sys.exit('\u001b[35;1m Please write yes or no. Quitting now because no Genotype Harmonizer. \u001b[0m')
+        sys.exit('Please write yes or no. Quitting now because no Genotype Harmonizer.')
 
     # Start harmonization
     # Make new folder where the harmonized files will be located.
@@ -196,7 +213,9 @@ def harmonize_with_1000g(geno_name):
                                    dtype={'chr': str, 'pos': int, 'id': str, 'alleles': str, 'action': str,
                                           'message': str})
         else:
-            sys.exit("\u001b[36;1m Something is wrong with the number/name of reference files \u001b[0m")
+            print(Fore.RED + Style.BRIGHT)
+            sys.exit("Something is wrong with the number/name of reference files")
+            print(Style.RESET_ALL)
 
     # Concatenate all of the id updates into one file.
     all_id_updates = pd.concat([id_updates[0], id_updates[1], id_updates[2], id_updates[3], id_updates[4],
@@ -369,7 +388,7 @@ def harmonize_with_1000g(geno_name):
             
         # Done with one chromosome.
 
-        print('\u001b[36;1m Finished with chr' + str(i + 1) + '\u001b[0m')
+        print('Finished with chr' + str(i + 1))
     
     # Make a big list of all SNPs removed and all SNPs kept just for reference purposes.
     all_snps_removed = pd.concat([af_diff_removed_by_chr[0], af_diff_removed_by_chr[1], af_diff_removed_by_chr[2],
@@ -407,7 +426,9 @@ def harmonize_with_1000g(geno_name):
             subprocess.call(rm + str(af_checked_names[i]) + '.*', shell=True)
 
     else:
-        sys.exit("\u001b[36;1m For some reason the house gentoypes did not merge. You should try it manually \u001b[0m")
+        print(Fore.RED + Style.BRIGHT)
+        sys.exit("For some reason the house gentoypes did not merge. You should try it manually.")
+        print(Style.RESET_ALL)
     
     #Check to make sure the snps are on the same strand as the reference
     # First need to change the chromosome names to match the fasta file so they can match.

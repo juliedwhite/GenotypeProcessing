@@ -6,6 +6,7 @@ if system_check in ("Linux", "Darwin"):
 elif system_check == "Windows":
     plink = 'plink.exe'
 
+
 def ibd(geno_name):
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
@@ -39,13 +40,12 @@ def ibd(geno_name):
     subprocess.check_output('sed -r "s/\s+/\t/g" IBD_Calculations/' + geno_name + '.genome > IBD_Calculations/'
                             + geno_name + '.tab.genome', shell=True)
     # Finished
-    print("\u001b[36;1m Analysis finished. Your IBD results in a tab delimited file will have the name "
-          + geno_name + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate "
-                        "your relatives and possibly update the FID and IIDs in your file.\n"
-                        "If you are planning on using these data for future analyses like admixture or "
-                        "phasing/imputation, you should make set lists of people who are unrelated in each set. These "
-                        "lists should have Family ID / Individual ID pairs, one person per line (tab or space "
-                        "delimited).  \u001b[0m")
+    print("Analysis finished. Your IBD results in a tab delimited file will have the name " + geno_name
+          + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate your "
+            "relatives and possibly update the FID and IIDs in your file.\n"
+            "If you are planning on using these data for future analyses like admixture or phasing/imputation, you "
+            "should make set lists of people who are unrelated in each set. These lists should have "
+            "Family ID / Individual ID pairs, one person per line (tab or space delimited).")
 
 
 def update_id(geno_name, update_id_filename):
@@ -58,8 +58,7 @@ def update_id(geno_name, update_id_filename):
 
     subprocess.check_output([plink, '--bfile', geno_name, '--update-ids', update_id_filename, '--make-bed', '--out',
                              geno_name + '_IDUpdated'])
-    print("\u001b[36;1m Finished. Your genotype files with the ID updated will have the name "
-          + geno_name + "_IDUpdated \u001b[0m")
+    print("Finished. Your genotype files with the ID updated will have the name " + geno_name + "_IDUpdated")
 
 
 def update_parental(geno_name, update_parents_filename):
@@ -72,5 +71,4 @@ def update_parental(geno_name, update_parents_filename):
 
     subprocess.check_output([plink, '--bfile', geno_name, '--update-parents', update_parents_filename, '--make-bed',
                              '--out', geno_name + '_ParentsUpdated'])
-    print("\u001b[36;1m Finished. Your genotype files with parents updated will have the name "
-          + geno_name + "_ParentsUpdated \u001b[0m")
+    print("Finished. Your genotype files with parents updated will have the name " + geno_name + "_ParentsUpdated")

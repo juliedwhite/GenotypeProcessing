@@ -1,3 +1,6 @@
+from colorama import init, Fore, Style
+init()
+
 import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
@@ -18,13 +21,16 @@ def merge1000g(geno_name, harmonized_path):
     orig_wd = os.getcwd()
 
     # Make sure user has harmonized first.
-    merge_proceed = input("\u001b[32;1m You must harmonize your data with 1000G before this step. "
-                          "Have you already done this? (y/n): \u001b[0m").lower()
+    print(Fore.BLUE + Style.BRIGHT)
+    merge_proceed = input("You must harmonize your data with 1000G before this step. Have you already done this? "
+                          "(y/n): ").lower()
+    print(Style.RESET_ALL)
 
     if merge_proceed in ("y", "yes"):
         import csv
         import pandas as pd
         import shutil
+        import glob
 
         # Create new directory for storing these files.
         if not os.path.exists('Merged_With_1000G'):
@@ -41,12 +47,17 @@ def merge1000g(geno_name, harmonized_path):
 
         # Making sure they still have the 1000G vcf files. They should if they have just harmonized, but they might
         # have deleted them or something.
-        vcf_exists = input('\u001b[34;1m Have you already downloaded the 1000G Phase3 VCF files? (y/n): \u001b[0m').lower()
+        print(Fore.MAGENTA + Style.BRIGHT)
+        vcf_exists = input('Have you already downloaded the 1000G Phase3 VCF files? (y/n): ').lower()
+        print(Style.RESET_ALL)
 
         if vcf_exists in ('y', 'yes'):
             # Getting user's path to VCF files
-            vcf_path = input('\u001b[34;1m Please enter the pathname of where your 1000G vcf files are '
-                             '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): \u001b[0m')
+            print(Fore.GREEN)
+            vcf_path = input('Please enter the pathname of where your 1000G vcf files are '
+                             '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): ')
+            print(Style.RESET_ALL)
+
         elif vcf_exists in ('n', 'no'):
             # Get module where downloading instructions are.
             import genodownload
@@ -131,8 +142,7 @@ def merge1000g(geno_name, harmonized_path):
                 subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # The merge should be successful this time, but the user should double check.
-                print("\u001b[36;1m Successfully merged 1000G, though you should double-check the log file to be sure "
-                      "\u001b[0m")
+                print("Successfully merged 1000G, though you should double-check the log file to be sure.")
 
             else:  # If only merge warnings exist, exclude from 1000G completely
                 # Use plink to exclude the merge warning snps.
@@ -146,8 +156,7 @@ def merge1000g(geno_name, harmonized_path):
                 subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                          '--out', '1000G_Phase3'])
                 # Merge should be successful this time, but the user should double check.
-                print("\u001b[36;1m Successfully merged 1000G, though you should double-check the log file to be sure "
-                      "\u001b[0m")
+                print("Successfully merged 1000G, though you should double-check the log file to be sure.")
 
         # If only the missnps exist, remove them in 1000G.
         elif os.path.exists('1000G_Phase3-merge.missnp') and os.path.getsize('1000G_MergeWarnings.txt') == 0:
@@ -162,19 +171,19 @@ def merge1000g(geno_name, harmonized_path):
             subprocess.check_output([plink, '--merge-list', '1000GMergeList.txt', '--geno', '0.01', '--make-bed',
                                      '--out', '1000G_Phase3'])
             # Merge should be successful this time, but the user should double check.
-            print("\u001b[36;1m Successfully merged 1000G, though you should double check the log file to be sure. "
-                  "\u001b[0m")
+            print("Successfully merged 1000G, though you should double check the log file to be sure.")
 
         elif os.path.exists('1000G_Phase3.bim'):
             # Merge was successful.
-            print("\u001b[36;1m Successfully merged 1000G \u001b[0m")
+            print("Successfully merged 1000G.")
             # Remove the per chromosome 1000G files, since they're just taking up space now.
             for i in range(0, len(chr_1000G_Phase3_names)):
                 subprocess.call(rm + chr_1000G_Phase3_names[i] + '.*', shell=True)
 
         else: # If merge didn't work for reasons other than merge warnings and missnps.
-            sys.exit("\u001b[36;1m Unable to merge 1000G chromosome files. You should try to merge them on your own."
-                     "\u001b[0m")
+            print(Fore.RED + Style.BRIGHT)
+            sys.exit("Unable to merge 1000G chromosome files. You should try to merge them on your own.")
+            print(Style.RESET_ALL)
 
         ### Merge of house data and 1000G ####
         # Copying harmonized to 1000G files to this folder.
@@ -247,8 +256,8 @@ def merge1000g(geno_name, harmonized_path):
         elif os.path.exists(geno_name + '_1000G.bim'):
             # If mergewarnings and missnips don't exist, then hopefully the merge happened successfully on the first
             # try.
-            print("\u001b[36;1m Successfully merged house dataset with 1000G on the first try, "
-                  "though you should double check. I can't predict every error.\u001b[0m")
+            print("Successfully merged house dataset with 1000G on the first try, though you should double check. I "
+                  "can't predict every error.")
             # Copy successfully merged files to original working directory.
             shutil.copy2(geno_name + '_1000G.bed', orig_wd)
             shutil.copy2(geno_name + '_1000G.bim', orig_wd)
@@ -259,9 +268,11 @@ def merge1000g(geno_name, harmonized_path):
             os.chdir(orig_wd)
 
         else:
-            sys.exit("\u001b[36;1m The house dataset did not merge properly with 1000G, but not because of SNP merge "
+            print(Fore.RED + Style.BRIGHT)
+            sys.exit("The house dataset did not merge properly with 1000G, but not because of SNP merge "
                      "warnings or SNPs that needed to be flipped. I'm sorry, you'll have to perform the merge on your "
-                     "own.\u001b[0m")
+                     "own.")
+            print(Style.RESET_ALL)
 
         # If we had to perform a second merge because of one of the reasons above.
         if os.path.exists(geno_name + '_1000G_merge2.log'):
@@ -337,8 +348,8 @@ def merge1000g(geno_name, harmonized_path):
             # If we don't find warnings or missnps
             elif os.path.exists(geno_name + '_1000G_merge2.bim'):
                 # Merge should have happened, but user should check.
-                print("\u001b[36;1m Successfully merged house dataset with 1000G on 2nd try, though you should double "
-                      "check. I can't predict every error.\u001b[0m")
+                print("Successfully merged house dataset with 1000G on 2nd try, though you should double check. I "
+                      "can't predict every error.")
                 # Copy merged files to original working directory
                 shutil.copy2(geno_name + '_1000G_merge2.bed', orig_wd)
                 shutil.copy2(geno_name + '_1000G_merge2.bim', orig_wd)
@@ -349,9 +360,11 @@ def merge1000g(geno_name, harmonized_path):
                 os.chdir(orig_wd)
             # If the merge didn't happen, but not because of merge warnings or missnps.
             else:
-                sys.exit("\u001b[36;1m House dataset and 1000G did not successfully merge 2nd time, though not because "
-                         "of merge warnings or SNPs that needed to be flipped. You'll have to perform the merge on your "
-                         "own. I'm sorry!\u001b[0m")
+                print(Fore.RED + Style.BRIGHT)
+                sys.exit("House dataset and 1000G did not successfully merge 2nd time, though not because of merge "
+                         "warnings or SNPs that needed to be flipped. You'll have to perform the merge on your own. "
+                         "I'm sorry!")
+                print(Style.RESET_ALL)
 
         if os.path.exists(geno_name + '_1000G_merge3.log'):
             # If merge 3 log exists, read it into pandas dataframe.
@@ -366,26 +379,30 @@ def merge1000g(geno_name, harmonized_path):
                 # take care of them manually.
                 if logfile[0].str.contains('Warning:').any() \
                         and os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
-                    sys.exit("\u001b[36;1m I'm sorry, the logfile still has warnings, even after removing snps that "
+                    print(Fore.RED + Style.BRIGHT)
+                    sys.exit("I'm sorry, the logfile still has warnings, even after removing snps that "
                              "threw errors in the first two tries. There are also still snps with 3+ variants present, "
                              "even after flipping some and removing the ones that the flip didn't solve. You'll have "
-                             "to manually deal with these using the merge3 log and the merge3-merge.missnp file. "
-                             "\u001b[0m")
+                             "to manually deal with these using the merge3 log and the merge3-merge.missnp file.")
+                    print(Style.RESET_ALL)
                 # Check to see if the logfile still has warnings
                 elif logfile[0].str.contains('Warning:').any():
-                    sys.exit("\u001b[36;1m I'm sorry, the logfile still has warnings, even after removing snps that "
-                             "threw errors in the first two tries. You'll have to manually deal with these using the "
-                             "merge3 log file. \u001b[0m")
+                    print(Fore.RED + Style.BRIGHT)
+                    sys.exit("I'm sorry, the logfile still has warnings, even after removing snps that threw errors in "
+                             "the first two tries. You'll have to manually deal with these using the merge3 log file.")
+                    print(Style.RESET_ALL)
                 # If triallelic snps still exist
                 elif os.path.exists(geno_name + '_1000G_merge3-merge.missnp'):
-                    sys.exit("\u001b[36;1m I'm sorry, there are still snps with 3+ variants present, even after "
-                             "flipping some and removing the ones that the flip didn't solve. You'll have to deal with "
-                             "these manually using the merge3-merge.missnp file \u001b[0m")
+                    print(Fore.RED + Style.BRIGHT)
+                    sys.exit("I'm sorry, there are still snps with 3+ variants present, even after flipping some and "
+                             "removing the ones that the flip didn't solve. You'll have to deal with these manually "
+                             "using the merge3-merge.missnp file")
+                    print(Style.RESET_ALL)
 
             # If the bim file exists, then the merge should have happened correctly.
             if os.path.exists(geno_name + '_1000G_merge3.bim'):
-                print("\u001b[36;1m House dataset and 1000G merged correctly on 3rd try. Though you should "
-                      "double-check the log file, I can't predict every error.\u001b[0m")
+                print("House dataset and 1000G merged correctly on 3rd try. Though you should double-check the log "
+                      "file, I can't predict every error.")
                 # Copy files to original working directory.
                 shutil.copy2(geno_name + '_1000G_merge3.bed', orig_wd)
                 shutil.copy2(geno_name + '_1000G_merge3.bim', orig_wd)
@@ -397,8 +414,8 @@ def merge1000g(geno_name, harmonized_path):
 
     # End the program if the user did not harmonize first.
     elif merge_proceed in ('n', 'no'):
-        sys.exit("\u001b[34;1m Please harmonize your genotypes with 1000G first. \u001b[0m")
+        sys.exit("Please harmonize your genotypes with 1000G first.")
 
     # End the program if the user did not give a correctly formatted answer.
     else:
-        sys.exit('\u001b[34;1m Please answer yes or no. \u001b[0m')
+        sys.exit('Please answer yes or no.')

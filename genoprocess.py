@@ -11,27 +11,37 @@ else:
     genodownload.python3()
     sys.exit("Exiting now, please re-run the script now that we've downloaded python3.")
 
+try:
+    from colorama import init, Fore, Style
+    init()
+except ImportError:
+    import genodownload
+    genodownload.getcolorama()
+    from colorama import init, Fore, Style
+    init()
+
 # Ask the user what they'd like to do.
-to_do = input('\u001b[31;1m What would you like to do?\n'
-              '1) Download reference files or programs.\n'
-              '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
-              'headings)\n'
-              '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
-              '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-              '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
-              'New FID, New IID.\n'
-              '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-              '7) Harmonize with 1000G\n'
-              '8) Filter for extreme (+-3SD) heterozygosity values\n'
-              '9) Merge with 1000G\n'
-              '10) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
-              '11) Run a phasing check and prepare files for phasing using SHAPEIT\n'
-              '12) Prepare for imputation on the Sanger Imputation Server\n'
-              '13) Extract imputation quality score and reference allele frequency from Sanger Imputation Server VCF '
-              'files\n'
-              '14) Plot imputation quality scores\n'
-              '15) Nothing. \n'
-              'Please enter a number (i.e. 2): \u001b[0m')
+print(Fore.RED + Style.BRIGHT + 'What would you like to do?\n'
+                 '1) Download reference files or programs.\n'
+                 '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
+                 'headings)\n'
+                 '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+                 '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+                 '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+                 'New FID, New IID.\n'
+                 '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+                 '7) Harmonize with 1000G\n'
+                 '8) Filter for extreme (+-3SD) heterozygosity values\n'
+                 '9) Merge with 1000G\n'
+                 '10) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
+                 '11) Run a phasing check and prepare files for phasing using SHAPEIT\n'
+                 '12) Prepare for imputation on the Sanger Imputation Server\n'
+                 '13) Extract imputation quality score and reference allele frequency from Sanger Imputation Server VCF'
+                 ' files\n'
+                 '14) Plot imputation quality scores\n'
+                 '15) Nothing.')
+to_do = input("Please enter a number (i.e. 2): ")
+print(Style.RESET_ALL)
 
 # Use genodownload to figure out what to download.
 if to_do == '1':
@@ -43,11 +53,15 @@ if to_do == '1':
 # GenoQC: Update sex
 elif to_do == '2':
     # Get name of genotype file
-    geno_name = input("\u001b[32;1m Please enter the name of the genotype files you'd like to update sex in "
-                      "(without bed/bim/fam extension: \u001b[0m")
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input("Please enter the name of the genotype files you'd like to update sex in "
+                      "(without bed/bim/fam extension: ")
+    print(Style.RESET_ALL)
+
     # Get name of file to be used for updating sex
-    update_sex_filename = input('\u001b[34;1m Please enter the name of your text file for updating sex (with file '
-                                'extension): \u001b[0m')
+    print(Fore.MAGENTA + Style.BRIGHT)
+    update_sex_filename = input('Please enter the name of your text file for updating sex (with file extension): ')
+    print(Style.RESET_ALL)
     # Import module where this command is.
     import genoqc
     # Call UpdateSex command using geno name and update sex filename as input
@@ -56,8 +70,10 @@ elif to_do == '2':
 # GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '3':
     # Get name of genotype file
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files (without bed/bim/fam extension:'
-                      ' \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+    print(Style.RESET_ALL)
+
     # Import module and call command
     import genoqc
     genoqc.missing_call_rate(geno_name)
@@ -78,7 +94,9 @@ elif to_do == '4':
     # A good cutoff to use for Pi_Hat is 0.1875. This represents the halfway point between 2nd and 3rd degree relatives.
 
     # Get name of genotype file
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files to run an IBD on (without bed/bim/fam extension: \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of the genotype files to run an IBD on (without bed/bim/fam extension: ')
+    print(Style.RESET_ALL)
     # Import module and call command.
     import genorelatives
     genorelatives.ibd(geno_name)
@@ -92,11 +110,16 @@ elif to_do == '5':
           "3) New FID\n"
           "4) New IID")
     # Getting name of working file.
-    geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to update FID/IID '
-                      'in (without bed/bim/fam extension): \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of your genotype files that you would like to update FID/IID in '
+                      '(without bed/bim/fam extension): ')
+    print(Style.RESET_ALL)
+
     # Name of file to be used to update the genotype files.
-    update_id_filename = input('\u001b[34;1m Please enter the name of your text file for updating FID or IID '
-                                '(with file extension): \u001b[0m')
+    print(Fore.MAGENTA + Style.BRIGHT)
+    update_id_filename = input('Please enter the name of your text file for updating FID or IID (with file extension): ')
+    print(Style.RESET_ALL)
+
     # Import module and call command.
     import genorelatives
     genorelatives.update_id(geno_name, update_id_filename)
@@ -110,11 +133,17 @@ elif to_do == '6':
           "3) Paternal IID\n"
           "4) Maternal IID")
     # Getting name of working file.
-    geno_name = input('\u001b[32;1m Please enter the name of your genotype files that you would like to update parents '
-                      'in (without bed/bim/fam extension): \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of your genotype files that you would like to update parents in '
+                      '(without bed/bim/fam extension): ')
+    print(Style.RESET_ALL)
+
     # Getting name of file to be used for update
-    update_parents_filename = input('\u001b[34;1m Please enter the name of your text file for updating parents '
-                                    '(with file extension): \u001b[0m')
+    print(Fore.MAGENTA + Style.BRIGHT)
+    update_parents_filename = input('Please enter the name of your text file for updating parents '
+                                    '(with file extension): ')
+    print(Style.RESET_ALL)
+
     # Import module and call command.
     import genorelatives
     genorelatives.update_parental(geno_name, update_parents_filename)
@@ -133,8 +162,10 @@ elif to_do == '7':
 
     if coord_check in ('yes', 'y'):
         # Get name of genotypes.
-        geno_name = input('\u001b[34;1m Please enter the name of the genotype file you would like to harmonize with '
-                          '1000G Phase 3 (without bed/bim/fam extension: \u001b[0m')
+        print(Fore.BLUE + Style.BRIGHT)
+        geno_name = input('Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
+                          '(without bed/bim/fam extension: ')
+        print(Style.RESET_ALL)
         # Harmonize with 1000G Phase 3
         import genoharmonize
         genoharmonize.harmonize_with_1000g(geno_name)
@@ -147,8 +178,11 @@ elif to_do == '7':
 
 # GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
 elif to_do == '8':
-    geno_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to run a '
-                      'heterozygosity check on (without bed/bim/fam extension: \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of the genotype files that you would like to run a heterozygosity check on '
+                      '(without bed/bim/fam extension: ')
+    print(Style.RESET_ALL)
+
     # Call module and function.
     import genoqc
     genoqc.het(geno_name)
@@ -156,14 +190,20 @@ elif to_do == '8':
 # GenoMerge: Merge with 1000G
 elif to_do == '9':
     # Ask user genotype names.
-    geno_name = input('\u001b[34;1m Please enter the name of the genotype files you would like to merge with 1000G '
-                      '(without bed/bim/fam extension: \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of the genotype files you would like to merge with 1000G '
+                      '(without bed/bim/fam extension: ')
+    print(Style.RESET_ALL)
+
     # If there are genotype files with _HarmonizedTo1000G as ending in this working directory, then I know the path
     if os.path.exists(geno_name + '_HarmonizedTo1000G.bed'):
         harmonize_path = os.getcwd()
     else: # If I can't find the files in this working directory, ask the user where their harmonized files are.
-        harmonize_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files are '
-                               '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
+        print(Fore.MAGENTA + Style.BRIGHT)
+        harmonize_path = input('Please enter the path name where your harmonized genotype files are '
+                               '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): ')
+        print(Style.RESET_ALL)
+
     #Import module and run.
     import genomerge
     genomerge.merge1000g(geno_name, harmonize_path)
@@ -175,51 +215,61 @@ elif to_do == '9':
 #   Prepare for ADMIXTURE with k = 3..9
 elif to_do == '10':
     # Make sure the reader knows what they're getting into.
-    admixture_proceed_check = input("\u001b[32;1m This will merge your data with the 1000G data to and prepare files "
-                                    "for an unsupervised ADMIXTURE analysis. Some cautions/notes before you perform "
-                                    "this step:\n"
-                                    "1) You should perform the steps 2-9 BEFORE this one (in roughly that order).\n"
-                                    "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
-                                    "3) There should not be related individuals when you perform admixture. If you have"
-                                    " related individuals in your sample, you should create set lists so that the "
-                                    "people in each set are unrelated (using information from the IBD analysis\n"
-                                    "4) This will prepare files to run ADMIXTURE from k = 3 - 9. If you'd like other "
-                                    "admixture runs performed, then you should change the PrepAdmixture.py code to "
-                                    "reflect that.\n"
-                                    "5) You must have a Penn State ACI cluster allocation to perofrm this step. We are "
-                                    "using the cluster because ADMIXTURE takes a long time to run. I will ask you for "
-                                    "your cluster name.\n"
-                                    "6) This will write the files that you need, but you are responsible for the "
-                                    "memory, node, and time usage (walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) "
-                                    "and for putting them on the cluster and submitting them\n"
-                                    "7) On the cluster, You will need the admixture program either on your path or in "
-                                    "the same folder where you will submit this job.\n"
-                                    "8) You will need to transfer the pbs files and genotype bed/bim/fam files to your "
-                                    "cluster before running. I'll make a folder called 'Admixture' with all the files "
-                                    "for you to transfer.\n"
-                                    "Are you sure you want to proceed? (y/n): \u001b[0m").lower()
+    print("This will merge your data with the 1000G data to and prepare files for an unsupervised ADMIXTURE analysis. "
+          "Some cautions/notes before you perform this step:\n"
+          "1) You should perform the steps 2-9 BEFORE this one (in roughly that order).\n"
+          "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
+          "3) There should not be related individuals when you perform admixture. If you have related individuals in "
+          "your sample, you should create set lists so that the people in each set are unrelated (using information "
+          "from the IBD analysis\n"
+          "4) This will prepare files to run ADMIXTURE from k = 3 - 9. If you'd like other admixture runs performed, "
+          "then you should change the PrepAdmixture.py code to reflect that.\n"
+          "5) You must have a Penn State ACI cluster allocation to perofrm this step. We are using the cluster because "
+          "ADMIXTURE takes a long time to run. I will ask you for your cluster name.\n"
+          "6) This will write the files that you need, but you are responsible for the memory, node, and time usage "
+          "(walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them on the cluster and submitting them\n"
+          "7) On the cluster, You will need the admixture program either on your path or in "
+          "the same folder where you will submit this job.\n"
+          "8) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running. "
+          "I'll make a folder called 'Admixture' with all the files for you to transfer.\n")
+    print(Fore.BLUE + Style.BRIGHT)
+    admixture_proceed_check = input("Are you sure you want to proceed? (y/n): ").lower()
+    print(Style.RESET_ALL)
 
     if admixture_proceed_check in ('y', 'yes'):
         # Ask the user if they've already harmonized their data.
-        harmonize_check = input('\u001b[34;1m Have you already harmonized your data with 1000G Phase 3? (y/n): '
-                                '\u001b[0m').lower()
+        print(Fore.MAGENTA + Style.BRIGHT)
+        harmonize_check = input('Have you already harmonized your data with 1000G Phase 3? (y/n): ').lower()
+        print(Style.RESET_ALL)
+
         # If yes
         if harmonize_check in ('y', 'yes'):
             # Ask the user if they've already merged their data.
-            merge_check = input('\u001b[34;1m Have you already merged your data with 1000G Phase 3 (y/n): '
-                                '\u001b[0m').lower()
+            print(Fore.GREEN)
+            merge_check = input('Have you already merged your data with 1000G Phase 3 (y/n): ').lower()
+            print(Style.RESET_ALL)
+
             # If yes, proceed, but first ask what they called the files.
             if merge_check in ('y', 'yes'):
-                admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to '
-                                   'perform admixture on (without bed/bim/fam extension: \u001b[0m')
+                print(Fore.CYAN)
+                admix_name = input('Please enter the name of the genotype files that you would like to perform '
+                                   'admixture on (without bed/bim/fam extension: ')
+                print(Style.RESET_ALL)
+
             # If no, merge the data.
             elif merge_check in ('n','no'):
                 # Ask for name of harmonized genotype files, which we will use to merge.
-                geno_name = input('\u001b[34;1m Please enter the name of your harmonized genotype files that you would '
-                                  'like to merge with 1000G (without bed/bim/fam extension): \u001b[0m')
+                print(Fore.CYAN)
+                geno_name = input('Please enter the name of your harmonized genotype files that you would like to merge'
+                                  ' with 1000G (without bed/bim/fam extension): ')
+                print(Style.RESET_ALL)
+
                 # Ask the user where their harmonized files are.
-                harmonized_path = input('\u001b[34;1m Please enter the path name where your harmonized genotype files '
-                                        'are (i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): \u001b[0m')
+                print(Fore.BLUE + Style.BRIGHT)
+                harmonized_path = input('Please enter the path name where your harmonized genotype files are '
+                                        '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): ')
+                print(Style.RESET_ALL)
+
                 # Get module for merging
                 import genomerge
                 genomerge.merge(geno_name, harmonized_path)
@@ -233,8 +283,10 @@ elif to_do == '10':
                 elif os.path.exists(geno_name + '1000G_merge3.bed'):
                     admix_name = geno_name + '1000G_merge3.bed'
                 else:
-                    admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like '
-                                       'to perform admixture on (without bed/bim/fam extension: \u001b[0m')
+                    print(Fore.MAGENTA + Style.BRIGHT)
+                    admix_name = input('Please enter the name of the genotype files that you would like to perform '
+                                       'admixture on (without bed/bim/fam extension: ')
+                    print(Style.RESET_ALL)
 
             # If user gives non yes or no response:
             else:
@@ -243,8 +295,10 @@ elif to_do == '10':
         # If they haven't harmonized, then harmonize and merge.
         elif harmonize_check in ('n', 'no'):
             # Ask for name of genotype file, which we will use to harmonize and then merge.
-            geno_name = input('\u001b[34;1m Please enter the name of the genotype file you would like to harmonize, '
-                              'merge, then prepare for ADMIXTURE (without bed/bim/fam extension): \u001b[0m')
+            print(Fore.GREEN)
+            geno_name = input('Please enter the name of the genotype file you would like to harmonize, merge, then '
+                              'prepare for ADMIXTURE (without bed/bim/fam extension): ')
+            print(Style.RESET_ALL)
 
             # Harmonize with 1000G Phase 3
             import genoharmonize
@@ -267,8 +321,11 @@ elif to_do == '10':
             elif os.path.exists(harmonized_name + '1000G_merge3.bed'):
                 admix_name = harmonized_name + '1000G_merge3.bed'
             else:
-                admix_name = input('\u001b[34;1m Please enter the name of the genotype files that you would like to '
-                                   'perform admixture on (without bed/bim/fam extension: \u001b[0m')
+                print(Fore.CYAN)
+                admix_name = input('Please enter the name of the genotype files that you would like to perform '
+                                   'admixture on (without bed/bim/fam extension: ')
+                print(Style.RESET_ALL)
+
         # If user gives non-recognized answer.
         else:
             sys.exit("Please give a yes or no answer. Quitting now.")
@@ -288,12 +345,16 @@ elif to_do == '10':
 # GenoPhase: Run pre-phasing check; prepare and submit files for phasing.
 elif to_do == '11':
     # Ask the user what to run the phasing check on.
-    geno_name = input('\u001b[32;1m Please enter the name of the genotype files that you would like to run a '
-                      'phasing check on (without bed/bim/fam extension). You should only do this after running steps '
-                      '2-8: \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of the genotype files that you would like to run a phasing check on '
+                      '(without bed/bim/fam extension). You should only do this after running steps 2-8: ')
+    print(Style.RESET_ALL)
 
     # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
-    allocation_name = input('\u001b[35;1m Please enter the name of your cluster allocation: \u001b[0m')
+    print(Fore.MAGENTA + Style.BRIGHT)
+    allocation_name = input('Please enter the name of your cluster allocation: ')
+    print(Style.RESET_ALL)
+
     # Import module
     import genophaseimpute
     # Call function
@@ -308,13 +369,17 @@ elif to_do == '12':
     genophaseimpute.impute()
 
 elif to_do == '13':
-    imputed_path = input('\u001b[32;1m Please enter the path for your Sanger Imputed VCF files '
-                         '(e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\) : \u001b[0m')
+    print(Fore.BLUE + Style.BRIGHT)
+    imputed_path = input('Please enter the path for your Sanger Imputed VCF files '
+                         '(e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\) : ')
+    print(Style.RESET_ALL)
 
-    geno_name = input('\u001b[32;1m Please enter the name of the imputed VCF files that you would like to extract '
-                      'imputation quality scores and reference allele frequency from. The VCF file names should be in '
-                      'the format YourStudy_chr1, YourStudy_chr2...YourStudy_chr23" and I would like to know what '
-                      '"YourStudy" is, I will fill in the _chr# in the script.: \u001b[0m')
+    print(Fore.MAGENTA + Style.BRIGHT)
+    geno_name = input('Please enter the name of the imputed VCF files that you would like to extract imputation '
+                      'quality scores and reference allele frequency from. The VCF file names should be in the format '
+                      'YourStudy_chr1, YourStudy_chr2...YourStudy_chr23" and I would like to know what "YourStudy" is, '
+                      'I will fill in the _chr# in the script.: ')
+    print(Style.RESET_ALL)
 
     # Import module
     import genophaseimpute
@@ -324,9 +389,11 @@ elif to_do == '13':
 
 # Make plots of imputation quality scores.
 elif to_do == '14':
+    print(Fore.BLUE + Style.BRIGHT)
     info_path = input("Please tell me where your .INFO files produced by step #13 are. Make sure they are in a folder "
                  "with no other .INFO files, as this part of the script looks for anything with the ending '.INFO' "
                  "(e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\ etc.): ")
+    print(Style.RESET_ALL)
 
     # Import module
     import genophaseimpute
@@ -337,9 +404,9 @@ elif to_do == '14':
 
 # Nothing
 elif to_do == '15':
-    sys.exit("\u001b[36;1m You go, couch potato\u001b[0m")
+    sys.exit("You go, couch potato")
 
 else:
-    print("\u001b[36;1m Please enter a number 1-9.\u001b[0m")
+    print("Please enter a number 1-15.")
 
 
