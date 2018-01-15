@@ -164,7 +164,7 @@ elif to_do == '7':
         # Get name of genotypes.
         print(Fore.BLUE + Style.BRIGHT)
         geno_name = input('Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
-                          '(without bed/bim/fam extension: ')
+                          '(without bed/bim/fam extension): ')
         print(Style.RESET_ALL)
         # Harmonize with 1000G Phase 3
         import genoharmonize
