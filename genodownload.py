@@ -127,18 +127,49 @@ def plink():
     import urllib.request
     import sys
     import subprocess
+    import requests
+    import lxml.html
+    try:
+        import cssselect
+    except ImportError:
+        try:
+            import pip
+            pip.main(['install', 'cssselect'])
+        except ImportError:
+            pip()
+            import pip
+            pip.main(['install', 'cssselect'])
 
     # Get what system the user is using
     system_check = platform.system()
     # Get the version of that system
     architecture_check = platform.architecture()[0]
 
+    #Get plink urls
+    start_url = 'https://www.cog-genomics.org/plink/1.9/'
+    response = requests.get(start_url)
+    tree = lxml.html.fromstring(response.text)
+    links = tree.cssselect('a')  # or tree.xpath('//a')
+    out = []
+    for link in links:
+        # we use this if just in case some <a> tags lack an href attribute
+        if 'href' in link.attrib:
+            out.append(link.attrib['href'])
+
+    linux_x86 = [x for x in out if '/plink_linux_x86_64.zip' in x]
+    linux_x32 = [x for x in out if '/plink_linux_i686.zip' in x]
+    mac = [x for x in out if '/plink_mac.zip' in x]
+    win64 = [x for x in out if '/plink_win64.zip' in x]
+    win32 = [x for x in out if '/plink_win32.zip' in x]
+
+    base_url = 'https://www.cog-genomics.org'
+
+    # Download based on system
     if system_check == "Linux":
         if architecture_check == '64bit':
-            # Download 64 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_linux_x86_64.zip
+            # Download 64 bit Linux Plink 1.9
             print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_linux_x86_64.zip',
-                                       'Plink_1.9_Linux64.zip')
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, linux_x86[0]), 'Plink_1.9_Linux64.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Linux64')
             # Unpacking to this directory
@@ -148,10 +179,9 @@ def plink():
             shutil.copy2('Plink_1.9_Linux64/plink', os.getcwd())
 
         elif architecture_check == '32bit':
-            # Download 32 bit Linux Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_linux_i686.zip
+            # Download 32 bit Linux Plink 1.9
             print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_linux_i686.zip',
-                                       'Plink_1.9_Linux32.zip')
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, linux_x32[0]), 'Plink_1.9_Linux32.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Linux32')
             # Unpacking to this directory
@@ -167,10 +197,9 @@ def plink():
             subprocess.check_output(['chmod', '777', 'plink'])
 
     elif system_check == "Darwin":
-        # Download Mac Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_mac.zip
+        # Download Mac Plink 1.9
         print("Downloading Mac Plink 1.9 to this directory now.")
-        urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_mac.zip',
-                                   'Plink_1.9_Mac.zip')
+        urllib.request.urlretrieve(requests.compat.urljoin(base_url, mac[0]), 'Plink_1.9_Mac.zip')
         # Making directory to store program
         os.makedirs('Plink_1.9_Mac')
         # Unpacking to this directory
@@ -181,10 +210,9 @@ def plink():
 
     elif system_check == "Windows":
         if architecture_check == '64bit':
-            # Download 64 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_win64.zip
+            # Download 64 bit Windows Plink 1.9
             print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_win64.zip',
-                                       'Plink_1.9_Win64.zip')
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, win64[0]), 'Plink_1.9_Win64.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Win64')
             # Unpacking to this directory
@@ -194,10 +222,9 @@ def plink():
             shutil.copy2('Plink_1.9_Win64/plink.exe', os.getcwd())
 
         elif architecture_check == '32bit':
-            # Download 32 bit Windows Plink 1.9 https://www.cog-genomics.org/static/bin/plink171204/plink_win32.zip
+            # Download 32 bit Windows Plink 1.9
             print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve('https://www.cog-genomics.org/static/bin/plink180109/plink_win32.zip',
-                                       'Plink_1.9_Win32.zip')
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, win32[0]), 'Plink_1.9_Win32.zip')
             # Making directory to store program
             os.makedirs('Plink_1.9_Win32')
             # Unpacking to this directory
