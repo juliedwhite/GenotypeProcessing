@@ -118,6 +118,12 @@ def python3():
 
 
 def plink():
+    try:
+        import pip
+    except ImportError:
+        pip()
+        import pip
+
     import os
     import platform
     import zipfile
@@ -125,18 +131,24 @@ def plink():
     import urllib.request
     import sys
     import subprocess
-    import requests
-    import lxml.html
+
+    try:
+        import requests
+    except ImportError:
+        pip.main(['install', 'requests'])
+        import requests
+
+    try:
+        import lxml.html
+    except ImportError:
+        pip.main(['install', 'lxml'])
+        import lxml.html
+
     try:
         import cssselect
     except ImportError:
-        try:
-            import pip
-            pip.main(['install', 'cssselect'])
-        except ImportError:
-            pip()
-            import pip
-            pip.main(['install', 'cssselect'])
+        pip.main(['install', 'cssselect'])
+        import cssselect
 
     # Get what system the user is using
     system_check = platform.system()
