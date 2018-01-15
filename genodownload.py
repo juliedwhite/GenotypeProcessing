@@ -118,12 +118,6 @@ def python3():
 
 
 def plink():
-    try:
-        import pip
-    except ImportError:
-        pip()
-        import pip
-
     import os
     import platform
     import zipfile
@@ -131,6 +125,12 @@ def plink():
     import urllib.request
     import sys
     import subprocess
+
+    try:
+        import pip
+    except ImportError:
+        pip()
+        import pip
 
     try:
         import requests
