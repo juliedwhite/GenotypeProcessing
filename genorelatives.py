@@ -41,7 +41,7 @@ def ibd(geno_name):
                             + geno_name + '.tab.genome', shell=True)
     # Finished
     print("Analysis finished. Your IBD results in a tab delimited file will have the name " + geno_name
-          + ".tab.genome and be in the folder 'IBS_Calculations'. You should use this file to investigate your "
+          + ".tab.genome and be in the folder 'IBD_Calculations'. You should use this file to investigate your "
             "relatives and possibly update the FID and IIDs in your file.\n"
             "If you are planning on using these data for future analyses like admixture or phasing/imputation, you "
             "should make set lists of people who are unrelated in each set. These lists should have "
