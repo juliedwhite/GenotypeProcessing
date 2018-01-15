@@ -1,54 +1,52 @@
 from colorama import init, Fore, Style
 init()
 
+
 def todownload():
     import sys
     print(Fore.BLUE + Style.BRIGHT)
     item = input('What would you like to download?\n'
-                 '1) Python 3.6.3\n'
-                 '2) Plink 1.9\n'
-                 '3) 1000G Phase 3 VCF\n'
-                 '4) 1000G Phase 3 Hap/Legend/Sample\n'
-                 '5) GRCh37/hg19 1000G FASTA file\n'
-                 '6) Genotype Harmonizer\n'
-                 '7) pip\n'
-                 '8) snpflip\n'
-                 '9) shapeit\n'
-                 '10) vcftools\n'
-                 '11) bcftools\n'
-                 '12) htslib\n'
-                 '13) samtools\n'
-                 '14) Nothing\n'
+                 '1) Plink 1.9\n'
+                 '2) 1000G Phase 3 VCF\n'
+                 '3) 1000G Phase 3 Hap/Legend/Sample\n'
+                 '4) GRCh37/hg19 1000G FASTA file\n'
+                 '5) Genotype Harmonizer\n'
+                 '6) pip\n'
+                 '7) snpflip\n'
+                 '8) shapeit\n'
+                 '9) vcftools\n'
+                 '10) bcftools\n'
+                 '11) htslib\n'
+                 '12) samtools\n'
+                 '13) Nothing\n'
                  'Please enter a number (i.e. 2): ')
     print(Style.RESET_ALL)
 
     if item == '1':
-        python3()
-    elif item == '2':
         plink()
-    elif item == '3':
+    elif item == '2':
         vcf_1000g_phase3()
-    elif item == '4':
+    elif item == '3':
         hls_1000g_phase3()
-    elif item == '5':
+    elif item == '4':
         fasta_1000G_hg19()
-    elif item == '6':
+    elif item == '5':
         genotype_harmonizer()
-    elif item == '7':
+    elif item == '6':
         pip()
-    elif item == '8':
+    elif item == '7':
         snpflip()
-    elif item == '9':
+    elif item == '8':
         shapeit()
-    elif item == '10':
+    elif item == '9':
         vcftools()
-    elif item == '11':
+    elif item == '10':
         bcftools()
-    elif item == '12':
+    elif item == '11':
         htslib()
-    elif item == '13':
+    elif item == '12':
         samtools()
-    elif item == '14':
+    elif item == '13':
         sys.exit("Exiting now")
     else:
         sys.exit("Quitting because you did not give a recognizable number when asked what to download.")
