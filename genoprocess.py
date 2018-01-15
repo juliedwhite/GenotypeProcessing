@@ -23,9 +23,9 @@ except ImportError:
 # Ask the user what they'd like to do.
 print(Fore.RED + Style.BRIGHT + 'What would you like to do?\n'
                  '1) Download reference files or programs.\n'
-                 '2) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
+                 '2) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
+                 '3) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
                  'headings)\n'
-                 '3) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
                  '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
                  '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
                  'New FID, New IID.\n'
@@ -50,8 +50,19 @@ if to_do == '1':
     # Call command
     genodownload.todownload()
 
-# GenoQC: Update sex
+# GenoQC: Clean dataset by missing call rate > 10%
 elif to_do == '2':
+    # Get name of genotype file
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
+    print(Style.RESET_ALL)
+
+    # Import module and call command
+    import genoqc
+    genoqc.missing_call_rate(geno_name)
+
+# GenoQC: Update sex
+elif to_do == '3':
     # Get name of genotype file
     print(Fore.BLUE + Style.BRIGHT)
     geno_name = input("Please enter the name of the genotype files you'd like to update sex in "
@@ -66,17 +77,6 @@ elif to_do == '2':
     import genoqc
     # Call UpdateSex command using geno name and update sex filename as input
     genoqc.update_sex(geno_name, update_sex_filename)
-
-# GenoQC: Clean dataset by missing call rate > 10%
-elif to_do == '3':
-    # Get name of genotype file
-    print(Fore.BLUE + Style.BRIGHT)
-    geno_name = input('Please enter the name of the genotype files (without bed/bim/fam extension: ')
-    print(Style.RESET_ALL)
-
-    # Import module and call command
-    import genoqc
-    genoqc.missing_call_rate(geno_name)
 
 # GenoRelatives: Run IBD
 elif to_do == '4':
