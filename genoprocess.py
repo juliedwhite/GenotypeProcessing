@@ -24,22 +24,23 @@ except ImportError:
 print(Fore.RED + Style.BRIGHT + 'What would you like to do?\n'
                  '1) Download reference files or programs.\n'
                  '2) Produce a new dataset of people and SNPs with missing call rate < 10%\n'
-                 '3) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
+                 '3) Estimate the sex of your samples. All you need are plink bed/bim/fam files.\n'
+                 '4) Update sex. You need a file with FID, IID, Sex (M=1, F=2, Unknown=0) (in that order, no column '
                  'headings)\n'
-                 '4) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
-                 '5) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
+                 '5) Run an IBD analysis to identify relatives. All you need are plink bed/bim/fam files.\n'
+                 '6) Update FID or IID information. You need a file with the following information Old FID, Old IID, '
                  'New FID, New IID.\n'
-                 '6) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
-                 '7) Harmonize with 1000G\n'
-                 '8) Filter for extreme (+-3SD) heterozygosity values\n'
-                 '9) Merge with 1000G\n'
-                 '10) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
-                 '11) Run a phasing check and prepare files for phasing using SHAPEIT\n'
-                 '12) Prepare for imputation on the Sanger Imputation Server\n'
-                 '13) Extract imputation quality score and reference allele frequency from Sanger Imputation Server VCF'
+                 '7) Update parental IDs. You need a file with FID, IID, Paternal IID, and Maternal IID.\n'
+                 '8) Harmonize with 1000G\n'
+                 '9) Filter for extreme (+-3SD) heterozygosity values\n'
+                 '10) Merge with 1000G\n'
+                 '11) Prepare for ADMIXTURE with 1000G Phase 3 files\n'
+                 '12) Run a phasing check and prepare files for phasing using SHAPEIT\n'
+                 '13) Prepare for imputation on the Sanger Imputation Server\n'
+                 '14) Extract imputation quality score and reference allele frequency from Sanger Imputation Server VCF'
                  ' files\n'
-                 '14) Plot imputation quality scores\n'
-                 '15) Nothing.')
+                 '15) Plot imputation quality scores\n'
+                 '16) Nothing.')
 to_do = input("Please enter a number (i.e. 2): ")
 print(Style.RESET_ALL)
 
@@ -61,8 +62,22 @@ elif to_do == '2':
     import genoqc
     genoqc.missing_call_rate(geno_name)
 
-# GenoQC: Update sex
+# GenoQC: Estimate sex
 elif to_do == '3':
+    # Get name of genotype file
+    print(Fore.BLUE + Style.BRIGHT)
+    geno_name = input("Please enter the name of the genotype files you'd like to estimate sex in "
+                      "(without bed/bim/fam extension: ")
+    print(Style.RESET_ALL)
+
+    # Import module where this command is.
+    import genoqc
+
+    # Call UpdateSex command using geno name and update sex filename as input
+    genoqc.estimate_sex(geno_name)
+
+# GenoQC: Update sex
+elif to_do == '4':
     # Get name of genotype file
     print(Fore.BLUE + Style.BRIGHT)
     geno_name = input("Please enter the name of the genotype files you'd like to update sex in "
@@ -79,7 +94,7 @@ elif to_do == '3':
     genoqc.update_sex(geno_name, update_sex_filename)
 
 # GenoRelatives: Run IBD
-elif to_do == '4':
+elif to_do == '5':
     # Identity-by-descent in Plink
     # This part of the script will prune for LD, calculate IBD, and exclude individuals who have IBD < 0.2
     # The IBD results will have .genome appended to your file name. I have also included a line to convert the IBD results
@@ -102,7 +117,7 @@ elif to_do == '4':
     genorelatives.ibd(geno_name)
 
 # GenoRelatives: Update FID or IID
-elif to_do == '5':
+elif to_do == '6':
     # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating FID or IID should have four fields: \n"
           "1) Old FID\n"
@@ -125,7 +140,7 @@ elif to_do == '5':
     genorelatives.update_id(geno_name, update_id_filename)
 
 # GenoRelatives: Update parental IDs
-elif to_do == '6':
+elif to_do == '7':
     # Just making sure the user knows what is needed.
     print("The tab delimited text file for updating parents should have four fields: \n"
           "1) FID\n"
@@ -149,7 +164,7 @@ elif to_do == '6':
     genorelatives.update_parental(geno_name, update_parents_filename)
 
 # GenoHarmonize: Harmonize with 1000G
-elif to_do == '7':
+elif to_do == '8':
     print("Before we harmonize your data, please make sure your genotype data are on GRCh37/hg19 by comparing some of "
           "the positions in your bim file to the position for that rsid on the UCSC Genome Browser: "
           "https://genome.ucsc.edu/cgi-bin/hgGateway You should search your risd after selecting Human and "
@@ -177,7 +192,7 @@ elif to_do == '7':
         sys.exit("Please answer 'yes' or 'no'. Exiting now.")
 
 # GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
-elif to_do == '8':
+elif to_do == '9':
     print(Fore.BLUE + Style.BRIGHT)
     geno_name = input('Please enter the name of the genotype files that you would like to run a heterozygosity check on '
                       '(without bed/bim/fam extension: ')
@@ -188,7 +203,7 @@ elif to_do == '8':
     genoqc.het(geno_name)
 
 # GenoMerge: Merge with 1000G
-elif to_do == '9':
+elif to_do == '10':
     # Ask user genotype names.
     print(Fore.BLUE + Style.BRIGHT)
     geno_name = input('Please enter the name of the genotype files you would like to merge with 1000G '
@@ -213,11 +228,11 @@ elif to_do == '9':
 #   Harmonize with 1000G Phase 3
 #   Merge with 1000G
 #   Prepare for ADMIXTURE with k = 3..9
-elif to_do == '10':
+elif to_do == '11':
     # Make sure the reader knows what they're getting into.
     print("This will merge your data with the 1000G data to and prepare files for an unsupervised ADMIXTURE analysis. "
           "Some cautions/notes before you perform this step:\n"
-          "1) You should perform the steps 2-9 BEFORE this one (in roughly that order).\n"
+          "1) You should perform the steps 2-10 BEFORE this one (in roughly that order).\n"
           "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
           "3) There should not be related individuals when you perform admixture. If you have related individuals in "
           "your sample, you should create set lists so that the people in each set are unrelated (using information "
@@ -343,7 +358,7 @@ elif to_do == '10':
         sys.exit('Please give a yes or no answer. Quitting now.')
 
 # GenoPhase: Run pre-phasing check; prepare and submit files for phasing.
-elif to_do == '11':
+elif to_do == '12':
     # Ask the user what to run the phasing check on.
     print(Fore.BLUE + Style.BRIGHT)
     geno_name = input('Please enter the name of the genotype files that you would like to run a phasing check on '
@@ -360,7 +375,7 @@ elif to_do == '11':
     # Call function
     genophaseimpute.phase(geno_name, allocation_name)
 
-elif to_do == '12':
+elif to_do == '13':
     # The user should only do this after phasing.
     print("I will prepare files for imputation now. It is very important that you do this AFTER phasing.")
     # Import module
@@ -368,7 +383,7 @@ elif to_do == '12':
     # Call function
     genophaseimpute.impute()
 
-elif to_do == '13':
+elif to_do == '14':
     print(Fore.BLUE + Style.BRIGHT)
     imputed_path = input('Please enter the path for your Sanger Imputed VCF files '
                          '(e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\) : ')
@@ -388,7 +403,7 @@ elif to_do == '13':
     genophaseimpute.getinfo(imputed_path, geno_name)
 
 # Make plots of imputation quality scores.
-elif to_do == '14':
+elif to_do == '15':
     print(Fore.BLUE + Style.BRIGHT)
     info_path = input("Please tell me where your .INFO files produced by step #13 are. Make sure they are in a folder "
                  "with no other .INFO files, as this part of the script looks for anything with the ending '.INFO' "
@@ -403,10 +418,10 @@ elif to_do == '14':
 
 
 # Nothing
-elif to_do == '15':
+elif to_do == '16':
     sys.exit("You go, couch potato")
 
 else:
-    print("Please enter a number 1-15.")
+    print("Please enter a number 1-16.")
 
 

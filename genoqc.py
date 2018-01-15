@@ -9,6 +9,21 @@ elif system_check == "Windows":
     rm = "del "
 
 
+def estimate_sex(geno_name):
+    import subprocess
+
+    print("This can take a while, so sit back for a bit and don't worry.")
+
+    # Checks the sex listed in the file against the chromosomal sex.
+    subprocess.check_output([plink, '--bfile', geno_name, '--indep-pairphase', '20000', '2000', '0.5', '--out',
+                             geno_name])
+    subprocess.check_output([plink, '--bfile', geno_name, '--exclude', geno_name + '.prune.out', '--check-sex',
+                             'ycount', '0.3', '0.8', '0', '0', '--out', geno_name])
+
+    print("Finished. Your sex estimation files will have the name " + geno_name
+          + ".sexcheck. You should check this file for any problems and decide if you want to update your file.")
+
+
 def update_sex(geno_name, update_sex_filename):
     # File for updating sex should have:
     #   1) FID
@@ -19,17 +34,7 @@ def update_sex(geno_name, update_sex_filename):
     subprocess.check_output([plink, '--bfile', geno_name, '--update-sex', update_sex_filename, '--make-bed', '--out',
                              geno_name + '_SexUpdated'])
 
-    # Checks the sex listed in the file against the chromosomal sex.
-    subprocess.check_output([plink, '--bfile', geno_name + '_SexUpdated', '--indep-pairphase', '20000', '2000', '0.5',
-                             '--out', geno_name + '_SexUpdated'])
-    subprocess.check_output([plink, '--bfile', geno_name + '_SexUpdated', '--exclude',
-                             geno_name + '_SexUpdated.prune.out', '--check-sex', 'ycount', '0.3', '0.8', '0', '0',
-                             '--out', geno_name + '_SexUpdated'])
-
-    print("Finished. Your genotype files with sex updated will have the name " + geno_name
-          + "_SexUpdated. I also ran a sex check on your sample, which will have the name " + geno_name
-          + "_SexUpdated.sexcheck. You should check this file for any problems and decide if you want to re-update "
-            "your file.")
+    print("Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated.")
 
 
 def missing_call_rate(geno_name):
