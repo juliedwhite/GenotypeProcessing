@@ -120,7 +120,7 @@ def plink():
 
     try:
         import requests
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         try:
             pip.main(['install', 'requests'])
         except:
@@ -129,7 +129,7 @@ def plink():
 
     try:
         import lxml.html
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         try:
             pip.main(['install', 'lxml'])
         except:
@@ -138,7 +138,7 @@ def plink():
 
     try:
         import cssselect
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         try:
             pip.main(['install', 'cssselect'])
         except:
@@ -292,6 +292,9 @@ def hls_1000g_phase3():
     import os
     import urllib.request
     import subprocess
+    import platform
+
+    system_check = platform.system()
 
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
           'This will create a ~12G folder on your computer and will take a little while.')
@@ -316,8 +319,12 @@ def hls_1000g_phase3():
         # Change directory where tgz files are
         os.chdir('1000G_Phase3_HapLegendSample')
         # Unpack tar files
-        subprocess.check_output(['tar', '-xvf', '1000GP_Phase3.tgz', '--strip-components', '1'])
-        subprocess.check_output(['tar', '-xvf', '1000GP_Phase3_chrX.tgz'])
+        if system_check in ("Linux", "Darwin"):
+            subprocess.check_output(['tar', '-xvf', '1000GP_Phase3.tgz', '--strip-components', '1'])
+            subprocess.check_output(['tar', '-xvf', '1000GP_Phase3_chrX.tgz'])
+        elif system_check in ("Windows"):
+            print("Please use 7-Zip to unzip your .tgz file in the 1000G_Phase3_HapLegendSample folder, then use 7-Zip "
+                  "again to untar the .tar file. Do this for both 1000GP_Phase3.tgz and 1000GP_Phase3_chrX.tgz")
 
         # Print when done.
         print('Done extracting 1000G_Phase3_HapLegendSample')
@@ -373,12 +380,15 @@ def genotype_harmonizer():
 def snpflip():
     try:
         import pip
-        # Use pip to install snpflip and it's dependencies.
-        pip.main(['install', 'snpflip'])
     except ImportError:
         pip()
         import pip
+    # Use pip to install snpflip and it's dependencies
+    try:
         pip.main(['install', 'snpflip'])
+    except:
+        pip.main(['install', 'snpflip', '--user'])
+
 
     print("Done installing snpflip")
 
