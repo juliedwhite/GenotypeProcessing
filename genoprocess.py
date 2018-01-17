@@ -12,13 +12,14 @@ else:
     sys.exit("Exiting now, please re-run the script now that we've downloaded python3.")
 
 try:
-    from colorama import init, Fore, Style
-    init()
+    import colorama
 except ImportError:
     import genodownload
     genodownload.getcolorama()
-    from colorama import init, Fore, Style
-    init()
+
+from colorama import init, Fore, Style
+init()
+
 
 # Ask the user what they'd like to do.
 print(Fore.RED + Style.BRIGHT + 'What would you like to do?\n'
