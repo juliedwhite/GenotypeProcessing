@@ -1,3 +1,55 @@
+def pip():
+    import urllib.request
+    import platform
+    import subprocess
+
+    print('Downloading pip now')
+    # Getting get-pip module
+    urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')
+    try:
+        subprocess.check_output(['python','get-pip.py'])
+    except:
+        # Run it and install pip into user directory.
+        subprocess.check_output(['python','get-pip.py','--user'])
+
+        # Tell the user that they should add the following folders to their PATH:
+        system_check = platform.system()
+        if system_check in ("Linux", "Darwin"):
+            print(Fore.RED + Style.BRIGHT)
+            print("Because I couldn't use root access, I installed pip into a local directory. You should type "
+                  "'echo $PATH' to check that '~/.local/bin' is in your $PATH variable. IF it isn't, then type you "
+                  "should add it to your .bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+
+        elif system_check == "Windows":
+            print(Fore.RED + Style.BRIGHT)
+            print("Because I couldn't use root access, I installed pip into a local directory. You should type 'PATH' "
+                  "to check that '~/.local/bin' is in your PATH variable. IF it isn't, then you should add it to your "
+                  "environment variables. If you won't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+
+    print("Done downloading pip")
+
+
+def getcolorama():
+    try:
+        import pip
+    except ImportError:
+        pip()
+        import pip
+
+    try:
+        pip.main(['install', 'colorama'])
+    except:
+        pip.main(['install', 'colorama', '--user'])
+
+
+try:
+    import colorama
+except ImportError:
+    getcolorama()
+
+
 from colorama import init, Fore, Style
 init()
 
@@ -308,38 +360,6 @@ def genotype_harmonizer():
     print("Done downloading genotype harmonizer")
 
 
-def pip():
-    import urllib.request
-    import platform
-    import subprocess
-
-    print('Downloading pip now')
-    # Getting get-pip module
-    urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')
-    try:
-        subprocess.check_output(['python','get-pip.py'])
-    except:
-        # Run it and install pip into user directory.
-        subprocess.check_output(['python','get-pip.py','--user'])
-
-        # Tell the user that they should add the following folders to their PATH:
-        system_check = platform.system()
-        if system_check in ("Linux", "Darwin"):
-            print(Fore.RED + Style.BRIGHT)
-            print("Because I couldn't use root access, I installed pip into a local directory. You should type "
-                  "'echo $PATH' to check that '~/.local/bin' is in your $PATH variable. IF it isn't, then type you "
-                  "should add it to your .bash_profile. If you don't know how to do this, ask the internet or myself.")
-            print(Style.RESET_ALL)
-
-        elif system_check == "Windows":
-            print(Fore.RED + Style.BRIGHT)
-            print("Because I couldn't use root access, I installed pip into a local directory. You should type 'PATH' "
-                  "to check that '~/.local/bin' is in your PATH variable. IF it isn't, then you should add it to your "
-                  "environment variables. If you won't know how to do this, ask the internet or myself.")
-            print(Style.RESET_ALL)
-
-    print("Done downloading pip")
-
 
 def snpflip():
     try:
@@ -649,11 +669,4 @@ def getmatplotlib():
     print("Done installing matplotlib")
 
 
-def getcolorama():
-    try:
-        import pip
-        pip.main(['install', 'colorama'])
-    except ImportError:
-        pip()
-        import pip
-        pip.main(['install', 'colorama'])
+
