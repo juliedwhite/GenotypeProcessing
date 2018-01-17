@@ -121,19 +121,28 @@ def plink():
     try:
         import requests
     except ImportError:
-        pip.main(['install', 'requests'])
+        try:
+            pip.main(['install', 'requests'])
+        except:
+            pip.main(['install', 'requests', '--user'])
         import requests
 
     try:
         import lxml.html
     except ImportError:
-        pip.main(['install', 'lxml'])
+        try:
+            pip.main(['install', 'lxml'])
+        except:
+            pip.main(['install', 'lxml', '--user'])
         import lxml.html
 
     try:
         import cssselect
     except ImportError:
-        pip.main(['install', 'cssselect'])
+        try:
+            pip.main(['install', 'cssselect'])
+        except:
+            pip.main(['install', 'cssselect', '--user'])
         import cssselect
 
     # Get what system the user is using
