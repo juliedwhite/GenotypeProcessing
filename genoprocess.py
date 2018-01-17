@@ -7,8 +7,8 @@ if (sys.version_info > (3, 0)):
 else:
     print("I've detected that you are not running Python3. This script was written with that in mind, so I'm going to "
           "download it (or ask you to download it) and exit. Then you should re-run this script.")
-    import genodownload
-    genodownload.python3()
+    import getpython
+    getpython.python3()
     sys.exit("Exiting now, please re-run the script now that we've downloaded python3.")
 
 try:
