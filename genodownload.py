@@ -433,13 +433,13 @@ def shapeit():
     if system_check == "Linux":
         print('Downloading shapeit now.')
         urllib.request.urlretrieve(
-            'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz',
-            'shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz')
+            'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r900.glibcv2.12.linux.tar.gz',
+            'shapeit.v2.r900.glibcv2.12.linux.tar.gz')
         # Making directory to store program
-        os.makedirs('Shapeit_v2.12_Linux_Static')
+        os.makedirs('Shapeit_v2.r900_Linux_Static')
         # Unpacking
-        subprocess.check_output(['tar','-xzvf','shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz','-C',
-                                 'Shapeit_v2.12_Linux_Static/'])
+        subprocess.check_output(['tar','-xzvf','shapeit.v2.r900.glibcv2.12.linux.tar.gz','-C',
+                                 'Shapeit_v2.r900_Linux_Static/'])
 
         print("Done downloading shapeit")
 
