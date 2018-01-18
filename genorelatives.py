@@ -35,13 +35,10 @@ def ibd(geno_name):
     # relatives.
     subprocess.check_output([plink,'--bfile', geno_name, '--exclude', 'IBD_Calculations/' + geno_name + '.prune.out',
                              '--genome', '--min', '0.1875', '--out', 'IBD_Calculations/' + geno_name])
-    # Change separator of IBD file from space to tab separated. Comment out this line if you prefer whitespace
-    # delimited files
-    subprocess.check_output('sed -r "s/\s+/\t/g" IBD_Calculations/' + geno_name + '.genome > IBD_Calculations/'
-                            + geno_name + '.tab.genome', shell=True)
+
     # Finished
-    print("Analysis finished. Your IBD results in a tab delimited file will have the name " + geno_name
-          + ".tab.genome and be in the folder 'IBD_Calculations'. You should use this file to investigate your "
+    print("Analysis finished. Your IBD results will have the name " + geno_name
+          + ".genome and be in the folder 'IBD_Calculations'. You should use this file to investigate your "
             "relatives and possibly update the FID and IIDs in your file.\n"
             "If you are planning on using these data for an admixture analysis you should make set lists of people who "
             "are unrelated in each set. These lists should have Family ID / Individual ID pairs, one person per line "
