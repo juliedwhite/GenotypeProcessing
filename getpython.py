@@ -3,7 +3,6 @@ def python3():
     import urllib2
     import os
     import sys
-    import subprocess
 
     from os.path import expanduser
     home = expanduser("~")
@@ -20,29 +19,25 @@ def python3():
         with open(os.path.join(home, 'software/Python-3.6.3.tgz'), "wb") as code:
             code.write(f.read())
 
-        # Unpacking
-        subprocess.Popen(['tar','-xzvf',os.path.join(home, 'software/Python-3.6.3.tgz'),'-C',
-                                 os.path.join(home, 'software')])
-
-        # Moving into the Python folder
-        os.chdir(os.path.join(home, 'software/Python-3.6.3'))
-        with open('InstallPython', "w") as file:
-            file.write('./configure --prefix=' + os.path.join(home, 'software')
-                       + '\n'
-                         'make\n'
+        with open(os.path.join(home, 'software/InstallPython'), "w") as file:
+            file.write('cd ' + os.path.join(home, 'software/Python-3.6.3') + '\n'
+                       + './configure --prefix=' + os.path.join(home, 'software') + '\n'
+                       + 'make\n'
                          'make install\n'
-                         'cd ' + home
-                       + '\n'
-                         "echo 'export PATH=" + os.path.join(home, 'software/bin/') + ":$PATH' >> .bashrc"
-                       + '\n'
-                         "echo 'export PATH=" + os.path.join(home, 'software/Python-3.6.3/') + ":$PATH' >> .bashrc"
-                       + '\n'
-                         'echo "export PYTHONPATH=' + os.path.join(home, 'software/Python-3.6.3/" >> .bashrc')
-                       + '\n'
-                         'source .bashrc')
+                         'cd ' + home + '\n'
+                       + "echo 'export PATH=" + os.path.join(home, 'software/bin/') + ":$PATH' >> .bash_profile\n"
+                       + "echo 'export PATH=" + os.path.join(home, 'software/Python-3.6.3/') + ":$PATH' >> "
+                                                                                               ".bash_profile\n"
+                       + "echo 'export PYTHONPATH=" + os.path.join(home, 'software/Python-3.6.3/') + "' >> "
+                                                                                                     ".bash_profile\n"
+                       + 'source ' + os.path.join(home, '.bash_profile'))
 
-        sys.exit("Please move to the " + os.path.join(home, 'software/Python-3.6.3')
-                 + " folder and type in 'source InstallPython'. Then re-run this script.")
+        # Unpacking
+        os.system('tar -xzvf ' + os.path.join(home, 'software/Python-3.6.3.tgz') + ' -C '
+                  + os.path.join(home, 'software'))
+
+        print("Done, move to " + os.path.join(home, 'software') + " and type in 'source InstallPython'. Then re-run "
+                                                                  "this script.")
 
     # If the user is on a mac
     elif system_check == "Darwin":
