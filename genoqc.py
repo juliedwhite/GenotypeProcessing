@@ -46,6 +46,8 @@ def missing_call_rate(geno_name):
                              geno_name + '_geno0.1_mind0.1'])
     subprocess.call(rm + geno_name + '_geno0.1.*', shell=True)
 
+    print("Finished. Your pruned genotype files will have the name " + geno_name + "_geno0.01_mind0.01")
+
 
 def het(geno_name):
     # Identifies individuals with extreme heterozygosity values (more than +- 3 SD)
