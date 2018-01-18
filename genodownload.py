@@ -389,8 +389,6 @@ def snpflip():
         pip.main(['install', 'snpflip'])
     except:
         pip.main(['install', 'snpflip', '--user'])
-
-
     print("Done installing snpflip")
 
 
@@ -679,14 +677,27 @@ def samtools():
 def getmatplotlib():
     try:
         import pip
-        # Use pip to install snpflip and it's dependencies.
-        pip.main(['install', 'matplotlib'])
     except ImportError:
         pip()
         import pip
+
+    try:
         pip.main(['install', 'matplotlib'])
+    except ImportError:
+        pip.main(['install', 'matplotlib', '--user'])
 
     print("Done installing matplotlib")
 
 
+def getargparse():
+    try:
+        import pip
+    except ImportError:
+        pip()
+        import pip
 
+    # Try to download
+    try:
+        pip.main(['install', 'argparse'])
+    except:
+        pip.main(['install', 'argparse', '--user'])
