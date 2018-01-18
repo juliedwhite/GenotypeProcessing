@@ -42,7 +42,7 @@ print(Fore.RED + Style.BRIGHT + 'What would you like to do?\n'
                  ' files\n'
                  '15) Plot imputation quality scores\n'
                  '16) Nothing.')
-to_do = input("Please enter a number (i.e. 2): ")
+to_do = input("Please enter the number that references the task you would like to perform above (i.e. 2): ")
 print(Style.RESET_ALL)
 
 # Use genodownload to figure out what to download.
