@@ -43,9 +43,9 @@ def ibd(geno_name):
     print("Analysis finished. Your IBD results in a tab delimited file will have the name " + geno_name
           + ".tab.genome and be in the folder 'IBD_Calculations'. You should use this file to investigate your "
             "relatives and possibly update the FID and IIDs in your file.\n"
-            "If you are planning on using these data for future analyses like admixture or phasing/imputation, you "
-            "should make set lists of people who are unrelated in each set. These lists should have "
-            "Family ID / Individual ID pairs, one person per line (tab or space delimited).")
+            "If you are planning on using these data for an admixture analysis you should make set lists of people who "
+            "are unrelated in each set. These lists should have Family ID / Individual ID pairs, one person per line "
+            "(tab or space delimited).")
 
 
 def update_id(geno_name, update_id_filename):
