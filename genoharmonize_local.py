@@ -1,7 +1,6 @@
+import platform
 from colorama import init, Fore, Style
 init()
-
-import platform
 
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
@@ -13,7 +12,7 @@ elif system_check == "Windows":
     rm = "del "
 
 
-def harmonize_with_1000g(geno_name):
+def harmonize_with_1000g(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     # Using 1000 Genomes as a reference(based off Perl script by W.Rayner, 2015, wrayner @ well.ox.ac.uk)
     #   -Removes SNPs with MAF < 5% in study dataset
     #   -Removes SNPs not in 1000 Genomes Phase 3
@@ -40,95 +39,6 @@ def harmonize_with_1000g(geno_name):
     # Get current working directory.
     orig_wd = os.getcwd()
 
-    # Getting required reference files and genotype harmonizer program
-    # Ask the user if they already have the 1000G Phase 3 vcf files.
-    print(Fore.BLUE + Style.BRIGHT)
-    vcf_exists = input('Have you already downloaded the 1000G Phase3 VCF files? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if vcf_exists in ('y', 'yes'):
-        # Getting user's path to VCF files
-        print(Fore.MAGENTA + Style.BRIGHT)
-        vcf_path = input('Please enter the pathname of where your 1000G VCF files are '
-                         '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): ')
-        print(Style.RESET_ALL)
-
-    elif vcf_exists in ('n', 'no'):
-        # Get module where downloading instructions are.
-        import genodownload
-        # From that module, call download 1000G Phase 3 VCF
-        genodownload.vcf_1000g_phase3()
-        # Saving VCF path
-        vcf_path = os.path.join(os.getcwd(), '1000G_Phase3_VCF')
-    else:
-        sys.exit("Please answer yes or no. Quitting now because no VCF files.")
-
-    # Ask the user if they already have the 1000G Phase 3 Hap/Legend/Sample files.
-    print(Fore.GREEN)
-    legend_exists = input('Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if legend_exists in ('y', 'yes'):
-        # Ask the user where the Legend files are.
-        print(Fore.CYAN)
-        legend_path = input('Please enter the pathname of where your 1000G legend files are '
-                            '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): ')
-        print(Style.RESET_ALL)
-
-    elif legend_exists in ('n', 'no'):
-        # Get genodownload module
-        import genodownload
-        # Call download HapLegendSample command
-        genodownload.hls_1000g_phase3()
-        # Saving legend path
-        legend_path = os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample')
-    else:
-        sys.exit('Please answer yes or no. Quitting now because no legend files.')
-
-    # Ask if they have the hg19 fasta files.
-    print(Fore.BLUE + Style.BRIGHT)
-    fasta_exists = input('Have you already downloaded the 1000G hg19 fasta file? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if fasta_exists in ('y', 'yes'):
-        # Ask the user where the fasta file is.
-        print(Fore.MAGENTA + Style.BRIGHT)
-        fasta_path = input('Please enter the pathname of where the your 1000G hg19 fasta file is '
-                           '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): ')
-        print(Style.RESET_ALL)
-
-    elif fasta_exists in ('n', 'no'):
-        # Get geno download module
-        import genodownload
-        # Call download fasta command
-        genodownload.fasta_1000G_hg19()
-        # Saving fasta path
-        fasta_path = os.path.join(os.getcwd(), '1000G_hg19_fasta')
-    else:
-        sys.exit('Please answer yes or no. Quitting now because no fasta file.')
-
-    # Ask if they have genotype harmonizer.
-    print(Fore.GREEN)
-    harmonizer_exists = input('Have you already downloaded Genotype Harmonizer? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if harmonizer_exists in ('y', 'yes'):
-        # Ask the user where genotype harmonizer is.
-        print(Fore.CYAN)
-        harmonizer_path = input('Please enter the pathname of where the Genotype Harmonizer folder is '
-                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): ')
-        print(Style.RESET_ALL)
-
-    elif harmonizer_exists in ('n', 'no'):
-        import genodownload
-        genodownload.genotype_harmonizer()
-        # Harmonize path now that we've downloaded it.
-        harmonizer_path = os.path.join(os.getcwd(), 'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
-
-    else:
-        sys.exit('Please write yes or no. Quitting now because no Genotype Harmonizer.')
-
-    # Start harmonization
     # Make new folder where the harmonized files will be located.
     if not os.path.exists('Harmonized_To_1000G'):
         os.makedirs('Harmonized_To_1000G')
