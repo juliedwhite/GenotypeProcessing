@@ -1,3 +1,4 @@
+# Define get pip first
 def pip():
     import urllib.request
     import platform
@@ -31,6 +32,7 @@ def pip():
     print("Done downloading pip")
 
 
+# Define module to get colorama
 def getcolorama():
     try:
         import pip
@@ -38,12 +40,13 @@ def getcolorama():
         pip()
         import pip
 
+    # Try to download
     try:
         pip.main(['install', 'colorama'])
     except:
         pip.main(['install', 'colorama', '--user'])
 
-
+# Try to import colorama, if that doesn't work, download it using pip.
 try:
     import colorama
 except ImportError:
@@ -52,6 +55,7 @@ except ImportError:
 
 from colorama import init, Fore, Style
 init()
+
 
 def todownload():
     import sys
