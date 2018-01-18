@@ -62,15 +62,14 @@ def todownload():
                  '3) 1000G Phase 3 Hap/Legend/Sample\n'
                  '4) GRCh37/hg19 1000G FASTA file\n'
                  '5) Genotype Harmonizer\n'
-                 '6) pip\n'
-                 '7) snpflip\n'
-                 '8) shapeit\n'
-                 '9) vcftools\n'
-                 '10) bcftools\n'
-                 '11) htslib\n'
-                 '12) samtools\n'
-                 '13) Nothing\n'
-                 'Please enter a number (i.e. 2): ')
+                 '6) snpflip\n'
+                 '7) shapeit\n'
+                 '8) vcftools\n'
+                 '9) bcftools\n'
+                 '10) htslib\n'
+                 '11) samtools\n'
+                 '12) Nothing\n'
+                 'Please enter the number of the reference file or program that you would like to download (i.e. 2): ')
     print(Style.RESET_ALL)
 
     if item == '1':
@@ -84,20 +83,18 @@ def todownload():
     elif item == '5':
         genotype_harmonizer()
     elif item == '6':
-        pip()
-    elif item == '7':
         snpflip()
-    elif item == '8':
+    elif item == '7':
         shapeit()
-    elif item == '9':
+    elif item == '8':
         vcftools()
-    elif item == '10':
+    elif item == '9':
         bcftools()
-    elif item == '11':
+    elif item == '10':
         htslib()
-    elif item == '12':
+    elif item == '11':
         samtools()
-    elif item == '13':
+    elif item == '12':
         sys.exit("Exiting now")
     else:
         sys.exit("Quitting because you did not give a recognizable number when asked what to download.")
