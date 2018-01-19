@@ -1,7 +1,14 @@
+import platform
+
+try:
+    import colorama
+except ImportError:
+    import genodownload
+    genodownload.getcolorama()
+
 from colorama import init, Fore, Style
 init()
 
-import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):

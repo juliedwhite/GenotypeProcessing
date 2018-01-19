@@ -1,4 +1,11 @@
 import platform
+
+try:
+    import colorama
+except (ImportError, ModuleNotFoundError):
+    import genodownload
+    genodownload.getcolorama()
+
 from colorama import init, Fore, Style
 init()
 
@@ -31,10 +38,22 @@ def harmonize_with_1000g(geno_name, harmonizer_path, vcf_path, legend_path, fast
     import shutil
     import glob
     import sys
-    import pandas as pd
-    import numpy as np
     import csv
     import gzip
+
+    try:
+        import pandas as pd
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getpandas()
+        import pandas as pd
+
+    try:
+        import numpy as np
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getnumpy()
+        import numpy as np
 
     # Get current working directory.
     orig_wd = os.getcwd()
@@ -381,7 +400,7 @@ def harmonize_with_1000g(geno_name, harmonizer_path, vcf_path, legend_path, fast
                                 + '_HarmonizedTo1000G', shell=True)
 
     except:
-        # Import module where I have snpflip
+        # Import module where I have the download instructions for snpflip
         import genodownload
         # Download snpflip
         genodownload.snpflip()

@@ -701,3 +701,31 @@ def getargparse():
         pip.main(['install', 'argparse'])
     except:
         pip.main(['install', 'argparse', '--user'])
+
+
+def getpandas():
+    try:
+        import pip
+    except ImportError:
+        pip()
+        import pip
+
+    # Try to download
+    try:
+        pip.main(['install', 'pandas'])
+    except:
+        pip.main(['install', 'pandas', '--user'])
+
+
+def getnumpy():
+    try:
+        import pip
+    except ImportError:
+        pip()
+        import pip
+
+    # Try to download
+    try:
+        pip.main(['install', 'numpy'])
+    except:
+        pip.main(['install', 'numpy', '--user'])

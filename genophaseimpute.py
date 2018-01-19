@@ -1,7 +1,14 @@
+import platform
+
+try:
+    import colorama
+except ImportError:
+    import genodownload
+    genodownload.getcolorama()
+
 from colorama import init, Fore, Style
 init()
 
-import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
@@ -18,32 +25,17 @@ def phase(geno_name, allocation_name):
     import subprocess
     try:
         import pandas as pd
-    except ImportError:
-        try:
-            import pip
-            # Use pip to install pandas and it's dependencies.
-            pip.main(['install', 'pandas'])
-            import pandas as pd
-        except ImportError:
-            import genodownload
-            genodownload.pip()
-            import pip
-            pip.main(['install', 'pandas'])
-            import pandas as pd
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getpandas()
+        import pandas as pd
+
     try:
         import numpy as np
-    except ImportError:
-        try:
-            import pip
-            # Use pip to install numpy and it's dependencies.
-            pip.main(['install', 'numpy'])
-            import numpy as np
-        except ImportError:
-            import genodownload
-            genodownload.pip()
-            import pip
-            pip.main(['install', 'numpy'])
-            import numpy as np
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getnumpy()
+        import numpy as np
 
     # Ask if the user is on the cluster right now to determine if we should submit the files for them
     print(Fore.BLUE + Style.BRIGHT)
@@ -611,6 +603,7 @@ def phase(geno_name, allocation_name):
 
     print("Done")
 
+
 def impute():
     '''
     Required by the sanger imputation server.
@@ -633,11 +626,6 @@ def impute():
     import subprocess
     from subprocess import Popen, PIPE
     import shutil
-    try:
-        import pip
-    except ImportError:
-        import genodownload
-        genodownload.pip()
     import re
 
     # Needed for sorting lists by numeric instead of string.
@@ -1038,9 +1026,22 @@ def qualscoreplot(info_path):
     import os
     import glob
     import sys
-    import pandas as pd
     import re
-    import numpy as np
+
+    try:
+        import pandas as pd
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getpandas()
+        import pandas as pd
+
+    try:
+        import numpy as np
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getnumpy()
+        import numpy as np
+
     try:
         import matplotlib
         matplotlib.use('Agg')

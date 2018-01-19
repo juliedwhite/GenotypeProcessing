@@ -1,7 +1,14 @@
+import platform
+
+try:
+    import colorama
+except ImportError:
+    import genodownload
+    genodownload.getcolorama()
+
 from colorama import init, Fore, Style
 init()
 
-import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
@@ -28,9 +35,15 @@ def merge1000g(geno_name, harmonized_path):
 
     if merge_proceed in ("y", "yes"):
         import csv
-        import pandas as pd
         import shutil
         import glob
+
+        try:
+            import pandas as pd
+        except (ImportError, ModuleNotFoundError):
+            import genodownload
+            genodownload.getpandas()
+            import pandas as pd
 
         # Create new directory for storing these files.
         if not os.path.exists('Merged_With_1000G'):

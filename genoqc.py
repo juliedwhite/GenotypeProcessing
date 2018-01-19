@@ -52,8 +52,20 @@ def missing_call_rate(geno_name):
 def het(geno_name):
     # Identifies individuals with extreme heterozygosity values (more than +- 3 SD)
     # Getting extra required modules
-    import pandas as pd
-    import numpy as np
+    try:
+        import pandas as pd
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getpandas()
+        import pandas as pd
+
+    try:
+        import numpy as np
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getnumpy()
+        import numpy as np
+
     import subprocess
 
     # Use plink to calculate the heterozygosity, paying attention to geno and mind.
