@@ -166,37 +166,138 @@ elif to_do == '7':
 
 # GenoHarmonize: Harmonize with 1000G
 elif to_do == '8':
-    print("Before we harmonize your data, please make sure your genotype data are on GRCh37/hg19 by comparing some of "
-          "the positions in your bim file to the position for that rsid on the UCSC Genome Browser: "
-          "https://genome.ucsc.edu/cgi-bin/hgGateway You should search your risd after selecting Human and "
-          "Feb. 2009 (GRCh37/hg19). Your snp position should be directly in the middle of the snp ranges it gives when "
-          "you search (i.e. rs1042522 at chr17:7579472-7579472). If you find that your snps don't match, then you "
-          "should figure out what GRCh/hg version your snps are on and use the LiftOver tool "
-          "(https://genome.ucsc.edu/cgi-bin/hgLiftOver) to change the coordinates to GRCh37/hg19.")
-
+    print(Fore.BLUE + Style.BRIGHT
+          + "Before we harmonize your data, please make sure your genotype data are on GRCh37/hg19 by comparing some "
+            "of the positions in your bim file to the position for that rsid on the UCSC Genome Browser: "
+            "https://genome.ucsc.edu/cgi-bin/hgGateway You should search your risd after selecting Human and Feb. 2009 "
+            "(GRCh37/hg19). Your snp position should be directly in the middle of the snp ranges it gives when you "
+            "search (i.e. rs1042522 at chr17:7579472-7579472). If you find that your snps don't match, then you should "
+            "figure out what GRCh/hg version your snps are on and use the LiftOver tool "
+            "(https://genome.ucsc.edu/cgi-bin/hgLiftOver) to change the coordinates to GRCh37/hg19.")
+    print(Fore.CYAN + Style.RESET_ALL)
     coord_check = input("Have you checked that your data are on GRCh37/hg19? (y/n): ").lower()
+    print(Style.RESET_ALL)
 
     if coord_check in ('yes', 'y'):
         # Get name of genotypes.
-        print(Fore.BLUE + Style.BRIGHT)
+        print(Fore.GREEN)
         geno_name = input('Please enter the name of the genotype file you would like to harmonize with 1000G Phase 3 '
                           '(without bed/bim/fam extension): ')
         print(Style.RESET_ALL)
-        # Harmonize with 1000G Phase 3
-        import genoharmonize
-        genoharmonize.harmonize_with_1000g(geno_name)
 
+        # Getting required reference files and genotype harmonizer program
+        # Ask the user if they already have the 1000G Phase 3 vcf files.
+        print(Fore.BLUE + Style.BRIGHT)
+        vcf_exists = input('Have you already downloaded the 1000G Phase3 VCF files? (y/n): ').lower()
+        print(Style.RESET_ALL)
+        # If yes, then get user's path to VCF files
+        if vcf_exists in ('y', 'yes'):
+            print(Fore.MAGENTA + Style.BRIGHT)
+            vcf_path = input('Please enter the pathname of where your 1000G VCF files are '
+                             '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): ')
+            print(Style.RESET_ALL)
+        # If no, then download vcf files.
+        elif vcf_exists in ('n', 'no'):
+            import genodownload
+            genodownload.vcf_1000g_phase3()
+            # Saving VCF path
+            vcf_path = os.path.join(os.getcwd(), '1000G_Phase3_VCF')
+        else:
+            sys.exit("Please answer yes or no. Quitting now because no VCF files.")
+
+        # Ask the user if they already have the 1000G Phase 3 Hap/Legend/Sample files.
+        print(Fore.GREEN)
+        legend_exists = input('Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): ').lower()
+        print(Style.RESET_ALL)
+        # If yes, then get legend_path
+        if legend_exists in ('y', 'yes'):
+            print(Fore.CYAN)
+            legend_path = input('Please enter the pathname of where your 1000G legend files are '
+                                '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): ')
+            print(Style.RESET_ALL)
+        # If no, then download legend files
+        elif legend_exists in ('n', 'no'):
+            import genodownload
+            genodownload.hls_1000g_phase3()
+            # Saving legend path
+            legend_path = os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample')
+        else:
+            sys.exit('Please answer yes or no. Quitting now because no legend files.')
+
+        # Ask if they have the hg19 fasta files.
+        print(Fore.BLUE + Style.BRIGHT)
+        fasta_exists = input('Have you already downloaded the 1000G hg19 fasta file? (y/n): ').lower()
+        print(Style.RESET_ALL)
+        # If yes, then get fasta path
+        if fasta_exists in ('y', 'yes'):
+            # Ask the user where the fasta file is.
+            print(Fore.MAGENTA + Style.BRIGHT)
+            fasta_path = input('Please enter the pathname of where the your 1000G hg19 fasta file is '
+                               '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): ')
+            print(Style.RESET_ALL)
+        # If no, then download fasta files.
+        elif fasta_exists in ('n', 'no'):
+            import genodownload
+            genodownload.fasta_1000G_hg19()
+            # Saving fasta path
+            fasta_path = os.path.join(os.getcwd(), '1000G_hg19_fasta')
+        else:
+            sys.exit('Please answer yes or no. Quitting now because no fasta file.')
+
+        # Ask if they have genotype harmonizer.
+        print(Fore.GREEN)
+        harmonizer_exists = input('Have you already downloaded Genotype Harmonizer? (y/n): ').lower()
+        print(Style.RESET_ALL)
+        # If yes, then get path to genotype harmonizer.
+        if harmonizer_exists in ('y', 'yes'):
+            print(Fore.CYAN)
+            harmonizer_path = input('Please enter the pathname of where the Genotype Harmonizer folder is '
+                                    '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): ')
+            print(Style.RESET_ALL)
+        # If no, then download genotype harmonizer
+        elif harmonizer_exists in ('n', 'no'):
+            import genodownload
+            genodownload.genotype_harmonizer()
+            # Harmonize path now that we've downloaded it.
+            harmonizer_path = os.path.join(os.getcwd(), 'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
+        else:
+            sys.exit('Please write yes or no. Quitting now because no Genotype Harmonizer.')
+
+        # Ask if the user is on the cluster right now to determine if we should submit the files for them
+        print(Fore.BLUE + Style.BRIGHT)
+        on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I make this '
+                           'process as a job and submit it to run. If you are not on the cluster, then this will run '
+                           'locally and will take approximately 15 hours. (y/n): ').lower()
+        print(Style.RESET_ALL)
+        # If they are on the cluster, then run as a job.
+        if on_cluster in ('yes', 'y'):
+            # I based this formatting off of PSU cluster users, so they need to have a PSU cluster allocation.
+            print(Fore.MAGENTA + Style.BRIGHT)
+            allocation_name = input('Please enter the name of your cluster allocation: ')
+            print(Style.RESET_ALL)
+            # Run
+            import genoharmonize
+            genoharmonize.cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, fasta_path)
+
+        # If they are not on the cluster, then run on their local machine.
+        elif on_cluster in ('no', 'n'):
+            # Run harmonization script on their local machine.
+            import genoharmonize
+            genoharmonize.local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path)
+
+    # If they have not checked that they are on hg19, quit
     elif coord_check in ('no', 'n'):
         sys.exit("Please make sure your data are on GRCh37/hg19 then re-run this script. Exiting now.")
-
+    # If they give a bad answer.
     else:
         sys.exit("Please answer 'yes' or 'no'. Exiting now.")
+
 
 # GenoQC: Remove individuals with  extreme heterozygosity values (more than +- 3 SD)
 elif to_do == '9':
     print(Fore.BLUE + Style.BRIGHT)
-    geno_name = input('Please enter the name of the genotype files that you would like to run a heterozygosity check on '
-                      '(without bed/bim/fam extension: ')
+    geno_name = input('Please enter the name of the genotype files that you would like to run a heterozygosity check '
+                      'on (without bed/bim/fam extension: ')
     print(Style.RESET_ALL)
 
     # Call module and function.

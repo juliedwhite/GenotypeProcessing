@@ -1,7 +1,14 @@
+import platform
+
+try:
+    import colorama
+except ImportError:
+    import genodownload
+    genodownload.getcolorama()
+
 from colorama import init, Fore, Style
 init()
 
-import platform
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
@@ -12,7 +19,91 @@ elif system_check == "Windows":
     rm = "del "
 
 
-def harmonize_with_1000g(geno_name):
+def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, fasta_path):
+    # Using 1000 Genomes as a reference(based off Perl script by W.Rayner, 2015, wrayner @ well.ox.ac.uk)
+    #   -Removes SNPs with MAF < 5% in study dataset
+    #   -Removes SNPs not in 1000 Genomes Phase 3
+    #   -Removes all A/T G/C SNPs with MAF > 40% in the reference data set
+    #   -Removes all SNPs with an AF difference >0.2, between reference and dataset frequency file, frequency file is
+    #         expected to be a plink frequency file with the same number of SNPs as the bim file
+    #   -Removes duplicates that may be introduced with the position update
+    #   -Removes indels #Need to figure out how to do this. Or even if it is necessary with plink files.
+    #   -Removes SNPs with HWE p-value < 0.01
+    #   -Updates the reference allele to match 1000G
+    #   -Outputs new files per chromosome, in plink bed/bim/fam format.
+
+    import glob
+    import os
+    import shutil
+    import subprocess
+
+    # Make new folder where the harmonized files will be located.
+    if not os.path.exists('Harmonized_To_1000G'):
+        os.makedirs('Harmonized_To_1000G')
+
+    # Copy genotype files to new folder.
+    shutil.copy2(geno_name + '.bed', 'Harmonized_To_1000G')
+    shutil.copy2(geno_name + '.bim', 'Harmonized_To_1000G')
+    shutil.copy2(geno_name + '.fam', 'Harmonized_To_1000G')
+
+    # Copy plink to new folder.
+    plink_files = glob.glob(r'plink')
+    plink_files.extend(glob.glob(r'plink.exe'))
+    # If it didn't find any plink files, then download plink and re-search
+    if not plink_files:
+        import genodownload
+        genodownload.plink()
+        plink_files = glob.glob(r'plink')
+        plink_files.extend(glob.glob(r'plink.exe'))
+    # Move plink files to Harmonized_To_1000G folder
+    for file in plink_files:
+        print(file)
+        shutil.copy(file, 'Harmonized_To_1000G')
+
+    # Copy post processing script to Harmonized_To_1000G folder
+    shutil.copy2('genoharmonize_postprocess.py', 'Harmonized_To_1000G')
+
+    # Switch to this directory.
+    os.chdir('Harmonized_To_1000G')
+
+    # Write script to harmonize.
+    with open(geno_name + '_HarmonizeTo1000G.pbs', 'w') as file:
+        file.write('#!/bin/bash\n'
+                   '#PBS -l walltime=100:00:00\n'
+                   '#PBS -l nodes=1:ppn=8\n'
+                   '#PBS -l pmem=8gb\n'
+                   '#PBS -A ' + allocation_name
+                   + '\n'
+                     '#PBS -j oe\n'
+                     'cd $PBS_O_WORKDIR\n'
+                     'for i in {1..22}; do '
+                   + plink + ' --bfile ' + geno_name + ' --chr $i --hardy --hwe 0.01 --maf 0.05 --make-bed --out '
+                   + geno_name + '_MAF_HWE_Filter_chr$[i]\n'
+                   + 'java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input ' + geno_name
+                   + '_MAF_HWE_Filter_chr$[i] --ref '
+                   + os.path.join(vcf_path,
+                                  'ALL.chr$[i].phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz')
+                   + ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
+                     ' --output ' + geno_name + '_chr$[i]_Harmonized\n'
+                   + 'rm ' + geno_name + '_MAF_HWE_Filter_chr$[i].*; done\n'
+                   + plink + ' --bfile ' + geno_name + ' --chr X --hardy --hwe 0.01 --maf 0.05 --make-bed --out '
+                   + geno_name + '_MAF_HWE_Filter_chr23\n'
+                   + "awk '{gsub(\"23\",\"X\",$1)}1' " + geno_name + "_MAF_HWE_Filter_chr23.bim > " + geno_name
+                   + "_MAF_HWE_Filter_chr23.bim\n"
+                   + 'java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input ' + geno_name
+                   + '_MAF_HWE_Filter_chr23 --ref '
+                   + os.path.join(vcf_path,
+                                  'ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz')
+                   + ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
+                     ' --output ' + geno_name + '_chr23_Harmonized\n'
+                   + 'rm ' + geno_name + '_MAF_HWE_Filter_chr23.*\n'
+                   + 'python harmonize_postprocess.py ' + geno_name + legend_path + fasta_path + '\n')
+
+    # Submit this job
+    subprocess.check_output(['qsub', geno_name + '_HarmonizeTo1000G.pbs'])
+
+
+def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     # Using 1000 Genomes as a reference(based off Perl script by W.Rayner, 2015, wrayner @ well.ox.ac.uk)
     #   -Removes SNPs with MAF < 5% in study dataset
     #   -Removes SNPs not in 1000 Genomes Phase 3
@@ -31,103 +122,26 @@ def harmonize_with_1000g(geno_name):
     import shutil
     import glob
     import sys
-    import pandas as pd
-    import numpy as np
     import csv
     import gzip
 
+    try:
+        import pandas as pd
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getpandas()
+        import pandas as pd
+
+    try:
+        import numpy as np
+    except (ImportError, ModuleNotFoundError):
+        import genodownload
+        genodownload.getnumpy()
+        import numpy as np
+
     # Get current working directory.
     orig_wd = os.getcwd()
-    
-    # Getting required reference files and genotype harmonizer program
-    # Ask the user if they already have the 1000G Phase 3 vcf files.
-    print(Fore.BLUE + Style.BRIGHT)
-    vcf_exists = input('Have you already downloaded the 1000G Phase3 VCF files? (y/n): ').lower()
-    print(Style.RESET_ALL)
 
-    if vcf_exists in ('y', 'yes'):
-        # Getting user's path to VCF files
-        print(Fore.MAGENTA + Style.BRIGHT)
-        vcf_path = input('Please enter the pathname of where your 1000G VCF files are '
-                         '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\VCF\\ etc.): ')
-        print(Style.RESET_ALL)
-
-    elif vcf_exists in ('n', 'no'):
-        # Get module where downloading instructions are.
-        import genodownload
-        # From that module, call download 1000G Phase 3 VCF
-        genodownload.vcf_1000g_phase3()
-        # Saving VCF path
-        vcf_path = os.path.join(os.getcwd(), '1000G_Phase3_VCF')
-    else:
-        sys.exit("Please answer yes or no. Quitting now because no VCF files.")
-
-    # Ask the user if they already have the 1000G Phase 3 Hap/Legend/Sample files.
-    print(Fore.GREEN)
-    legend_exists = input('Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if legend_exists in ('y', 'yes'):
-        # Ask the user where the Legend files are.
-        print(Fore.CYAN)
-        legend_path = input('Please enter the pathname of where your 1000G legend files are '
-                            '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\ etc.): ')
-        print(Style.RESET_ALL)
-
-    elif legend_exists in ('n', 'no'):
-        # Get genodownload module
-        import genodownload
-        # Call download HapLegendSample command
-        genodownload.hls_1000g_phase3()
-        # Saving legend path
-        legend_path = os.path.join(os.getcwd(), '1000G_Phase3_HapLegendSample')
-    else:
-        sys.exit('Please answer yes or no. Quitting now because no legend files.')
-    
-    # Ask if they have the hg19 fasta files.
-    print(Fore.BLUE + Style.BRIGHT)
-    fasta_exists = input('Have you already downloaded the 1000G hg19 fasta file? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if fasta_exists in ('y', 'yes'):
-        # Ask the user where the fasta file is.
-        print(Fore.MAGENTA + Style.BRIGHT)
-        fasta_path = input('Please enter the pathname of where the your 1000G hg19 fasta file is '
-                           '(i.e. C:\\Users\\Julie White\\Box Sync\\1000GP\\Fasta\\ etc.): ')
-        print(Style.RESET_ALL)
-
-    elif fasta_exists in ('n', 'no'):
-        # Get geno download module
-        import genodownload
-        # Call download fasta command
-        genodownload.fasta_1000G_hg19()
-        # Saving fasta path
-        fasta_path = os.path.join(os.getcwd(), '1000G_hg19_fasta')
-    else:
-        sys.exit('Please answer yes or no. Quitting now because no fasta file.')
-    
-    # Ask if they have genotype harmonizer.
-    print(Fore.GREEN)
-    harmonizer_exists = input('Have you already downloaded Genotype Harmonizer? (y/n): ').lower()
-    print(Style.RESET_ALL)
-
-    if harmonizer_exists in ('y', 'yes'):
-        # Ask the user where genotype harmonizer is.
-        print(Fore.CYAN)
-        harmonizer_path = input('Please enter the pathname of where the Genotype Harmonizer folder is '
-                                '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): ')
-        print(Style.RESET_ALL)
-
-    elif harmonizer_exists in ('n', 'no'):
-        import genodownload
-        genodownload.genotype_harmonizer()
-        # Harmonize path now that we've downloaded it.
-        harmonizer_path = os.path.join(os.getcwd(), 'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
-
-    else:
-        sys.exit('Please write yes or no. Quitting now because no Genotype Harmonizer.')
-
-    # Start harmonization
     # Make new folder where the harmonized files will be located.
     if not os.path.exists('Harmonized_To_1000G'):
         os.makedirs('Harmonized_To_1000G')
@@ -148,10 +162,10 @@ def harmonize_with_1000g(geno_name):
         for file in plink_files:
             print(file)
             shutil.copy(file, 'Harmonized_To_1000G')
-    
+
     # Switch to this directory.
     os.chdir('Harmonized_To_1000G')
-    
+
     # Make the lists that we're going to need, since this is on a per chromosome basis.
     vcf_file_names = ['ALL.chr%d.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz' % x for x in
                       range(1, 23)]
@@ -179,14 +193,14 @@ def harmonize_with_1000g(geno_name):
         if i < 22:
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
                                     + geno_name + '_MAF_HWE_Filter --ref "' + os.path.join(vcf_path, vcf_file_names[i])
-                                    + '" --refType VCF --chrFilter ' + str(i+1)
+                                    + '" --refType VCF --chrFilter ' + str(i + 1)
                                     + ' --update-id --debug --mafAlign 0 --update-reference-allele --outputType '
                                       'PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
-                                        dtype={'chr':str, 'pos':int, 'originalId':str, 'newId':str})
+                                        dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
             snp_logs[i] = pd.read_table(snp_log_names[i], sep='\t', header=0,
-                                      dtype={'chr': str, 'pos': int, 'id': str, 'alleles': str, 'action':str,
-                                             'message':str})
+                                        dtype={'chr': str, 'pos': int, 'id': str, 'alleles': str, 'action': str,
+                                               'message': str})
 
         elif i == 22:
             # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and
@@ -210,8 +224,8 @@ def harmonize_with_1000g(geno_name):
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
             snp_logs[i] = pd.read_csv(snp_log_names[i], sep='\t', header=0,
-                                   dtype={'chr': str, 'pos': int, 'id': str, 'alleles': str, 'action': str,
-                                          'message': str})
+                                      dtype={'chr': str, 'pos': int, 'id': str, 'alleles': str, 'action': str,
+                                             'message': str})
         else:
             print(Fore.RED + Style.BRIGHT)
             sys.exit("Something is wrong with the number/name of reference files")
@@ -385,11 +399,11 @@ def harmonize_with_1000g(geno_name):
         if os.path.getsize(af_checked_names[i] + '.bim') > 0:
             subprocess.call(rm + final_snp_lists[i], shell=True)
             subprocess.call(rm + harmonized_geno_names[i] + '.*', shell=True)
-            
+
         # Done with one chromosome.
 
         print('Finished with chr' + str(i + 1))
-    
+
     # Make a big list of all SNPs removed and all SNPs kept just for reference purposes.
     all_snps_removed = pd.concat([af_diff_removed_by_chr[0], af_diff_removed_by_chr[1], af_diff_removed_by_chr[2],
                                   af_diff_removed_by_chr[3], af_diff_removed_by_chr[4], af_diff_removed_by_chr[5],
@@ -413,7 +427,7 @@ def harmonize_with_1000g(geno_name):
                                final_snps_by_chr[21], final_snps_by_chr[22]])
     # Write this list to a text file.
     all_snps_kept.to_csv('SNPs_Kept_AFCheck.txt', sep='\t', header=True, index=False)
-    
+
     # Merge harmonized dataset genotypes
     with open("HouseMergeList.txt", "w") as f:
         wr = csv.writer(f, delimiter="\n")
@@ -429,12 +443,12 @@ def harmonize_with_1000g(geno_name):
         print(Fore.RED + Style.BRIGHT)
         sys.exit("For some reason the house gentoypes did not merge. You should try it manually.")
         print(Style.RESET_ALL)
-    
-    #Check to make sure the snps are on the same strand as the reference
+
+    # Check to make sure the snps are on the same strand as the reference
     # First need to change the chromosome names to match the fasta file so they can match.
     # Read chrX file into pandas
     bim_file = pd.read_csv(geno_name + '_HarmonizedTo1000G.bim', sep='\t', header=None,
-                           dtype={0:str, 1:str, 2:int, 3:int, 4: str, 5:str})
+                           dtype={0: str, 1: str, 2: int, 3: int, 4: str, 5: str})
     # Replace '23' with 'X', which is how the fasta file calls X
     bim_file.iloc[:, 0].replace('23', 'X', inplace=True)
     # Replace '24' with 'Y', which is how the fasta file calls Y
@@ -470,7 +484,7 @@ def harmonize_with_1000g(geno_name):
                                 + '_HarmonizedTo1000G', shell=True)
 
     except:
-        # Import module where I have snpflip
+        # Import module where I have the download instructions for snpflip
         import genodownload
         # Download snpflip
         genodownload.snpflip()
@@ -505,5 +519,3 @@ def harmonize_with_1000g(geno_name):
     print("Finished with harmonization")
     # Change back to original working directory.
     os.chdir(orig_wd)
-
-
