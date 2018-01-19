@@ -97,7 +97,7 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
                    + ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
                      ' --output ' + geno_name + '_chr23_Harmonized\n'
                    + 'rm ' + geno_name + '_MAF_HWE_Filter_chr23.*\n'
-                   + 'python harmonize_postprocess.py ' + geno_name + legend_path + fasta_path + '\n')
+                   + 'python harmonize_postprocess.py ' + geno_name + ' ' + legend_path + ' ' + fasta_path + '\n')
 
     # Submit this job
     subprocess.check_output(['qsub', geno_name + '_HarmonizeTo1000G.pbs'])
