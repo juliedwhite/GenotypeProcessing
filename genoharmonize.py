@@ -61,7 +61,7 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
         shutil.copy(file, 'Harmonized_To_1000G')
 
     # Copy post processing script to Harmonized_To_1000G folder
-    shutil.copy2('genoharmonize_postprocess.py', 'Harmonized_To_1000G')
+    shutil.copy2('harmonize_postprocess.py', 'Harmonized_To_1000G')
 
     # Switch to this directory.
     os.chdir('Harmonized_To_1000G')
