@@ -310,62 +310,71 @@ bim_file.iloc[:, 0].replace('26', 'MT', inplace=True)
 bim_file.to_csv(args.geno_name + '_HarmonizedTo1000G.bim', sep='\t', header=False, index=False, na_rep='NA')
 
 # Fasta file needs to be unzipped for snpflip to work.
-if os.path.exists(os.path.join(args.fasta_path, 'human_g1k_v37.fasta')):
+if os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta')):
     pass
-elif os.path.exists(os.path.join(args.fasta_path, 'human_g1k_v37.fasta.gz')):
-    with gzip.open(os.path.join(args.fasta_path, 'human_g1k_v37.fasta.gz'), 'rb') as f_in, \
-            open(os.path.join(args.fasta_path, 'human_g1k_v37.fasta'), 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
+elif os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')):
+    try:
+        with gzip.open(os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), 'rb') as f_in, \
+                open(os.path.join(fasta_path, 'human_g1k_v37.fasta'), 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    except:
+        if system_check in ("Linux", "Darwin"):
+            subprocess.call(['gunzip', '-c', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), '>',
+                             os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+        elif system_check in ("Windows"):
+            for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
+                for files in f:
+                    if files == "7zG.exe":
+                        zip_path = os.path.join(r, files)
+            subprocess_check_output([zip_path, 'e', os.path.join(fasta_path, 'human_gik_v37.fasta.gz')])
 else:
     sys.exit("Quitting because I cannot find the fasta file.")
 
-from os.path import expanduser
-home = expanduser("~")
-
 try:
     # Find where snpflip is.
-    for r, d, f in os.walk(os.path.join(home, 'software', 'bin')):
-        for files in f:
-            if files == "snpflip":
-                snpflip_path = os.path.join(r, files)
+    for path in sys.path:
+        for r, d, f in os.walk(path):
+            for files in f:
+                if files == "snpflip":
+                    snpflip_path = os.path.join(r, files)
     # Perform flip check.
     subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                            + os.path.join(args.fasta_path, 'human_g1k_v37.fasta')
-                            + '" --bim-file ' + args.geno_name + '_HarmonizedTo1000G.bim --output-prefix '
-                            + args.geno_name + '_HarmonizedTo1000G', shell=True)
-
+                            + os.path.join(fasta_path, 'human_g1k_v37.fasta')
+                            + '" --bim-file ' + geno_name + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name
+                            + '_HarmonizedTo1000G', shell=True)
 except:
-    # Import module where I have snpflip
+    # Import module where I have the download instructions for snpflip
     import genodownload
+
     # Download snpflip
     genodownload.snpflip()
     # Find where snpflip is:
-    for r, d, f in os.walk(os.path.join(home, 'software', 'bin')):
-        for files in f:
-            if files == "snpflip":
-                snpflip_path = os.path.join(r, files)
+    for path in sys.path:
+        for r, d, f in os.walk(path):
+            for files in f:
+                if files == "snpflip":
+                    snpflip_path = os.path.join(r, files)
     # Re do
     subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                            + os.path.join(args.fasta_path, 'human_g1k_v37.fasta') + '" --bim-file ' + args.geno_name
-                            + '_HarmonizedTo1000G.bim --output-prefix ' + args.geno_name + '_HarmonizedTo1000G',
+                            + os.path.join(fasta_path, 'human_g1k_v37.fasta') + '" --bim-file ' + geno_name
+                            + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name + '_HarmonizedTo1000G',
                             shell=True)
 
 # If SNPs exist that are on the reverse strand, then flip them.
 # Currently ignores snps that are ambiguous, since I already removed those that would be hard to phase. Could change
 # this later.
-if os.path.getsize(args.geno_name + '_HarmonizedTo1000G.reverse') > 0:
-    subprocess.check_output([plink, '--bfile', args.geno_name + '_HarmonizedTo1000G', '--flip',
-                             args.geno_name + '_HarmonizedTo1000G.reverse', '--make-bed', '--out',
-                             args.geno_name + '_HarmonizedTo1000G_StrandChecked'])
+if os.path.getsize(geno_name + '_HarmonizedTo1000G.reverse') > 0:
+    subprocess.check_output([plink, '--bfile', geno_name + '_HarmonizedTo1000G', '--flip',
+                             geno_name + '_HarmonizedTo1000G.reverse', '--make-bed', '--out',
+                             geno_name + '_HarmonizedTo1000G_StrandChecked'])
 # If .reverse doesn't exist, still make a new file to signify that you've done the strand check.
 else:
-    subprocess.check_output([plink, '--bfile', args.geno_name + '_HarmonizedTo1000G', '--make-bed', '--out',
-                             args.geno_name + '_HarmonizedTo1000G_StrandChecked'])
+    subprocess.check_output([plink, '--bfile', geno_name + '_HarmonizedTo1000G', '--make-bed', '--out',
+                             geno_name + '_HarmonizedTo1000G_StrandChecked'])
 
 # Finished
-shutil.copy2(args.geno_name + '_HarmonizedTo1000G_StrandChecked.bed', orig_wd)
-shutil.copy2(args.geno_name + '_HarmonizedTo1000G_StrandChecked.bim', orig_wd)
-shutil.copy2(args.geno_name + '_HarmonizedTo1000G_StrandChecked.fam', orig_wd)
+shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.bed', orig_wd)
+shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.bim', orig_wd)
+shutil.copy2(geno_name + '_HarmonizedTo1000G_StrandChecked.fam', orig_wd)
 
 print("Finished with harmonization")
-
