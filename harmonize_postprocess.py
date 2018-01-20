@@ -95,7 +95,7 @@ all_id_updates.to_csv('Harmonization_ID_Updates.txt', sep='\t', header=True, ind
 # Remove the clutter
 if os.path.getsize('Harmonization_ID_Updates.txt') > 0:
     for f in id_update_names:
-        subprocess.call([rm, f])
+        os.remove(f)
 
 all_snp_logs = pd.concat([snp_logs[0], snp_logs[1], snp_logs[2], snp_logs[3], snp_logs[4], snp_logs[5], snp_logs[6],
                           snp_logs[7], snp_logs[8], snp_logs[9], snp_logs[10], snp_logs[11], snp_logs[12],
@@ -107,7 +107,7 @@ all_snp_logs.to_csv('Harmonization_SNP_Logs.txt', sep='\t', header=True, index=F
 # Remove the clutter
 if os.path.getsize('Harmonization_SNP_Logs.txt') > 0:
     for f in snp_log_names:
-        subprocess.call([rm, f])
+        os.remove(f)
 
 # Now for each that was just harmonized, remove all SNPs with an allele (AF) difference > 0.2 since we are going to
 # use a global reference population between study dataset and all superpopulation allele frequencies. IF within 0.2
@@ -249,7 +249,7 @@ for i in range(0, len(harmonized_geno_names)):
     # Remove extra files that we don't need anymore. These were files that were harmonized, but not checked for
     # allele frequency differences.
     if os.path.getsize(af_checked_names[i] + '.bim') > 0:
-        subprocess.call(rm + final_snp_lists[i], shell=True)
+        os.remove(final_snp_lists[i])
         subprocess.call(rm + harmonized_geno_names[i] + '.*', shell=True)
 
     # Done with one chromosome.
@@ -324,7 +324,7 @@ home = expanduser("~")
 
 try:
     # Find where snpflip is.
-    for r, d, f in os.walk(home):
+    for r, d, f in os.walk(os.path.join(home, 'software', 'bin')):
         for files in f:
             if files == "snpflip":
                 snpflip_path = os.path.join(r, files)
@@ -340,7 +340,7 @@ except:
     # Download snpflip
     genodownload.snpflip()
     # Find where snpflip is:
-    for r, d, f in os.walk(home):
+    for r, d, f in os.walk(os.path.join(home, 'software', 'bin')):
         for files in f:
             if files == "snpflip":
                 snpflip_path = os.path.join(r, files)

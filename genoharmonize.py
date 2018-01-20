@@ -397,7 +397,7 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
         # Remove extra files that we don't need anymore. These were files that were harmonized, but not checked for
         # allele frequency differences.
         if os.path.getsize(af_checked_names[i] + '.bim') > 0:
-            subprocess.call(rm + final_snp_lists[i], shell=True)
+            os.remove(final_snp_lists[i])
             subprocess.call(rm + harmonized_geno_names[i] + '.*', shell=True)
 
         # Done with one chromosome.
@@ -473,7 +473,7 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
 
     try:
         # Find where snpflip is.
-        for r, d, f in os.walk(home):
+        for r, d, f in os.walk(os.path.join(home, 'software', 'bin')):
             for files in f:
                 if files == "snpflip":
                     snpflip_path = os.path.join(r, files)
@@ -489,7 +489,7 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
         # Download snpflip
         genodownload.snpflip()
         # Find where snpflip is:
-        for r, d, f in os.walk(home):
+        for r, d, f in os.walk(os.path.join(home, 'software', 'bin')):
             for files in f:
                 if files == "snpflip":
                     snpflip_path = os.path.join(r, files)
