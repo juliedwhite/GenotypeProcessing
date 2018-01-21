@@ -1,4 +1,8 @@
 import platform
+import os
+import glob
+import shutil
+import subprocess
 
 try:
     import colorama
@@ -31,11 +35,6 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
     #   -Removes SNPs with HWE p-value < 0.01
     #   -Updates the reference allele to match 1000G
     #   -Outputs new files per chromosome, in plink bed/bim/fam format.
-
-    import glob
-    import os
-    import shutil
-    import subprocess
 
     # Make new folder where the harmonized files will be located.
     if not os.path.exists('Harmonized_To_1000G'):
@@ -117,10 +116,6 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     #   -Outputs new files per chromosome, in plink bed/bim/fam format.
 
     # Needed modules
-    import os
-    import subprocess
-    import shutil
-    import glob
     import sys
     import csv
     import gzip
@@ -154,14 +149,16 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     # Copy plink to new folder.
     plink_files = glob.glob(r'plink')
     plink_files.extend(glob.glob(r'plink.exe'))
-
+    # If it didn't find any plink files, then download plink and re-search
     if not plink_files:
-        sys.exit("We need plink to run this part of the script. Please run step 1 if you do not have plink, or make "
-                 "sure that it is in this directory.")
-    else:
-        for file in plink_files:
-            print(file)
-            shutil.copy(file, 'Harmonized_To_1000G')
+        import genodownload
+        genodownload.plink()
+        plink_files = glob.glob(r'plink')
+        plink_files.extend(glob.glob(r'plink.exe'))
+    # Move plink files to Harmonized_To_1000G folder
+    for file in plink_files:
+        print(file)
+        shutil.copy(file, 'Harmonized_To_1000G')
 
     # Switch to this directory.
     os.chdir('Harmonized_To_1000G')
@@ -183,19 +180,20 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     final_snp_lists = ['chr%d_SNPsKept.txt' % x for x in range(1, 24)]
     af_checked_names = [geno_name + '_chr%d_HarmonizedTo1000G' % x for x in range(1, 24)]
 
-    # Remove all SNPs with HWE p-value < 0.01 and SNPs with MAF < 0.05
-    subprocess.check_output([plink, '--bfile', geno_name, '--hardy', '--hwe', '0.01', '--maf', '0.05', '--make-bed',
-                             '--out', geno_name + '_MAF_HWE_Filter'])
-
     # Harmonize for each chromosome
     for i in range(0, len(vcf_file_names)):
         # Call genotype harmonizer for autosomes
         if i < 22:
+            # Remove SNPs with HWE p-value < 0.01 and SNPs with MAF < 0.05
+            subprocess.check_output([plink, '--bfile', geno_name, '--chr', str(i+1), '--hardy', '--hwe', '0.01',
+                                     '--maf', '0.05', '--make-bed', '--out',
+                                     geno_name + '_MAF_HWE_Filter_chr' + str(i+1)])
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
-                                    + geno_name + '_MAF_HWE_Filter --ref "' + os.path.join(vcf_path, vcf_file_names[i])
-                                    + '" --refType VCF --chrFilter ' + str(i + 1)
-                                    + ' --update-id --debug --mafAlign 0 --update-reference-allele --outputType '
-                                      'PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
+                                    + geno_name + '_MAF_HWE_Filter_chr' + str(i+1) + ' --ref "'
+                                    + os.path.join(vcf_path, vcf_file_names[i])
+                                    + '" --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele '
+                                      '--outputType PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
+            subprocess.call(rm + geno_name + '_MAF_HWE_Filter_chr' + str(i + 1) + '.*', shell=True)
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
             snp_logs[i] = pd.read_table(snp_log_names[i], sep='\t', header=0,
@@ -229,7 +227,6 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
         else:
             print(Fore.RED + Style.BRIGHT)
             sys.exit("Something is wrong with the number/name of reference files")
-            print(Style.RESET_ALL)
 
     # Concatenate all of the id updates into one file.
     all_id_updates = pd.concat([id_updates[0], id_updates[1], id_updates[2], id_updates[3], id_updates[4],
@@ -441,8 +438,8 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
 
     else:
         print(Fore.RED + Style.BRIGHT)
-        sys.exit("For some reason the house gentoypes did not merge. You should try it manually.")
-        print(Style.RESET_ALL)
+        sys.exit("For some reason the house gentoypes did not merge. You should try it manually. Then, you will need "
+                 "to use the program snpflip to make sure the snps are on the same strand as the reference.")
 
     # Check to make sure the snps are on the same strand as the reference
     # First need to change the chromosome names to match the fasta file so they can match.
@@ -477,7 +474,7 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
                             zip_path = os.path.join(r, files)
                 subprocess.check_output([zip_path, 'e', os.path.join(fasta_path,'human_gik_v37.fasta.gz')])
     else:
-        sys.exit("Quitting because I cannot find the fasta file.")
+        sys.exit("Quitting because I cannot find the fasta file. You must have this for snpflip to run.")
 
     try:
         # Find where snpflip is.
