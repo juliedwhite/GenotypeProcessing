@@ -320,13 +320,13 @@ elif os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')):
     except:
         if system_check in ("Linux", "Darwin"):
             subprocess.call(['gunzip', '-c', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), '>',
-                             os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+                             os.path.join(fasta_path, 'human_g1k_v37.fasta')])
         elif system_check in ("Windows"):
             for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
                 for files in f:
                     if files == "7zG.exe":
                         zip_path = os.path.join(r, files)
-            subprocess_check_output([zip_path, 'e', os.path.join(fasta_path, 'human_gik_v37.fasta.gz')])
+            subprocess.check_output([zip_path, 'e', os.path.join(fasta_path, 'human_gik_v37.fasta.gz')])
 else:
     sys.exit("Quitting because I cannot find the fasta file.")
 
