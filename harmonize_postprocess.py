@@ -30,12 +30,14 @@ except (ImportError, ModuleNotFoundError):
 
 try:
     import colorama
+    from colorama import init, Fore, Style
+    init()
 except ImportError:
     import genodownload
     genodownload.getcolorama()
-
-from colorama import init, Fore, Style
-init()
+    import colorama
+    from colorama import init, Fore, Style
+    init()
 
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
@@ -301,7 +303,7 @@ else:
 # First need to change the chromosome names to match the fasta file so they can match.
 # Read chrX file into pandas
 bim_file = pd.read_csv(args.geno_name + '_HarmonizedTo1000G.bim', sep='\t', header=None,
-                       dtype={0:str, 1:str, 2:int, 3:int, 4: str, 5:str})
+                       dtype={0: str, 1: str, 2: int, 3: int, 4: str, 5: str})
 # Replace '23' with 'X', which is how the fasta file calls X
 bim_file.iloc[:, 0].replace('23', 'X', inplace=True)
 # Replace '24' with 'Y', which is how the fasta file calls Y
@@ -323,7 +325,8 @@ elif os.path.exists(os.path.join(args.fasta_path, 'human_g1k_v37.fasta.gz')):
         if system_check in ("Linux", "Darwin"):
             subprocess.call(['gunzip', '-c', os.path.join(args.fasta_path, 'human_g1k_v37.fasta.gz'), '>',
                              os.path.join(args.fasta_path, 'human_g1k_v37.fasta')])
-        elif system_check in ("Windows"):
+        elif system_check == "Windows":
+            zip_path = []
             for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
                 for files in f:
                     if files == "7zG.exe":
@@ -335,6 +338,7 @@ else:
 
 try:
     # Find where snpflip is.
+    snpflip_path = []
     for path in sys.path:
         for r, d, f in os.walk(path):
             for files in f:
@@ -351,6 +355,7 @@ except:
     # Download snpflip
     genodownload.snpflip()
     # Find where snpflip is:
+    snpflip_path = []
     for path in sys.path:
         for r, d, f in os.walk(path):
             for files in f:

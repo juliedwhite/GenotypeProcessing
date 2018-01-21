@@ -33,7 +33,7 @@ def ibd(geno_name):
                              'IBD_Calculations/' + geno_name])
     # Perform IBD calculation, filtering for a minimum of 0.1875. This is the halfway point between 2nd and 3rd degree
     # relatives.
-    subprocess.check_output([plink,'--bfile', geno_name, '--exclude', 'IBD_Calculations/' + geno_name + '.prune.out',
+    subprocess.check_output([plink, '--bfile', geno_name, '--exclude', 'IBD_Calculations/' + geno_name + '.prune.out',
                              '--genome', '--min', '0.1875', '--out', 'IBD_Calculations/' + geno_name])
 
     # Finished

@@ -3,10 +3,9 @@ import subprocess
 import urllib.request
 import os
 import sys
+from os.path import expanduser
 
 system_check = platform.system()
-
-from os.path import expanduser
 home = expanduser("~")
 
 
@@ -16,11 +15,11 @@ def pip():
     # Getting get-pip module
     urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')
     try:
-        subprocess.check_output(['python','get-pip.py'])
+        subprocess.check_output(['python', 'get-pip.py'])
         print("Done downloading pip")
     except:
         # Run it and install pip into user directory.
-        subprocess.check_output(['python','get-pip.py','--user'])
+        subprocess.check_output(['python', 'get-pip.py', '--user'])
         os.remove('get-pip.py')
         # Tell the user that they should add the following folders to their PATH before rerunning the script:
         if system_check in ("Linux", "Darwin"):
@@ -53,11 +52,12 @@ def getcolorama():
 # Try to import colorama, if that doesn't work, download it using pip.
 try:
     import colorama
+    from colorama import init, Fore, Style
 except ImportError:
     getcolorama()
-
-from colorama import init, Fore, Style
-init()
+    import colorama
+    from colorama import init, Fore, Style
+    init()
 
 
 # What to download?
@@ -93,7 +93,7 @@ def todownload():
         vcftools()
         bcftools()
         samtools()
-        if system_check in ("Linux"):
+        if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed several programs into " + os.path.join(home, 'software/bin')
                   + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
@@ -115,7 +115,7 @@ def todownload():
         shapeit()
     elif item == '9':
         htslib()
-        if system_check in ("Linux"):
+        if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed htslib into " + os.path.join(home, 'software/bin')
                   + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
@@ -123,7 +123,7 @@ def todownload():
             print(Style.RESET_ALL)
     elif item == '10':
         vcftools()
-        if system_check in ("Linux"):
+        if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed vcftools into " + os.path.join(home, 'software/bin')
                   + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
@@ -131,7 +131,7 @@ def todownload():
             print(Style.RESET_ALL)
     elif item == '11':
         bcftools()
-        if system_check in ("Linux"):
+        if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed bcftools into " + os.path.join(home, 'software/bin')
                   + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
@@ -139,7 +139,7 @@ def todownload():
             print(Style.RESET_ALL)
     elif item == '12':
         samtools()
-        if system_check in ("Linux"):
+        if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed samtools into " + os.path.join(home, 'software/bin')
                   + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
@@ -191,7 +191,7 @@ def plink():
     # Get the version of the user's system
     architecture_check = platform.architecture()[0]
 
-    #Get plink urls
+    # Get plink urls
     start_url = 'https://www.cog-genomics.org/plink/1.9/'
     response = requests.get(start_url)
     tree = lxml.html.fromstring(response.text)
@@ -357,7 +357,7 @@ def hls_1000g_phase3():
         if system_check in ("Linux", "Darwin"):
             subprocess.check_output(['tar', '-xvf', '1000GP_Phase3.tgz', '--strip-components', '1'])
             subprocess.check_output(['tar', '-xvf', '1000GP_Phase3_chrX.tgz'])
-        elif system_check in ("Windows"):
+        elif system_check == "Windows":
             print(Fore.RED + Style.BRIGHT + "Please use 7-Zip to unzip your .tgz file in the "
                                             "1000G_Phase3_HapLegendSample folder, then use 7-Zip again to untar the "
                                             ".tar file. Do this for both 1000GP_Phase3.tgz and 1000GP_Phase3_chrX.tgz")
@@ -402,7 +402,8 @@ def fasta_1000G_hg19():
         if system_check in ("Linux", "Darwin"):
             subprocess.call(['gunzip', '-c', os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta.gz'), '>',
                              os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta')])
-        elif system_check in ("Windows"):
+        elif system_check == "Windows":
+            zip_path = []
             for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
                 for files in f:
                     if files == "7zG.exe":
@@ -427,9 +428,9 @@ def genotype_harmonizer():
     zip_ref.close()
 
     # copy subdirectory up
-    fromDirectory = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer_1.4.20-SNAPSHOT')
-    toDirectory = 'GenotypeHarmonizer-1.4.20'
-    copy_tree(fromDirectory, toDirectory)
+    fromdirectory = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer_1.4.20-SNAPSHOT')
+    todirectory = 'GenotypeHarmonizer-1.4.20'
+    copy_tree(fromdirectory, todirectory)
 
     print("Done downloading genotype harmonizer")
 
@@ -457,7 +458,7 @@ def shapeit():
         # Making directory to store program
         os.makedirs('Shapeit_v2.r900_Linux_Static')
         # Unpacking
-        subprocess.check_output(['tar','-xzvf','shapeit.v2.r900.glibcv2.12.linux.tar.gz','-C',
+        subprocess.check_output(['tar', '-xzvf', 'shapeit.v2.r900.glibcv2.12.linux.tar.gz', '-C',
                                  'Shapeit_v2.r900_Linux_Static/'])
 
         print("Done downloading shapeit")
@@ -472,7 +473,7 @@ def shapeit():
         # Create directory for shapeit.
         os.makedirs('Shapeit_v2.20_Mac')
         # Untar shapeit to that directory.
-        subprocess.check_output(['tar','-zxvf','shapeit.v2.r837.MacOSX.tgz','-C','Shapeit_v2.20_Mac/'])
+        subprocess.check_output(['tar', '-zxvf', 'shapeit.v2.r837.MacOSX.tgz', '-C', 'Shapeit_v2.20_Mac/'])
 
         print("Done downloading shapeit")
 
@@ -503,9 +504,9 @@ def vcftools():
         os.chdir(os.path.join(home, 'software/vcftools-vcftools-ea875e2'))
         # Running configuration and installation steps
         subprocess.check_output('./autogen.sh')
-        subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
-        subprocess.check_output(['make','install'])
+        subprocess.check_output(['make', 'install'])
         # Tell the user that they should add the following folders to their PATH:
         print(Fore.RED + Style.BRIGHT + "For vcftools to work properly, you should set your PERL5LIB. I highly "
                                         "recommend that you add the following line to your .bash_profile: "
@@ -518,15 +519,15 @@ def vcftools():
     # If the user is on a mac
     elif system_check == "Darwin":
         print('To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
-                 'https://brew.sh/ then download vcftools by typing "brew install homebrew/science/vcftools" in your '
-                 'command terminal. Then, follow the directions in the README file for configuring. Then make sure the'
-                 'install folder is in your PATH variable.')
+              'https://brew.sh/ then download vcftools by typing "brew install homebrew/science/vcftools" in your '
+              'command terminal. Then, follow the directions in the README file for configuring. Then make sure the'
+              'install folder is in your PATH variable.')
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
-        print("I'm sorry, I've detected that you're working on a Windows computer and vcftools is a "
-                 "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux).")
+        print("I'm sorry, I've detected that you're working on a Windows computer and vcftools is a linux or unix "
+              "program only. If you have access to the Penn State clusters, you should run this script from there "
+              "(they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
@@ -550,24 +551,23 @@ def bcftools():
         # Running configuration and installation steps
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
-        subprocess.check_output(['make','install'])
+        subprocess.check_output(['make', 'install'])
 
         print("Done downloading bcftools")
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        print("It's possible to install bcftools on a Mac, but it might require that you install other "
-                 "libraries too. You can try following this tutorial (not for bcftools specifically, but related "
-                 "programs) http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
-                 "(if you haven't already) and xcode. Then run brew install homebrew/science/bcftools and install using"
-                 " the directions in the README file. You should also add the install location to your PATH if it is "
-                 "not already there.")
+        print("It's possible to install bcftools on a Mac, but it might require that you install other libraries too. "
+              "You can try following this tutorial (not for bcftools specifically, but related programs) "
+              "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew (if you haven't "
+              "already) and xcode. Then run brew install homebrew/science/bcftools and install using the directions in "
+              "the README file. You should also add the install location to your PATH if it is not already there.")
 
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
-        print("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
-                 "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux).")
+        print("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a linux or unix "
+              "program only. If you have access to the Penn State clusters, you should run this script from there "
+              "(they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
@@ -586,14 +586,14 @@ def htslib():
         # Making directory to store program
         # os.makedirs(os.path.join(home,'software/htslib_1.6'))
         # Unpacking
-        subprocess.check_output(['tar','-xvjf', os.path.join(home, 'software/htslib-1.6.tar.bz2'),'-C',
+        subprocess.check_output(['tar', '-xvjf', os.path.join(home, 'software/htslib-1.6.tar.bz2'), '-C',
                                  os.path.join(home, 'software')])
         # Moving into the htslib folder
         os.chdir(os.path.join(home, 'software/htslib-1.6/'))
         # Running configuration and installation steps
-        subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
-        subprocess.check_output(['make','install'])
+        subprocess.check_output(['make', 'install'])
         print("Done downloading htslib")
     # If the user is on a mac
     elif system_check == "Darwin":
@@ -631,7 +631,7 @@ def samtools():
         # Running configuration and installation steps
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
-        subprocess.check_output(['make','install'])
+        subprocess.check_output(['make', 'install'])
 
         print("Done downloading samtools")
 

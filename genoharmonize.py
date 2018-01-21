@@ -6,12 +6,14 @@ import subprocess
 
 try:
     import colorama
+    from colorama import init, Fore, Style
+    init()
 except ImportError:
     import genodownload
     genodownload.getcolorama()
-
-from colorama import init, Fore, Style
-init()
+    import colorama
+    from colorama import init, Fore, Style
+    init()
 
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
@@ -467,17 +469,19 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
             if system_check in ("Linux", "Darwin"):
                 subprocess.call(['gunzip', '-c', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), '>',
                                  os.path.join(fasta_path, 'human_g1k_v37.fasta')])
-            elif system_check in ("Windows"):
+            elif system_check == "Windows":
+                zip_path = []
                 for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
                     for files in f:
                         if files == "7zG.exe":
                             zip_path = os.path.join(r, files)
-                subprocess.check_output([zip_path, 'e', os.path.join(fasta_path,'human_gik_v37.fasta.gz')])
+                subprocess.check_output([zip_path, 'e', os.path.join(fasta_path, 'human_gik_v37.fasta.gz')])
     else:
         sys.exit("Quitting because I cannot find the fasta file. You must have this for snpflip to run.")
 
     try:
         # Find where snpflip is.
+        snpflip_path = []
         for path in sys.path:
             for r, d, f in os.walk(path):
                 for files in f:
@@ -494,6 +498,7 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
         # Download snpflip
         genodownload.snpflip()
         # Find where snpflip is:
+        snpflip_path = []
         for path in sys.path:
             for r, d, f in os.walk(path):
                 for files in f:

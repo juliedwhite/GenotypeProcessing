@@ -2,12 +2,14 @@ import platform
 
 try:
     import colorama
+    from colorama import init, Fore, Style
+    init()
 except ImportError:
     import genodownload
     genodownload.getcolorama()
-
-from colorama import init, Fore, Style
-init()
+    import colorama
+    from colorama import init, Fore, Style
+    init()
 
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
@@ -55,7 +57,7 @@ def prep(admix_name):
         print(set_list)
 
         # Perform the admixture prep separately on each set.
-        for i in range(0,len(set_list)):
+        for i in range(0, len(set_list)):
             # Tell the user what they gave as file names and what I'm going to output as file names (SetA, SetB, SetC,
             # etc.)
             set_name = chr(ord('a') + i).upper()
@@ -111,7 +113,7 @@ def prep(admix_name):
                                  'Admixture/' + admix_name + '_LDPruned'])
 
         # For all people, create a pbs file for admixture k = 3..6
-        with open ('Admixture/' + admix_name + '_Admixture_k3to6.pbs', 'w') as file:
+        with open('Admixture/' + admix_name + '_Admixture_k3to6.pbs', 'w') as file:
             file.write('#PBS -l walltime=150:00:00\n'
                        '#PBS -l nodes=1:ppn=8\n'
                        '#PBS -l pmem=8gb\n'

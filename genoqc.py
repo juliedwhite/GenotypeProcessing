@@ -69,7 +69,7 @@ def het(geno_name):
     import subprocess
 
     # Use plink to calculate the heterozygosity, paying attention to geno and mind.
-    subprocess.check_output([plink,'--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--het', '--out',
+    subprocess.check_output([plink, '--bfile', geno_name, '--geno', '0.1', '--mind', '0.1', '--het', '--out',
                              geno_name])
 
     # Read het file into pandas
@@ -94,7 +94,7 @@ def het(geno_name):
     # Make a list of the people who fail the filter.
     het_rem = het_file[het_file['HET_Filter'] == 'Remove']
     # Write this to file so we have the record.
-    het_rem.to_csv(geno_name + '_RemAfterHetCheck.txt', sep='\t', header = True, index=False)
+    het_rem.to_csv(geno_name + '_RemAfterHetCheck.txt', sep='\t', header=True, index=False)
 
     # Make new plink file with people passing het check.
     subprocess.check_output([plink, '--bfile', geno_name, '--keep', geno_name + '_KeptAfterHetCheck.txt', '--geno',
