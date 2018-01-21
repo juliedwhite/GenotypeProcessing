@@ -251,7 +251,7 @@ elif to_do == '8':
         # If yes, then get path to genotype harmonizer.
         if harmonizer_exists in ('y', 'yes'):
             print(Fore.CYAN)
-            harmonizer_path = input('Please enter the pathname of where the Genotype Harmonizer folder is '
+            harmonizer_path = input('Please enter the pathname of where the GenotypeHarmonizer.jar file is '
                                     '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): ')
             print(Style.RESET_ALL)
         # If no, then download genotype harmonizer
@@ -340,15 +340,9 @@ elif to_do == '11':
           "your sample, you should create set lists so that the people in each set are unrelated (using information "
           "from the IBD analysis\n"
           "4) This will prepare files to run ADMIXTURE from k = 3 - 9. If you'd like other admixture runs performed, "
-          "then you should change the PrepAdmixture.py code to reflect that.\n"
-          "5) You must have a Penn State ACI cluster allocation to perofrm this step. We are using the cluster because "
-          "ADMIXTURE takes a long time to run. I will ask you for your cluster name.\n"
-          "6) This will write the files that you need, but you are responsible for the memory, node, and time usage "
-          "(walltime = 150 hrs, nodes 1, ppn = 8, pmem = 8gb) and for putting them on the cluster and submitting them\n"
-          "7) On the cluster, You will need the admixture program either on your path or in "
-          "the same folder where you will submit this job.\n"
-          "8) You will need to transfer the pbs files and genotype bed/bim/fam files to your cluster before running. "
-          "I'll make a folder called 'Admixture' with all the files for you to transfer.\n")
+          "then you should (carefully) change the genoadmixture.py code, or the produced .pbs files, to reflect that.\n"
+          "5) You must have a Penn State ACI cluster allocation to perform this step. We are using the cluster because "
+          "ADMIXTURE takes a long time to run. I will ask you for your cluster name.\n")
     print(Fore.BLUE + Style.BRIGHT)
     admixture_proceed_check = input("Are you sure you want to proceed? (y/n): ").lower()
     print(Style.RESET_ALL)
