@@ -1,35 +1,39 @@
-# Define get pip first
-def pip():
-    import urllib.request
-    import platform
-    import subprocess
+import platform
+import subprocess
+import urllib.request
+import os
+import sys
 
-    print('Downloading pip now')
+system_check = platform.system()
+
+from os.path import expanduser
+home = expanduser("~")
+
+
+# Define get pip
+def pip():
+    print('Downloading pip now. You need this for downloading other things.')
     # Getting get-pip module
     urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')
     try:
         subprocess.check_output(['python','get-pip.py'])
+        print("Done downloading pip")
     except:
         # Run it and install pip into user directory.
         subprocess.check_output(['python','get-pip.py','--user'])
-
-        # Tell the user that they should add the following folders to their PATH:
-        system_check = platform.system()
+        os.remove('get-pip.py')
+        # Tell the user that they should add the following folders to their PATH before rerunning the script:
         if system_check in ("Linux", "Darwin"):
-            print(Fore.RED + Style.BRIGHT)
-            print("Because I couldn't use root access, I installed pip into a local directory. You should type "
-                  "'echo $PATH' to check that '~/.local/bin' is in your $PATH variable. IF it isn't, then type you "
-                  "should add it to your .bash_profile. If you don't know how to do this, ask the internet or myself.")
-            print(Style.RESET_ALL)
+            sys.exit("Because I couldn't use root access, I installed pip into a local directory. You should type "
+                     "'echo $PATH' to check that " + os.path.join(home, '.local/bin')
+                     + " is in your $PATH variable. If it isn't, then you should add it to your .bash_profile. If you "
+                       "don't know how to do this, ask the internet or myself. Then re-run this script.")
 
         elif system_check == "Windows":
-            print(Fore.RED + Style.BRIGHT)
-            print("Because I couldn't use root access, I installed pip into a local directory. You should type 'PATH' "
-                  "to check that '~/.local/bin' is in your PATH variable. IF it isn't, then you should add it to your "
-                  "environment variables. If you won't know how to do this, ask the internet or myself.")
-            print(Style.RESET_ALL)
-
-    print("Done downloading pip")
+            sys.exit("Because I couldn't use root access, I installed pip into a local directory. You should type "
+                     "'PATH' to check that " + os.path.join(home, '.local/bin')
+                     + " is in your PATH variable. If it isn't, then you should add it to your environment variables. "
+                       "If you won't know how to do this, ask the internet or myself. Then re-run this script.")
 
 
 # Define module to get colorama
@@ -52,66 +56,104 @@ try:
 except ImportError:
     getcolorama()
 
-
 from colorama import init, Fore, Style
 init()
 
 
+# What to download?
 def todownload():
-    import sys
     print(Fore.BLUE + Style.BRIGHT)
     item = input('What would you like to download?\n'
-                 '1) Plink 1.9\n'
-                 '2) 1000G Phase 3 VCF\n'
-                 '3) 1000G Phase 3 Hap/Legend/Sample\n'
-                 '4) GRCh37/hg19 1000G FASTA file\n'
-                 '5) Genotype Harmonizer\n'
-                 '6) snpflip\n'
-                 '7) shapeit\n'
-                 '8) vcftools\n'
-                 '9) bcftools\n'
-                 '10) htslib\n'
-                 '11) samtools\n'
-                 '12) Nothing\n'
+                 '1) Everything - this will take about an hour and you should be careful to read the messages that '
+                 'appear on the screen. Some installations require your help to complete.\n'
+                 '2) Plink 1.9\n'
+                 '3) 1000G Phase 3 VCF\n'
+                 '4) 1000G Phase 3 Hap/Legend/Sample\n'
+                 '5) GRCh37/hg19 1000G FASTA file\n'
+                 '6) Genotype Harmonizer\n'
+                 '7) snpflip\n'
+                 '8) shapeit\n'
+                 '9) htslib\n'
+                 '10) vcftools\n'
+                 '11) bcftools\n'
+                 '12) samtools\n'
+                 '13) Nothing\n'
                  'Please enter the number of the reference file or program that you would like to download (i.e. 2): ')
     print(Style.RESET_ALL)
 
     if item == '1':
         plink()
-    elif item == '2':
         vcf_1000g_phase3()
-    elif item == '3':
         hls_1000g_phase3()
-    elif item == '4':
         fasta_1000G_hg19()
-    elif item == '5':
         genotype_harmonizer()
-    elif item == '6':
         snpflip()
-    elif item == '7':
         shapeit()
-    elif item == '8':
-        vcftools()
-    elif item == '9':
-        bcftools()
-    elif item == '10':
         htslib()
-    elif item == '11':
+        vcftools()
+        bcftools()
         samtools()
+        if system_check in ("Linux"):
+            print(Fore.RED + Style.BRIGHT + "I installed several programs into " + os.path.join(home, 'software/bin')
+                  + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
+                  + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
+                    ".bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+    elif item == '2':
+        plink()
+    elif item == '3':
+        vcf_1000g_phase3()
+    elif item == '4':
+        hls_1000g_phase3()
+    elif item == '5':
+        fasta_1000G_hg19()
+    elif item == '6':
+        genotype_harmonizer()
+    elif item == '7':
+        snpflip()
+    elif item == '8':
+        shapeit()
+    elif item == '9':
+        htslib()
+        if system_check in ("Linux"):
+            print(Fore.RED + Style.BRIGHT + "I installed htslib into " + os.path.join(home, 'software/bin')
+                  + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
+                  + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
+                    ".bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+    elif item == '10':
+        vcftools()
+        if system_check in ("Linux"):
+            print(Fore.RED + Style.BRIGHT + "I installed vcftools into " + os.path.join(home, 'software/bin')
+                  + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
+                  + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
+                    ".bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+    elif item == '11':
+        bcftools()
+        if system_check in ("Linux"):
+            print(Fore.RED + Style.BRIGHT + "I installed bcftools into " + os.path.join(home, 'software/bin')
+                  + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
+                  + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
+                    ".bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
     elif item == '12':
+        samtools()
+        if system_check in ("Linux"):
+            print(Fore.RED + Style.BRIGHT + "I installed samtools into " + os.path.join(home, 'software/bin')
+                  + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
+                  + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
+                    ".bash_profile. If you don't know how to do this, ask the internet or myself.")
+            print(Style.RESET_ALL)
+    elif item == '13':
         sys.exit("Exiting now")
     else:
         sys.exit("Quitting because you did not give a recognizable number when asked what to download.")
 
 
 def plink():
-    import os
-    import platform
     import zipfile
     import shutil
-    import urllib.request
-    import sys
-    import subprocess
 
     try:
         import pip
@@ -146,9 +188,7 @@ def plink():
             pip.main(['install', 'cssselect', '--user'])
         import cssselect
 
-    # Get what system the user is using
-    system_check = platform.system()
-    # Get the version of that system
+    # Get the version of the user's system
     architecture_check = platform.architecture()[0]
 
     #Get plink urls
@@ -197,7 +237,7 @@ def plink():
             shutil.copy2('Plink_1.9_Linux32/plink', os.getcwd())
 
         else:
-            sys.exit("I'm sorry, I could not determine what Linux Plink version to download.")
+            print("I'm sorry, I could not determine what Linux Plink version to download.")
 
         if os.path.exists('plink'):
             subprocess.check_output(['chmod', '777', 'plink'])
@@ -240,17 +280,18 @@ def plink():
             shutil.copy2('Plink_1.9_Win32/plink.exe', os.getcwd())
 
         else:
-            sys.exit("I'm sorry, I could not determine what Windows Plink version to download.")
-
+            print(Fore.RED + Style.BRIGHT + "I'm sorry, I could not determine what Windows Plink version to download.")
+            print(Style.RESET_ALL)
     else:
-        sys.exit("I'm sorry, I could not determine what operating system you are running. Please download the latest "
-                 "version of Plink at https://www.cog-genomics.org/plink2")
+        print(Fore.RED + Style.BRIGHT + "I'm sorry, I could not determine what operating system you are running. "
+                                        "Please download the latest version of Plink at "
+                                        "https://www.cog-genomics.org/plink2")
+        print(Style.RESET_ALL)
 
     print("Done downloading plink")
 
 
 def vcf_1000g_phase3():
-    import os
     import ftplib
 
     print('Downloading 1000G Phase 3 VCF files now, putting them in "1000G_Phase3_VCF" folder. '
@@ -290,13 +331,6 @@ def vcf_1000g_phase3():
 
 
 def hls_1000g_phase3():
-    import os
-    import urllib.request
-    import subprocess
-    import platform
-
-    system_check = platform.system()
-
     print('Downloading 1000G Phase 3 files now, putting them in "1000G_Phase3_HapLegendSample" folder. '
           'This will create a ~12G folder on your computer and will take a little while.')
 
@@ -324,9 +358,10 @@ def hls_1000g_phase3():
             subprocess.check_output(['tar', '-xvf', '1000GP_Phase3.tgz', '--strip-components', '1'])
             subprocess.check_output(['tar', '-xvf', '1000GP_Phase3_chrX.tgz'])
         elif system_check in ("Windows"):
-            print("Please use 7-Zip to unzip your .tgz file in the 1000G_Phase3_HapLegendSample folder, then use 7-Zip "
-                  "again to untar the .tar file. Do this for both 1000GP_Phase3.tgz and 1000GP_Phase3_chrX.tgz")
-
+            print(Fore.RED + Style.BRIGHT + "Please use 7-Zip to unzip your .tgz file in the "
+                                            "1000G_Phase3_HapLegendSample folder, then use 7-Zip again to untar the "
+                                            ".tar file. Do this for both 1000GP_Phase3.tgz and 1000GP_Phase3_chrX.tgz")
+            print(Style.RESET_ALL)
         # Print when done.
         print('Done extracting 1000G_Phase3_HapLegendSample')
 
@@ -337,8 +372,9 @@ def hls_1000g_phase3():
 
 
 def fasta_1000G_hg19():
-    import os
     import ftplib
+    import gzip
+    import shutil
 
     print('Downloading 1000G hg19 fasta file now, putting it in the "1000G_hg19_fasta" folder.')
 
@@ -357,12 +393,28 @@ def fasta_1000G_hg19():
     ftp.quit()
     file.close()
 
+    # Fasta file needs to be unzipped for snpflip to work.
+    try:
+        with gzip.open(os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta.gz'), 'rb') as f_in, \
+                open(os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta'), 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    except:
+        if system_check in ("Linux", "Darwin"):
+            subprocess.call(['gunzip', '-c', os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta.gz'), '>',
+                             os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta')])
+        elif system_check in ("Windows"):
+            for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
+                for files in f:
+                    if files == "7zG.exe":
+                        zip_path = os.path.join(r, files)
+            subprocess.check_output([zip_path, 'e', os.path.join('1000G_hg19_fasta', 'human_gik_v37.fasta.gz')])
+
     print("Done downloading hg19 fasta file")
 
 
 def genotype_harmonizer():
-    import urllib.request
     import zipfile
+    from distutils.dir_util import copy_tree
 
     print('Downloading genotype harmonizer now.')
     # Download genotype harmonizer zip file
@@ -374,8 +426,12 @@ def genotype_harmonizer():
     zip_ref.extractall('GenotypeHarmonizer-1.4.20')
     zip_ref.close()
 
-    print("Done downloading genotype harmonizer")
+    # copy subdirectory up
+    fromDirectory = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer_1.4.20-SNAPSHOT')
+    toDirectory = 'GenotypeHarmonizer-1.4.20'
+    copy_tree(fromDirectory, toDirectory)
 
+    print("Done downloading genotype harmonizer")
 
 
 def snpflip():
@@ -393,15 +449,6 @@ def snpflip():
 
 
 def shapeit():
-    import platform
-    import urllib.request
-    import os
-    import sys
-    import subprocess
-
-    # Since shapeit only works on linux or mac, we need to first check what system they are on.
-    system_check = platform.system()
-
     if system_check == "Linux":
         print('Downloading shapeit now.')
         urllib.request.urlretrieve(
@@ -431,29 +478,18 @@ def shapeit():
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
-        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and shapeit is a "
-                 "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux).")
+        print(Fore.RED + Style.BRIGHT + "I'm sorry, I've detected that you're working on a Windows computer and "
+                                        "shapeit is a linux or unix program only. If you have access to the Penn State "
+                                        "clusters, you should run this script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download Shapeit on "
+                                        "your own.")
+        print(Style.RESET_ALL)
 
 
 def vcftools():
-    import platform
-    import urllib.request
-    import os
-    import sys
-    import subprocess
-
-    from os.path import expanduser
-    home = expanduser("~")
-
-    # vcftools is easily installed on a linux system, more difficult to install on a mac, and does not have a Windows
-    # distribution, so we need to check the platform.
-    system_check = platform.system()
-
     if system_check == "Linux":
         print('Downloading vcftools now.')
         if not os.path.exists(os.path.join(home, 'software')):
@@ -471,49 +507,35 @@ def vcftools():
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
         # Tell the user that they should add the following folders to their PATH:
-        print("I installed vcftools into " + os.path.join(home,'software/bin')
-              + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
-              + " is in your $PATH variable. If it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin')
-              + " to add it. You should also type in the following to set your PERL5LIB: 'export PERL5LIB="
-              + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl')
-              + ". I HIGHLY recommend you add both of these lines to your .bash_profile file, or else you'll have to "
-                "set this path every time you open a new terminal window.")
+        print(Fore.RED + Style.BRIGHT + "For vcftools to work properly, you should set your PERL5LIB. I highly "
+                                        "recommend that you add the following line to your .bash_profile: "
+                                        "'export PERL5LIB="
+              + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl'))
+        print(Style.RESET_ALL)
 
         print("Done downloading vcftools")
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit('To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
+        print('To download vcftools on a Mac you should get homebrew. On your own, download homebrew from '
                  'https://brew.sh/ then download vcftools by typing "brew install homebrew/science/vcftools" in your '
                  'command terminal. Then, follow the directions in the README file for configuring. Then make sure the'
                  'install folder is in your PATH variable.')
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
     elif system_check == "Windows":
-        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and vcftools is a "
+        print("I'm sorry, I've detected that you're working on a Windows computer and vcftools is a "
                  "linux or unix program only. If you have access to the Penn State clusters, you should run this "
                  "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download vcftools on "
+                                        "your own.")
+        print(Style.RESET_ALL)
 
 
 def bcftools():
-    import platform
-    import urllib.request
-    import os
-    import sys
-    import subprocess
-
-    from os.path import expanduser
-    home = expanduser("~")
-
-    # bcftools is easily installed on a linux system, more difficult to install on a mac, and does not have a Windows
-    # distribution, so we need to check the platform.
-    system_check = platform.system()
-
     if system_check == "Linux":
         print('Downloading bcftools now.')
         if not os.path.exists(os.path.join(home, 'software')):
@@ -529,18 +551,12 @@ def bcftools():
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        # Tell the user that they should add the following folders to their PATH:
-        print("I installed bcftools into " + os.path.join(home, 'software/bin')
-              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
-              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it. I HIGHLY recommend that you add the export command to"
-                                                     "your .bash_profile.")
 
         print("Done downloading bcftools")
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit("It's possible to install bcftools on a Mac, but it might require that you install other "
+        print("It's possible to install bcftools on a Mac, but it might require that you install other "
                  "libraries too. You can try following this tutorial (not for bcftools specifically, but related "
                  "programs) http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
                  "(if you haven't already) and xcode. Then run brew install homebrew/science/bcftools and install using"
@@ -549,29 +565,18 @@ def bcftools():
 
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
-        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
+        print("I'm sorry, I've detected that you're working on a Windows computer and bcftools is a "
                  "linux or unix program only. If you have access to the Penn State clusters, you should run this "
                  "script from there (they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download bcftools on "
+                                        "your own.")
+        print(Style.RESET_ALL)
 
 
 def htslib():
-    import platform
-    import urllib.request
-    import os
-    import sys
-    import subprocess
-
-    from os.path import expanduser
-    home = expanduser("~")
-
-    # htslib is easily installed on a linux system, more difficult to install on a mac, and does not have a Windows
-    # distribution, so we need to check the platform.
-    system_check = platform.system()
-
     if system_check == "Linux":
         print('Downloading htslib now.')
         if not os.path.exists(os.path.join(home, 'software')):
@@ -589,48 +594,28 @@ def htslib():
         subprocess.check_output(['./configure','--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        print("I installed htslib into " + os.path.join(home, 'software/bin')
-              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
-              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it. I highly recommend that you add the export command to"
-                                                     "your .bash_profile.")
-
+        print("Done downloading htslib")
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit("It's possible to install htslib on a Mac, but it might require that you install other "
-                 "libraries too. You can try following this tutorial (not for htslib specifically, but related "
-                 "programs) http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
-                 "(if you haven't already) and xcode. Then run brew install homebrew/science/htslib and install using"
-                 " the directions in the README file. You should also add the install location to your PATH if it is "
-                 "not already there.")
+        print("It's possible to install htslib on a Mac, but it might require that you install other libraries too. "
+              "You can try following this tutorial (not for htslib specifically, but related programs) "
+              "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew (if you haven't "
+              "already) and xcode. Then run brew install homebrew/science/htslib and install using the directions in "
+              "the README file. You should also add the install location to your PATH if it is not already there.")
     # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
     elif system_check == "Windows":
-        sys.exit(
-            "I'm sorry, I've detected that you're working on a Windows computer and htslib is a "
-            "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-            "script from there (they are linux).")
+        print("I'm sorry, I've detected that you're working on a Windows computer and htslib is a linux or unix "
+              "program only. If you have access to the Penn State clusters, you should run this script from there "
+              "(they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
-
-    print("Done installing htslib")
+        print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download htslib on "
+                                        "your own.")
+        print(Style.RESET_ALL)
 
 
 def samtools():
-    import platform
-    import urllib.request
-    import os
-    import sys
-    import subprocess
-
-    from os.path import expanduser
-    home = expanduser("~")
-
-    # samtools is easily installed on a linux system, more difficult to install on a mac, and does not have a Windows
-    # distribution, so we need to check the platform.
-    system_check = platform.system()
-
     if system_check == "Linux":
         print('Downloading samtools now.')
         if not os.path.exists(os.path.join(home, 'software')):
@@ -647,31 +632,27 @@ def samtools():
         subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
         subprocess.check_output('make')
         subprocess.check_output(['make','install'])
-        print("I installed samtools into " + os.path.join(home, 'software/bin')
-              + " . You should type '$PATH' to check that " + os.path.join(home, 'software/bin')
-              + " is in your $PATH variable. IF it isn't, then type 'export PATH=$PATH:"
-              + os.path.join(home, 'software/bin') + " to add it. I highly recommend that you add the export command to"
-                                                     " your .bash_profile.")
 
         print("Done downloading samtools")
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        sys.exit("It's possible to install samtools on a Mac, but it might require that you install other "
-                 "libraries too. You can try following this tutorial "
-                 "http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ and download homebrew "
-                 "(if you haven't already) and xcode. You should also add the install location to your PATH if it is "
-                 "not already there.")
+        print("It's possible to install samtools on a Mac, but it might require that you install other libraries too. "
+              "You can try following this tutorial http://www.danielecook.com/installing-tabix-and-samtools-on-mac/ "
+              "and download homebrew (if you haven't already) and xcode. You should also add the install location to "
+              "your PATH if it is not already there.")
 
     # If they are running this on a windows machine, they cannot proceed because samtools is *nix only.
     elif system_check == "Windows":
-        sys.exit("I'm sorry, I've detected that you're working on a Windows computer and samtools is a "
-                 "linux or unix program only. If you have access to the Penn State clusters, you should run this "
-                 "script from there (they are linux).")
+        print("I'm sorry, I've detected that you're working on a Windows computer and samtools is a linux or unix "
+              "program only. If you have access to the Penn State clusters, you should run this script from there "
+              "(they are linux).")
 
     # If I cannot detect what system they're on, force exit.
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download samtools on "
+                                        "your own.")
+        print(Style.RESET_ALL)
 
 
 def getmatplotlib():
