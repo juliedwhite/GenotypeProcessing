@@ -467,8 +467,8 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
                 shutil.copyfileobj(f_in, f_out)
         except:
             if system_check in ("Linux", "Darwin"):
-                subprocess.call(['gunzip', '-c', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), '>',
-                                 os.path.join(fasta_path, 'human_g1k_v37.fasta')])
+                os.system('gunzip -c ' + os.path.join(fasta_path, 'human_g1k_v37.fasta.gz') + ' > '
+                          + os.path.join(fasta_path, 'human_g1k_v37.fasta'))
             elif system_check == "Windows":
                 zip_path = []
                 for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):

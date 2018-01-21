@@ -402,10 +402,10 @@ def fasta_1000G_hg19():
         with gzip.open(os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta.gz'), 'rb') as f_in, \
                 open(os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta'), 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    except:
+    except OSError:
         if system_check in ("Linux", "Darwin"):
-            subprocess.call(['gunzip', '-c', os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta.gz'), '>',
-                             os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta')])
+            os.system('gunzip -c ' + os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta.gz') + ' > '
+                      + os.path.join('1000G_hg19_fasta', 'human_g1k_v37.fasta'))
         elif system_check == "Windows":
             zip_path = []
             for r, d, f in os.walk(os.path.join('C:\\', 'Program Files')):
