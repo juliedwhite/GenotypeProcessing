@@ -32,12 +32,12 @@ def python3():
                                                                                                      ".bash_profile\n"
                        + 'source ' + os.path.join(home, '.bash_profile'))
 
-        # Unpacking
-        os.system('tar -xzvf ' + os.path.join(home, 'software/Python-3.6.3.tgz') + ' -C '
-                  + os.path.join(home, 'software'))
+        print("Once this process is done, move to " + os.path.join(home, 'software')
+              + " and type in 'source InstallPython'. Then re-run this script.")
 
-        print("Done, move to " + os.path.join(home, 'software') + " and type in 'source InstallPython'. Then re-run "
-                                                                  "this script.")
+        # Unpacking
+        os.system('tar -xzf ' + os.path.join(home, 'software/Python-3.6.3.tgz') + ' -C '
+                  + os.path.join(home, 'software'))
 
     # If the user is on a mac
     elif system_check == "Darwin":
