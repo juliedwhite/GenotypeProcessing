@@ -72,12 +72,13 @@ def todownload():
                  '5) GRCh37/hg19 1000G FASTA file\n'
                  '6) Genotype Harmonizer\n'
                  '7) snpflip\n'
-                 '8) shapeit\n'
-                 '9) htslib\n'
-                 '10) vcftools\n'
-                 '11) bcftools\n'
-                 '12) samtools\n'
-                 '13) Nothing\n'
+                 '8) admixture\n'
+                 '9) shapeit\n'
+                 '10) htslib\n'
+                 '11) vcftools\n'
+                 '12) bcftools\n'
+                 '13) samtools\n'
+                 '14) Nothing\n'
                  'Please enter the number of the reference file or program that you would like to download (i.e. 2): ')
     print(Style.RESET_ALL)
 
@@ -88,6 +89,7 @@ def todownload():
         fasta_1000G_hg19()
         genotype_harmonizer()
         snpflip()
+        admixture()
         shapeit()
         htslib()
         vcftools()
@@ -112,8 +114,10 @@ def todownload():
     elif item == '7':
         snpflip()
     elif item == '8':
-        shapeit()
+        admixture()
     elif item == '9':
+        shapeit()
+    elif item == '10':
         htslib()
         if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed htslib into " + os.path.join(home, 'software/bin')
@@ -121,7 +125,7 @@ def todownload():
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
                     ".bash_profile. If you don't know how to do this, ask the internet or myself.")
             print(Style.RESET_ALL)
-    elif item == '10':
+    elif item == '11':
         vcftools()
         if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed vcftools into " + os.path.join(home, 'software/bin')
@@ -129,7 +133,7 @@ def todownload():
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
                     ".bash_profile. If you don't know how to do this, ask the internet or myself.")
             print(Style.RESET_ALL)
-    elif item == '11':
+    elif item == '12':
         bcftools()
         if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed bcftools into " + os.path.join(home, 'software/bin')
@@ -137,7 +141,7 @@ def todownload():
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
                     ".bash_profile. If you don't know how to do this, ask the internet or myself.")
             print(Style.RESET_ALL)
-    elif item == '12':
+    elif item == '13':
         samtools()
         if system_check == "Linux":
             print(Fore.RED + Style.BRIGHT + "I installed samtools into " + os.path.join(home, 'software/bin')
@@ -145,7 +149,7 @@ def todownload():
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
                     ".bash_profile. If you don't know how to do this, ask the internet or myself.")
             print(Style.RESET_ALL)
-    elif item == '13':
+    elif item == '14':
         sys.exit("Exiting now")
     else:
         sys.exit("Quitting because you did not give a recognizable number when asked what to download.")
@@ -428,9 +432,9 @@ def genotype_harmonizer():
     zip_ref.close()
 
     # copy subdirectory up
-    fromdirectory = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer_1.4.20-SNAPSHOT')
-    todirectory = 'GenotypeHarmonizer-1.4.20'
-    copy_tree(fromdirectory, todirectory)
+    fromdir = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer_1.4.20-SNAPSHOT')
+    todir = 'GenotypeHarmonizer-1.4.20'
+    copy_tree(fromdir, todir)
 
     print("Done downloading genotype harmonizer")
 
@@ -447,6 +451,43 @@ def snpflip():
     except:
         pip.main(['install', 'snpflip', '--user'])
     print("Done installing snpflip")
+
+
+def admixture():
+    if system_check == "Linux":
+        print('Downloading admixture now.')
+        urllib.request.urlretrieve(
+            'https://www.genetics.ucla.edu/software/admixture/binaries/admixture_linux-1.3.0.tar.gz',
+            'admixture_linux-1.3.0.tar.gz')
+        # Making directory to store program
+        os.makedirs('Admixture_1.3.0_Linux')
+        # Unpacking
+        subprocess.check_output(['tar', '-xzvf', 'admixture_linux-1.3.0.tar.gz', '-C', 'Admixture_1.3.0_Linux/'])
+        print("Done downloading admixture")
+
+    # If the user is on a mac
+    elif system_check == "Darwin":
+        print('Downloading admixture now.')
+        # Download shapeit
+        urllib.request.urlretrieve(
+            'https://www.genetics.ucla.edu/software/admixture/binaries/admixture_macosx-1.3.0.tar.gz',
+            'admixture_macosx-1.3.0.tar.gz')
+        # Create directory for shapeit.
+        os.makedirs('Admixture_1.3.0_Mac')
+        # Untar shapeit to that directory.
+        subprocess.check_output(['tar', '-zxvf', 'admixture_macosx-1.3.0.tar.gz', '-C', 'Admixture_1.3.0_Mac/'])
+        print("Done downloading admixture")
+
+    # If they are running this on a windows machine, they cannot proceed because admixture is *nix only.
+    elif system_check == "Windows":
+        print(Fore.RED + Style.BRIGHT + "I'm sorry, I've detected that you're working on a Windows computer and "
+                                        "admixture is a linux or unix program only. If you have access to the Penn "
+                                        "State clusters, you should run this script from there (they are linux).")
+    # If I cannot detect what system they're on, force exit.
+    else:
+        print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download admixture on "
+                                        "your own.")
+        print(Style.RESET_ALL)
 
 
 def shapeit():
@@ -483,7 +524,7 @@ def shapeit():
                                         "shapeit is a linux or unix program only. If you have access to the Penn State "
                                         "clusters, you should run this script from there (they are linux).")
 
-    # If I cannot detect what system they're on, force exit.
+    # If I cannot detect what system they're on, tell them to download shapeit.
     else:
         print(Fore.RED + Style.BRIGHT + "I cannot detect the system you are working on. Please download Shapeit on "
                                         "your own.")
