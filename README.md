@@ -4,6 +4,9 @@ This suite of modules is meant to ease the babysitting load for routinely proces
 * Requires Python 3.6.3, but will identify Python version and update if needed.  
 * Starts from plink bed/bim/fam files. I'll eventually add other file formats.  
 
+# To run
+Always start using `python genoprocess.py` then you will see a screen asking you what you'd like to do next.
+
 # Modules
 ## genoprocess
 **Sees what version of Python you're running.**  
