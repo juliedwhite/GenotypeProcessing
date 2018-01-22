@@ -3,6 +3,7 @@ import os
 import glob
 import shutil
 import subprocess
+from os.path import expanduser
 
 try:
     import colorama
@@ -15,14 +16,24 @@ except ImportError:
     from colorama import init, Fore, Style
     init()
 
+home = expanduser("~")
+bindir = os.path.join(home, 'software', 'bin')
+
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
-    plink = "./plink"
+    plink = "plink"
     rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
     rm = "del "
+
+# Determine if they have plink, if not download it.
+if os.path.exists(os.path.join(bindir, plink)):
+    pass
+else:
+    import genodownload
+    genodownload.plink()
 
 
 def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, fasta_path):
@@ -46,20 +57,6 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
     shutil.copy2(geno_name + '.bed', 'Harmonized_To_1000G')
     shutil.copy2(geno_name + '.bim', 'Harmonized_To_1000G')
     shutil.copy2(geno_name + '.fam', 'Harmonized_To_1000G')
-
-    # Copy plink to new folder.
-    plink_files = glob.glob(r'plink')
-    plink_files.extend(glob.glob(r'plink.exe'))
-    # If it didn't find any plink files, then download plink and re-search
-    if not plink_files:
-        import genodownload
-        genodownload.plink()
-        plink_files = glob.glob(r'plink')
-        plink_files.extend(glob.glob(r'plink.exe'))
-    # Move plink files to Harmonized_To_1000G folder
-    for file in plink_files:
-        print(file)
-        shutil.copy(file, 'Harmonized_To_1000G')
 
     # Copy post processing script to Harmonized_To_1000G folder
     shutil.copy2('harmonize_postprocess.py', 'Harmonized_To_1000G')
@@ -147,20 +144,6 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     shutil.copy2(geno_name + '.bed', 'Harmonized_To_1000G')
     shutil.copy2(geno_name + '.bim', 'Harmonized_To_1000G')
     shutil.copy2(geno_name + '.fam', 'Harmonized_To_1000G')
-
-    # Copy plink to new folder.
-    plink_files = glob.glob(r'plink')
-    plink_files.extend(glob.glob(r'plink.exe'))
-    # If it didn't find any plink files, then download plink and re-search
-    if not plink_files:
-        import genodownload
-        genodownload.plink()
-        plink_files = glob.glob(r'plink')
-        plink_files.extend(glob.glob(r'plink.exe'))
-    # Move plink files to Harmonized_To_1000G folder
-    for file in plink_files:
-        print(file)
-        shutil.copy(file, 'Harmonized_To_1000G')
 
     # Switch to this directory.
     os.chdir('Harmonized_To_1000G')
@@ -479,36 +462,19 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
     else:
         sys.exit("Quitting because I cannot find the fasta file. You must have this for snpflip to run.")
 
-    try:
-        # Find where snpflip is.
-        snpflip_path = []
-        for path in sys.path:
-            for r, d, f in os.walk(path):
-                for files in f:
-                    if files == "snpflip":
-                        snpflip_path = os.path.join(r, files)
-        # Perform flip check.
-        subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                                + os.path.join(fasta_path, 'human_g1k_v37.fasta')
-                                + '" --bim-file ' + geno_name + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name
-                                + '_HarmonizedTo1000G', shell=True)
-    except:
-        # Import module where I have the download instructions for snpflip
+    # Determine if they have snpflip, if not download it.
+    if os.path.exists(os.path.join(bindir, 'snpflip')):
+        pass
+    else:
         import genodownload
-        # Download snpflip
         genodownload.snpflip()
-        # Find where snpflip is:
-        snpflip_path = []
-        for path in sys.path:
-            for r, d, f in os.walk(path):
-                for files in f:
-                    if files == "snpflip":
-                        snpflip_path = os.path.join(r, files)
-        # Re do
-        subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                                + os.path.join(fasta_path, 'human_g1k_v37.fasta') + '" --bim-file ' + geno_name
-                                + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name + '_HarmonizedTo1000G',
-                                shell=True)
+
+    snpflip_path = [os.path.join(bindir, 'snpflip')]
+    # Perform flip check.
+    subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
+                            + os.path.join(fasta_path, 'human_g1k_v37.fasta')
+                            + '" --bim-file ' + geno_name + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name
+                            + '_HarmonizedTo1000G', shell=True)
 
     # If SNPs exist that are on the reverse strand, then flip them.
     # Currently ignores snps that are ambiguous, since I already removed those that would be hard to phase. Could change

@@ -1,12 +1,23 @@
 import platform
+from os.path import expanduser
+home = expanduser("~")
+bindir = os.path.join(home, 'software', 'bin')
+
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
-    plink = "./plink"
+    plink = "plink"
     rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
     rm = "del "
+
+# Determine if they have plink, if not download it.
+if os.path.exists(os.path.join(bindir, plink)):
+    pass
+else:
+    import genodownload
+    genodownload.plink()
 
 
 def estimate_sex(geno_name):

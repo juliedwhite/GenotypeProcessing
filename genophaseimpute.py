@@ -1,5 +1,5 @@
 import platform
-
+from os.path import expanduser
 try:
     import colorama
 except ImportError:
@@ -9,14 +9,31 @@ except ImportError:
 from colorama import init, Fore, Style
 init()
 
-# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+home = expanduser("~")
+bindir = os.path.join(home, 'software', 'bin')
 system_check = platform.system()
-if system_check in ("Linux", "Darwin"):
-    plink = "./plink"
-    rm = "rm "
-elif system_check == "Windows":
-    plink = 'plink.exe'
-    rm = "del "
+
+# If they are running this on a windows machine, they cannot proceed because shapeit, bcftools, vcftools are *nix only.
+if system_check == "Windows":
+    print(Fore.RED + Style.BRIGHT)
+    sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have "
+             "access to the Penn State clusters, you should run this script from there (they are linux).")
+    print(Style.RESET_ALL)
+# If I cannot detect what system they're on, force exit.
+else:
+    sys.exit("I cannot detect the system you are working on. Exiting now.")
+
+# Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
+plink = "plink"
+rm = "rm "
+
+# Determine if they have plink, if not download it.
+if os.path.exists(os.path.join(bindir, plink)):
+    pass
+else:
+    import genodownload
+    genodownload.plink()
+
 
 def phase(geno_name, allocation_name):
     import platform
@@ -47,70 +64,17 @@ def phase(geno_name, allocation_name):
     if not os.path.exists('Phasing'):
         os.makedirs('Phasing')
 
-    # Since shapeit only works on linux or mac, we need to first check what system they are on.
-    system_check = platform.system()
-
-    if system_check == "Linux":
-        # Now we need to know where they have shapeit, if they have it.
-        print(Fore.MAGENTA + Style.BRIGHT)
-        shapeit_exists = input("Do you already have the linux shapeit program unpacked? (y/n): ").lower()
-        print(Style.RESET_ALL)
-        # If yes, then ask for path of program
-        if shapeit_exists in ('yes', 'y'):
-            print(Fore.GREEN)
-            shapeit_path = input("Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ : ")
-            print(Style.RESET_ALL)
-
-        # If no, download and unpack shapeit.
-        elif shapeit_exists in ('no', 'n'):
-            # Get genodownload module
-            import genodownload
-            genodownload.shapeit()
-            # Since we just downloaded it, I know where the path is.
-            shapeit_path = os.path.join(os.getcwd(),'Shapeit_v2.12_Linux_Static/bin/')
-        else:
-            sys.exit('You did not answer "y" or "no" when asked if you had shapeit. Exiting now.')
-
-    # If the user is on a mac
-    elif system_check == "Darwin":
-        # Ask if they already have shapeit
-        print(Fore.MAGENTA + Style.BRIGHT)
-        shapeit_exists = input("Do you already have the mac shapeit program unpacked? (y/n): ").lower()
-        print(Style.RESET_ALL)
-
-        if shapeit_exists in ('yes', 'y'):
-            # Ask where shapeit is located.
-            print(Fore.GREEN)
-            shapeit_path = input("Please tell me the path where you have the shapeit program. "
-                                 "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\shapeit\\bin\\ : ")
-            print(Style.RESET_ALL)
-
-        elif shapeit_exists in ('no', 'n'):
-            # Get genodownload module
-            import genodownload
-            genodownload.shapeit()
-            # Since we just downloaded it, I know where the path is.
-            shapeit_path = os.path.join(os.getcwd(), 'Shapeit_v2.20_Mac/bin/')
-        else:
-            sys.exit('You did not answer "y" or "no" when asked where shapeit was. Exiting now.')
-
-    # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
-    elif system_check == ("Windows"):
-        print(Fore.RED + Style.BRIGHT)
-        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have "
-                 "access to the Penn State clusters, you should run this script from there (they are linux).")
-        print(Style.RESET_ALL)
-
-    # If I cannot detect what system they're on, force exit.
+    # Determine if they have shapeit, if not download it.
+    if os.path.exists(os.path.join(bindir, 'shapeit')):
+        pass
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        import genodownload
+        genodownload.shapeit()
 
     # Ask the user if they already have the 1000G Phase 3 Hap/Legend/Sample files.
     print(Fore.CYAN)
     ref_exists = input('Have you already downloaded the 1000G Phase 3 Hap/Legend/Sample files? (y/n): ').lower()
     print(Style.RESET_ALL)
-
     # If yes
     if ref_exists in ('y', 'yes'):
         # Ask the user where the ref files are.
@@ -150,7 +114,7 @@ def phase(geno_name, allocation_name):
     output_vcf_log = ['Phasing/' + geno_name + '_PhasedTo1000G.chr%d.vcf.log' % x for x in range(1,24)]
 
     # Use plink to set mendel errors to missing.
-    subprocess.check_output([plink,'--bfile',geno_name,'--me','1','1','--set-me-missing','--make-bed','--out',
+    subprocess.check_output([plink, '--bfile', geno_name, '--me', '1', '1', '--set-me-missing', '--make-bed', '--out',
                              geno_name])
     # Remove old files
     subprocess.call(rm + '*~', shell=True)
@@ -158,17 +122,16 @@ def phase(geno_name, allocation_name):
     # Perform phasing check per chromosome.
     for i in range(0,23):
         # Split the geno file into separate chromosomes and put it in the Phasing folder.
-        subprocess.check_output([plink,'--bfile',geno_name,'--chr',str(i + 1),'--make-bed','--out',
+        subprocess.check_output([plink, '--bfile', geno_name, '--chr', str(i + 1), '--make-bed', '--out',
                                  'Phasing/' + geno_name + '.chr' + str(i+1)])
         # If on autosomes
         if i < 22:
             # Perform phasing check.
-            subprocess.call([os.path.join(shapeit_path,'shapeit'),'-check','--input-bed',geno_bed_names[i],
-                             geno_bim_names[i],geno_fam_names[i],'--input-map',
-                             os.path.join(ref_path, genetic_map_names[i]),'--input-ref',
-                             os.path.join(ref_path, hap_names[i]),os.path.join(ref_path, legend_names[i]),
-                             os.path.join(ref_path, '1000GP_Phase3.sample'),'--output-log',check_log_names[i]])
-
+            subprocess.call(['shapeit', '-check', '--input-bed', geno_bed_names[i], geno_bim_names[i],
+                             geno_fam_names[i], '--input-map', os.path.join(ref_path, genetic_map_names[i]),
+                             '--input-ref', os.path.join(ref_path, hap_names[i]),
+                             os.path.join(ref_path, legend_names[i]), os.path.join(ref_path, '1000GP_Phase3.sample'),
+                             '--output-log', check_log_names[i]])
             print("Pre-phasing check done on chr" + str(i + 1))
 
         # If working on the X chromosome
@@ -184,14 +147,13 @@ def phase(geno_name, allocation_name):
 
             # Perform phasing check. Phasing chrX specifically considers all people unrelated. They might change this
             # later.
-            subprocess.check_output([os.path.join(shapeit_path, 'shapeit'), '-check','--chrX','--input-bed',
-                                     geno_bed_names[i], geno_bim_names[i], geno_fam_names[i],'--input-map',
-                                     os.path.join(ref_path, genetic_map_names[i]), '--input-ref',
-                                     os.path.join(ref_path, hap_names[i]), os.path.join(ref_path, legend_names[i]),
+            subprocess.check_output(['shapeit', '-check', '--chrX', '--input-bed', geno_bed_names[i], geno_bim_names[i],
+                                     geno_fam_names[i], '--input-map', os.path.join(ref_path, genetic_map_names[i]),
+                                     '--input-ref', os.path.join(ref_path, hap_names[i]),
+                                     os.path.join(ref_path, legend_names[i]),
                                      os.path.join(ref_path, '1000GP_Phase3.sample'), '--output-log',
                                      check_log_names[i]])
-
-            print("Pre-phasing check done on chr" + str(i +1))
+            print("Pre-phasing check done on chr" + str(i + 1))
 
     # Now that check is performed, we're on the lookout for these files:
         #  myLogFile.snp.strand.exclude that  gives a list of the physical positions of all Case1 and Case3 problems
@@ -201,7 +163,8 @@ def phase(geno_name, allocation_name):
     # Additional files just for chrX:
         # gwas.phased.snp.hh reports the number of haploid heterozygous per variant site.
         # gwas.phased.ind.hh reports the number of haploid heterozygous per sample.
-    # The mendel errors should not happen because we set them as missing in plink, but putting them in here just in case.
+    # The mendel errors should not happen because we set them as missing in plink, but putting them in here just in
+    # case.
 
     # Prepare files for phasing and submit to cluster.
     for i in range(0,23):
@@ -293,21 +256,21 @@ def phase(geno_name, allocation_name):
                                '#PBS -j oe\n'
                                'cd $PBS_O_WORKDIR\n'
                                '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                               + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                               'shapeit --input-bed ' + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' '
+                               + geno_fam_names[i] + ' --duohmm --input-map '
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --output-max ' + output_names[i] + ' --output-log '
                                + output_names[i]
                                + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
-                               + ' --output-log ' + output_vcf_log[i])
+                               + 'shapeit -convert --input-haps ' + output_names[i] + '.haps '
+                               + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i] + ' --output-log '
+                               + output_vcf_log[i])
             # If snp_exclude_names isn't filled, then phase with all SNPs.
             else:
                 # Write pbs file.
-                with open ('Phasing/' + geno_name + '_PhaseScript.chr' + str(i+1) + '.pbs', 'w') as file:
+                with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i+1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
                                '#PBS -l walltime=30:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
@@ -318,17 +281,16 @@ def phase(geno_name, allocation_name):
                                '#PBS -j oe\n'
                                'cd $PBS_O_WORKDIR\n'
                                '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                               + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --duohmm --input-map '
+                               'shapeit --input-bed ' + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' '
+                               + geno_fam_names[i] + ' --duohmm --input-map '
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
                                + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
-                               + ' --output-log ' + output_vcf_log[i])
-
+                               + 'shapeit -convert --input-haps ' + output_names[i] + '.haps '
+                               + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i] + ' --output-log '
+                               + output_vcf_log[i])
             print("Done preparing chr" + str(i + 1) + " for phasing")
 
         # Need to phase chrX specially.
@@ -433,7 +395,6 @@ def phase(geno_name, allocation_name):
                 # Save name of file we just created
                 snp_exclude_name = check_log_names[i] + '.ExcludeSnps'
 
-
             # If snp.strand.exclude and .snp.hh exist:
             elif log == ['a', 'c']:
                 # Concatenate the two lists of snps to exclude
@@ -497,17 +458,17 @@ def phase(geno_name, allocation_name):
                                '#PBS -j oe\n'
                                'cd $PBS_O_WORKDIR\n'
                                '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                               + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --chrX --input-map '
+                               'shapeit --input-bed ' + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' '
+                               + geno_fam_names[i] + ' --chrX --input-map '
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --exclude-ind ' + check_log_names[i] + '.ind.hh.exclude'
                                + ' --output-max ' + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
-                               + ' --output-log ' + output_vcf_log[i])
+                               + 'shapeit -convert --input-haps ' + output_names[i] + '.haps '
+                               + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i] + ' --output-log '
+                               + output_vcf_log[i])
 
             # If only snp_exclude_name variable is filled, then we have snps to remove.
             elif 'snp_exclude_name' in locals():
@@ -523,17 +484,17 @@ def phase(geno_name, allocation_name):
                                '#PBS -j oe\n'
                                'cd $PBS_O_WORKDIR\n'
                                '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                               + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --chrX --input-map '
+                               'shapeit --input-bed ' + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' '
+                               + geno_fam_names[i] + ' --chrX --input-map '
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-snp '
                                + snp_exclude_name + ' --output-max ' + output_names[i] + ' --output-log '
                                + output_names[i]
                                + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
-                               + ' --output-log ' + output_vcf_log[i])
+                               + 'shapeit -convert --input-haps ' + output_names[i] + '.haps '
+                               + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i] + ' --output-log '
+                               + output_vcf_log[i])
             # If there are only people in ind_hh_exclude, then we have people to remove.
             elif len(ind_hh_exclude) > 0:
                 # Write pbs script
@@ -548,17 +509,17 @@ def phase(geno_name, allocation_name):
                                '#PBS -j oe\n'
                                'cd $PBS_O_WORKDIR\n'
                                '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                               + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --chrX --input-map '
+                               'shapeit --input-bed ' + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' '
+                               + geno_fam_names[i] + ' --chrX --input-map '
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --exclude-ind '
                                + check_log_names[i] + '.ind.hh.exclude' + ' --output-max ' + output_names[i]
                                + ' --output-log ' + output_names[i]
                                + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
-                               + ' --output-log ' + output_vcf_log[i])
+                               + 'shapeit -convert --input-haps ' + output_names[i] + '.haps '
+                               + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i] + ' --output-log '
+                               + output_vcf_log[i])
             # If none of these are filled, then phase with all SNPs.
             else:
                 # Write pbs file.
@@ -573,22 +534,22 @@ def phase(geno_name, allocation_name):
                                '#PBS -j oe\n'
                                'cd $PBS_O_WORKDIR\n'
                                '\n' +
-                               os.path.join(shapeit_path, 'shapeit') + ' --input-bed ' + geno_bed_names[i] + ' '
-                               + geno_bim_names[i] + ' ' + geno_fam_names[i] + ' --chrX --input-map '
+                               'shapeit --input-bed ' + geno_bed_names[i] + ' ' + geno_bim_names[i] + ' '
+                               + geno_fam_names[i] + ' --chrX --input-map '
                                + os.path.join(ref_path, genetic_map_names[i]) + ' --input-ref '
                                + os.path.join(ref_path, hap_names[i]) + ' ' + os.path.join(ref_path, legend_names[i])
                                + ' ' + os.path.join(ref_path, '1000GP_Phase3.sample') + ' --output-max '
                                + output_names[i] + ' --output-log ' + output_names[i]
                                + '\n'
-                               + os.path.join(shapeit_path, 'shapeit') + ' -convert --input-haps ' + output_names[i]
-                               + '.haps ' + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i]
-                               + ' --output-log ' + output_vcf_log[i])
+                               + 'shapeit -convert --input-haps ' + output_names[i] + '.haps '
+                               + output_names[i] + '.sample --output-vcf ' + output_vcf_names[i] + ' --output-log '
+                               + output_vcf_log[i])
 
             print("Done preparing chr" + str(i+1) + " for phasing")
 
-    #I If the user is currently on the cluster, then submit the pbs files to start running.
+    # If the user is currently on the cluster, then submit the pbs files to start running.
     if on_cluster in ('y', 'yes'):
-        for i in range(0,23):
+        for i in range(0, 23):
             # Submit to cluster
             subprocess.check_output(['qsub', 'Phasing/' + geno_name + '_PhaseScript.chr' + str(i+1) + '.pbs'])
     elif on_cluster in ('n', 'no'):
@@ -605,18 +566,16 @@ def phase(geno_name, allocation_name):
 
 
 def impute():
-    '''
-    Required by the sanger imputation server.
-    If not requesting pre-phasing, then all sites and samples should be phased with no missing data. - genophase
-    All alleles on the forward strand - genoharmonize
-    A single VCF file, not one file per-chromosome - this script
-    Coordinates are on GRCh37 - user, before genoharmonize
-    Chromosome names should be 1, 2, 3, etc… not chr1, chr2, chr3, etc… - this script
-    Records are sorted by genomic position (chromosomal order is not important) - this script
-    REF allele matches GRCh37. See the resources for help checking and fixing the REF allele - genoharmonize should do
-    this, but in this script we will double check.
-    Valid VCF - this script.
-    '''
+    # Required by the sanger imputation server.
+    # If not requesting pre-phasing, then all sites and samples should be phased with no missing data. - genophase
+    # All alleles on the forward strand - genoharmonize
+    # A single VCF file, not one file per-chromosome - this script
+    # Coordinates are on GRCh37 - user, before genoharmonize
+    # Chromosome names should be 1, 2, 3, etc. Not chr1, chr2, chr3, etc - this script
+    # Records are sorted by genomic position (chromosomal order is not important) - this script
+    # REF allele matches GRCh37. See the resources for help checking and fixing the REF allele - genoharmonize should do
+    # this, but in this script we will double check.
+    # Valid VCF - this script.
 
     import platform
     import os
@@ -637,7 +596,7 @@ def impute():
     # Ask user what they want the eventual file to be named.
     print(Fore.BLUE + Style.BRIGHT)
     vcf_name = input("Please tell me what you would like your phased VCF file to be called. I'm going to concatenate "
-                      "all of the phased per chromosomes into one whole genome file and give it this name.: ")
+                     "all of the phased per chromosomes into one whole genome file and give it this name.: ")
     print(Style.RESET_ALL)
 
     # Use glob to find files ending with the endings set in geno phase.
@@ -649,7 +608,7 @@ def impute():
         print(Fore.MAGENTA + Style.BRIGHT)
         vcf_path = input("Please tell me where your phased vcf and haps/sample files are. Make sure they are in their "
                          "own folder, as this part of the script looks for anything with the ending '.vcf' "
-                          "(i.e. C:\\Users\\Julie White\\Box Sync\\Genotypes\\Phasing\\ etc.): ")
+                         "(i.e. C:\\Users\\Julie White\\Box Sync\\Genotypes\\Phasing\\ etc.): ")
         print(Style.RESET_ALL)
         # Make list of anything with .vcf ending
         raw_vcf_list = glob.glob(os.path.join(vcf_path,'*.vcf'))
@@ -663,120 +622,24 @@ def impute():
     if not os.path.exists('SangerImputation'):
         os.makedirs('SangerImputation')
 
-    # Since the programs we need only work on linux or mac, we need to first check what system they are on.
-    system_check = platform.system()
-
-    # Bcftools
-    if system_check in ("Linux", "Darwin"):
-        # Now we need to know where they have bcftools, if they have it.
-        print(Fore.GREEN)
-        bcftools_exists = input("Do you already have the program bcftools unpacked and installed? (y/n): ").lower()
-        print(Style.RESET_ALL)
-        # If yes, then ask for path of program
-        if bcftools_exists in ('yes', 'y'):
-            print(Fore.CYAN)
-            in_path = input("Do you already have the bcftools location in your $PATH? This is HIGHLY recommended."
-                            "(y/n): ").lower()
-            if in_path in ('yes', 'y'):
-                pass
-            elif in_path in ('no', 'n'):
-                print(Fore.RED + Style.BRIGHT)
-                print('You should open a new terminal window and set your path to bcftools by typing export '
-                      'PATH=$PATH:/path/to/bcftools or by adding the pathname to your .bash_profile then typing '
-                      'source .bash_profile')
-                print(Style.RESET_ALL)
-
-        # If no, download and unpack bcftools.
-        elif bcftools_exists in ('no', 'n'):
-            import genodownload
-            genodownload.bcftools()
-        else:
-            sys.exit('You did not answer "y" or "no" when asked if you had bcftools. Exiting now.')
-
-    # If they are running this on a windows machine, they cannot proceed because bcftools is *nix only.
-    elif system_check == ("Windows"):
-        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
-                 "the Penn State clusters, you should run this script from there (they are linux).")
-
-    # If I cannot detect what system they're on, force exit.
+    # Determine if they have bcftools, vcftools, samtools, if not download them.
+    if os.path.exists(os.path.join(bindir, 'bcftools')):
+        pass
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        import genodownload
+        genodownload.bcftools()
 
-    # Samtools
-    if system_check in ("Linux", "Darwin"):
-        # Now we need to know where they have samtools, if they have it.
-        print(Fore.BLUE + Style.BRIGHT)
-        samtools_exists = input("Do you already have the program samtools unpacked and installed? (y/n): ").lower()
-        print(Style.RESET_ALL)
-
-        # If yes, then ask for path of program
-        if samtools_exists in ('yes', 'y'):
-            print(Fore.MAGENTA + Style.BRIGHT)
-            in_path = input("Do you already have the samtools location in your $PATH? (y/n): ").lower()
-            print(Style.RESET_ALL)
-
-            if in_path in ('yes', 'y'):
-                pass
-            elif in_path in ('no', 'n'):
-                print(Fore.RED + Style.BRIGHT)
-                print('You should open a new terminal window and set your path to samtools by typing export '
-                      'PATH=$PATH:/path/to/samtools or by adding the pathname to your .bash_profile then typing '
-                      'source .bash_profile')
-                print(Style.RESET_ALL)
-
-        # If no, download and unpack samtools.
-        elif samtools_exists in ('no', 'n'):
-            import genodownload
-            genodownload.samtools()
-        else:
-            sys.exit('You did not answer "y" or "no" when asked if you had samtools. Exiting now.')
-
-    # If they are running this on a windows machine, they cannot proceed because samtools is *nix only.
-    elif system_check == ("Windows"):
-        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
-                 "the Penn State clusters, you should run this script from there (they are linux).")
-    # If I cannot detect what system they're on, force exit.
+    if os.path.exists(os.path.join(bindir, 'vcftools')):
+        pass
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        import genodownload
+        genodownload.vcftools()
 
-    # Vcftools
-    if system_check in ("Linux", "Darwin"):
-        # Now we need to know where they have vcftools, if they have it.
-        print(Fore.GREEN)
-        vcftools_exists = input("Do you already have the program vcftools unpacked and installed? (y/n): ").lower()
-        print(Style.RESET_ALL)
-
-        # If yes, then ask for path of program
-        if vcftools_exists in ('yes', 'y'):
-            print(Fore.CYAN)
-            in_path = input("Do you already have the vcftools location in your $PATH? If not, I will add it for you. "
-                            "(y/n): ").lower()
-            print(Style.RESET_ALL)
-
-            if in_path in ('yes', 'y'):
-                pass
-            elif in_path in ('no', 'n'):
-                print(Fore.RED + Style.BRIGHT)
-                print('You should open a new terminal window and set your path to vcftools by typing export '
-                      'PATH=$PATH:/path/to/vcftools or by adding the pathname to your .bash_profile then typing '
-                      'source .bash_profile')
-                print(Style.RESET_ALL)
-
-        # If no, download and unpack vcftools.
-        elif vcftools_exists in ('no', 'n'):
-            import genodownload
-            # Download vcftools
-            genodownload.vcftools()
-        else:
-            sys.exit('You did not answer "y" or "no" when asked if you had vcftools. Exiting now.')
-
-    # If they are running this on a windows machine, they cannot proceed because vcftools is *nix only.
-    elif system_check == ("Windows"):
-        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
-                 "the Penn State clusters, you should run this script from there (they are linux).")
-    # If I cannot detect what system they're on, force exit.
+    if os.path.exists(os.path.join(bindir, 'samtools')):
+        pass
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        import genodownload
+        genodownload.samtools()
 
     # hg19 fasta files.
     print(Fore.BLUE + Style.BRIGHT)
@@ -887,7 +750,7 @@ def impute():
     # Use bcftools to change the chromosome names, if needed.
     urllib.request.urlretrieve('https://imputation.sanger.ac.uk/www/plink2ensembl.txt',
                                'SangerImputation/plink2ensembl.txt')
-    subprocess.check_output(['bcftools','annotate','--rename-chrs','SangerImputation/plink2ensembl.txt', '-Oz', '-o',
+    subprocess.check_output(['bcftools', 'annotate', '--rename-chrs', 'SangerImputation/plink2ensembl.txt', '-Oz', '-o',
                              os.path.join('SangerImputation', vcf_name + '_ChrUpdated.vcf.gz'),
                              os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
     print("Done checking chromosome names")
@@ -897,8 +760,8 @@ def impute():
     subprocess.check_output(['bcftools', 'index', os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
 
     # Check that our data matches the reference allele of 1000G Phase 3. Fix those that do not match.
-    subprocess.check_output(['bcftools','norm','--check-ref','ws','--rm-dup', 'both', '--fasta-ref',
-                             os.path.join(fasta_path,'human_g1k_v37.fasta.gz'), '-Oz', '-o',
+    subprocess.check_output(['bcftools', 'norm', '--check-ref', 'ws', '--rm-dup', 'both', '--fasta-ref',
+                             os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), '-Oz', '-o',
                              os.path.join('SangerImputation', vcf_name + '_RefChecked.vcf.gz'),
                              os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
     print("Done checking if reference allele matches 1000G Phase3 and fixing those that don't match")
@@ -912,7 +775,7 @@ def impute():
                     + os.path.join('SangerImputation', vcf_name + '.vcf.gz') + ' > '
                     + os.path.join('SangerImputation', vcf_name + '_SexEst.txt'), shell=True)
 
-    subprocess.check_output(['bcftools','+fixploidy', '-Oz','-o',
+    subprocess.check_output(['bcftools', '+fixploidy', '-Oz', '-o',
                              os.path.join('SangerImputation', vcf_name + '_PloidyChecked.vcf.gz'),
                              os.path.join('SangerImputation', vcf_name + '.vcf.gz'),
                              '--', '--sex', os.path.join('SangerImputation', vcf_name + '_SexEst.txt')])
@@ -937,51 +800,19 @@ def getinfo(imputed_path, geno_name):
     import os
     import subprocess
 
-    # Vcftools
-    if system_check in ("Linux", "Darwin"):
-        # We need to know where they have vcftools, if they have it.
-        print(Fore.BLUE + Style.BRIGHT)
-        vcftools_exists = input("Do you already have the program vcftools unpacked and installed? (y/n): ").lower()
-        print(Style.RESET_ALL)
-
-        # If yes, then ask for path of program
-        if vcftools_exists in ('yes', 'y'):
-            print(Fore.MAGENTA + Style.BRIGHT)
-            in_path = input("Do you already have the vcftools location in your $PATH? (y/n): ").lower()
-            print(Style.RESET_ALL)
-
-            if in_path in ('yes', 'y'):
-                vcftools = 'vcftools'
-
-            elif in_path in ('no', 'n'):
-                print(Fore.GREEN)
-                vcftools_path = input("Please tell me the path where you have the vcftools program. "
-                                      "i.e. C:\\Users\\Julie White\\Box Sync\\Software\\vcftools\\ : ")
-                print(Style.RESET_ALL)
-                vcftools = os.path.join(vcftools_path, 'vcftools')
-
-        # If no, download and unpack vcftools.
-        elif vcftools_exists in ('no', 'n'):
-            import genodownload
-            # Download vcftools
-            genodownload.vcftools()
-        else:
-            sys.exit('You did not answer "y" or "no" when asked if you had vcftools. Exiting now.')
-
-    # If they are running this on a windows machine, they cannot proceed because vcftools is *nix only.
-    elif system_check == ("Windows"):
-        sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have access to "
-                 "the Penn State clusters, you should run this script from there (they are linux).")
-    # If I cannot detect what system they're on, force exit.
+    # Determine if they have vcftools, if not download.
+    if os.path.exists(os.path.join(bindir, 'vcftools')):
+        pass
     else:
-        sys.exit("I cannot detect the system you are working on. Exiting now.")
+        import genodownload
+        genodownload.vcftools()
 
     # Ask the user if they are running this from the PSU cluster. This is the preferred way to go, since this takes a
     # while and will clog their computer's RAM if they try to do it from their personal computer.
     print(Fore.CYAN)
     on_cluster = input('Are you currently running this from the Penn State ACI-B cluster? If yes, I can submit the jobs'
-                       ' for you. If not, I will try to run this using your local RAM, but this might make your computer'
-                       ' very slow and will probably take several hours. (y/n): ').lower()
+                       ' for you. If not, I will try to run this using your local RAM, but this might make your '
+                       'computer very slow and will probably take several hours. (y/n): ').lower()
     print(Style.RESET_ALL)
 
     if on_cluster in ("yes", "y"):
@@ -993,7 +824,7 @@ def getinfo(imputed_path, geno_name):
         # Write pbs file
         with open(os.path.join(imputed_path, 'GetImputationInfo.pbs'), 'w') as file:
             file.write('#!/bin/bash\n'
-                       '#PBS -l walltime=30:00:00\n'
+                       '#PBS -l walltime=24:00:00\n'
                        '#PBS -l nodes=1:ppn=8\n'
                        '#PBS -l pmem=7gb\n'
                        '#PBS -A ' + allocation_name +
@@ -1001,7 +832,7 @@ def getinfo(imputed_path, geno_name):
                        '#PBS -j oe\n'
                        'cd $PBS_O_WORKDIR\n'
                        '\n' +
-                       'for i in {1..23}; do ' + vcftools + ' --gzvcf ' + geno_name
+                       'for i in {1..23}; do vcftools --gzvcf ' + geno_name
                        + '_chr$i.vcf.gz --get-INFO INFO --get-INFO RefPanelAF --out ' + geno_name
                        + '_chr$[i]_InfoScoreAF; done')
         # Change directory into imputed path
@@ -1010,7 +841,7 @@ def getinfo(imputed_path, geno_name):
         subprocess.check_output(['qsub', 'GetImputationInfo.pbs'])
     # If they aren't on the cluster, then try to run this from their computer.
     elif on_cluster in ('no', 'n'):
-        subprocess.check_output('for i in {1..23}; do ' + vcftools + ' --gzvcf '
+        subprocess.check_output('for i in {1..23}; do vcftools --gzvcf '
                                 + os.path.join(imputed_path, geno_name + '_chr$i.vcf.gz')
                                 + ' --get-INFO INFO --get-INFO RefPanelAF --out '
                                 + os.path.join(imputed_path, geno_name + '_chr$[i]_InfoScoreAF') + '; done', shell=True)
@@ -1096,9 +927,9 @@ def qualscoreplot(info_path):
     hist, bins = np.histogram(INFO, bins = 100)
     width = np.diff(bins)
     center = (bins[:-1] + bins[1:]) / 2
-    plt.bar(center, hist, width = width, color = "green", edgecolor = "black")
+    plt.bar(center, hist, width=width, color="green", edgecolor="black")
     plt.xlabel('Imputation Quality Score')
     plt.ylabel('Number of SNPs')
-    plt.title('Histogram of Genome-Wide Imputation Quality Scores', y = 1.08)
+    plt.title('Histogram of Genome-Wide Imputation Quality Scores', y=1.08)
     plt.show()
     f.savefig("ImputationQualScores_Hist.pdf")

@@ -1,4 +1,5 @@
 import platform
+from os.path import expanduser
 
 try:
     import colorama
@@ -11,12 +12,24 @@ except ImportError:
     from colorama import init, Fore, Style
     init()
 
+home = expanduser("~")
+bindir = os.path.join(home, 'software', 'bin')
+
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
-    plink = "./plink"
+    plink = "plink"
+    rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
+    rm = "del "
+
+# Determine if they have plink, if not download it.
+if os.path.exists(os.path.join(bindir, plink)):
+    pass
+else:
+    import genodownload
+    genodownload.plink()
 
 
 def prep(admix_name):
@@ -36,26 +49,14 @@ def prep(admix_name):
                        'submit the jobs yourself. (y/n): ').lower()
     print(Style.RESET_ALL)
 
-    # If they are on the cluster, then ask if they have already downloaded the admixture program.
+    # If they are on the cluster, then see if they have already downloaded the admixture program.
     if on_cluster in ("yes", "y"):
-        print(Fore.GREEN)
-        admixture_exists = input('Have you already downloaded the admixture program? (y/n): ').lower()
-        print(Style.RESET_ALL)
-        # If yes, then get path to admixture
-        if admixture_exists in ('y', 'yes'):
-            print(Fore.CYAN)
-            admixture_path = input('Please enter the pathname of where the admixture program is '
-                                   '(i.e. /storage/home/jdw345/software/Admixture_1.3.0_Linux/): ')
-            print(Style.RESET_ALL)
-        # If no, then download admixture
-        elif admixture_exists in ('n', 'no'):
+        # Determine if they have admixture, if not download it.
+        if os.path.exists(os.path.join(bindir, 'admixture')):
+            pass
+        else:
             import genodownload
             genodownload.admixture()
-            admixture_path = os.path.join(os.getcwd(), 'Admixture_1.3.0_Linux/')
-        else:
-            sys.exit('You did not give a yes or no answer when I asked if you had admixture. Quitting now.')
-        # Copy admixture program to the admixture folder.
-        shutil.copy2(os.path.join(admixture_path, 'admixture'), 'Admixture')
     # If they are not on the cluster. Tell them to get it before they submit the jobs.
     elif on_cluster in ("no", "n"):
         print(Fore.RED + Style.BRIGHT + "Make sure to download the admixture program on the cluster and have it in the "
@@ -124,7 +125,7 @@ def prep(admix_name):
                            '#PBS -j oe\n'
                            'cd $PBS_O_WORKDIR\n'
                            '\n'
-                           'for K in {3..6}; do ./admixture --cv '
+                           'for K in {3..6}; do admixture --cv '
                            + admix_name + '_Set' + set_name + '_LDPruned.bed $K | tee '
                            + admix_name + '_Set' + set_name + '_LDPruned.log${K}.out; done')
 
@@ -138,7 +139,7 @@ def prep(admix_name):
                            '#PBS -j oe\n'
                            'cd $PBS_O_WORKDIR\n'
                            '\n'
-                           'for K in {7..9}; do ./admixture --cv '
+                           'for K in {7..9}; do admixture --cv '
                            + admix_name + '_Set' + set_name + '_LDPruned.bed $K | tee '
                            + admix_name + '_Set' + set_name + '_LDPruned.log${K}.out; done')
 
@@ -178,7 +179,7 @@ def prep(admix_name):
                        '#PBS -j oe\n'
                        'cd $PBS_O_WORKDIR\n'
                        '\n'
-                       'for K in {3..6}; do ./admixture --cv ' + admix_name + '_LDPruned.bed $K | tee '
+                       'for K in {3..6}; do admixture --cv ' + admix_name + '_LDPruned.bed $K | tee '
                        + admix_name + '_LDPruned.log${K}.out; done')
 
         # For all people, create a pbs file for admixture k = 7..9
@@ -191,7 +192,7 @@ def prep(admix_name):
                        '#PBS -j oe\n'
                        'cd $PBS_O_WORKDIR\n'
                        '\n'
-                       'for K in {7..9}; do ./admixture --cv ' + admix_name + '_LDPruned.bed $K | tee '
+                       'for K in {7..9}; do admixture --cv ' + admix_name + '_LDPruned.bed $K | tee '
                        + admix_name + '_LDPruned.log${K}.out; done')
 
         if on_cluster in ("yes", "y"):

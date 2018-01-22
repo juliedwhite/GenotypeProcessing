@@ -6,6 +6,7 @@ import csv
 import sys
 import gzip
 import shutil
+from os.path import expanduser
 
 try:
     import argparse
@@ -39,14 +40,24 @@ except ImportError:
     from colorama import init, Fore, Style
     init()
 
+home = expanduser("~")
+bindir = os.path.join(home, 'software', 'bin')
+
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 system_check = platform.system()
 if system_check in ("Linux", "Darwin"):
-    plink = "./plink"
+    plink = "plink"
     rm = "rm "
 elif system_check == "Windows":
     plink = 'plink.exe'
     rm = "del "
+
+# Determine if they have plink, if not download it.
+if os.path.exists(os.path.join(bindir, plink)):
+    pass
+else:
+    import genodownload
+    genodownload.plink()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("geno_name", help="Name of the genotype files to be harmonized with 1000G Phase3 (without "
@@ -336,36 +347,19 @@ else:
     sys.exit("Quitting because I cannot find the fasta file. You need this to check if your snps are on the reference "
              "strand")
 
-try:
-    # Find where snpflip is.
-    snpflip_path = []
-    for path in sys.path:
-        for r, d, f in os.walk(path):
-            for files in f:
-                if files == "snpflip":
-                    snpflip_path = os.path.join(r, files)
-    # Perform flip check.
-    subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                            + os.path.join(args.fasta_path, 'human_g1k_v37.fasta')
-                            + '" --bim-file ' + args.geno_name + '_HarmonizedTo1000G.bim --output-prefix '
-                            + args.geno_name + '_HarmonizedTo1000G', shell=True)
-except:
-    # Import module where I have the download instructions for snpflip
+# Determine if they have snpflip, if not download it.
+if os.path.exists(os.path.join(bindir, 'snpflip')):
+    pass
+else:
     import genodownload
-    # Download snpflip
     genodownload.snpflip()
-    # Find where snpflip is:
-    snpflip_path = []
-    for path in sys.path:
-        for r, d, f in os.walk(path):
-            for files in f:
-                if files == "snpflip":
-                    snpflip_path = os.path.join(r, files)
-    # Re do
-    subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                            + os.path.join(args.fasta_path, 'human_g1k_v37.fasta') + '" --bim-file ' + args.geno_name
-                            + '_HarmonizedTo1000G.bim --output-prefix ' + args.geno_name + '_HarmonizedTo1000G',
-                            shell=True)
+
+snpflip_path = [os.path.join(bindir, 'snpflip')]
+# Perform flip check.
+subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
+                        + os.path.join(fasta_path, 'human_g1k_v37.fasta')
+                        + '" --bim-file ' + geno_name + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name
+                        + '_HarmonizedTo1000G', shell=True)
 
 # If SNPs exist that are on the reverse strand, then flip them.
 # Currently ignores snps that are ambiguous, since I already removed those that would be hard to phase. Could change

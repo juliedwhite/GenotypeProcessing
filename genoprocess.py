@@ -4,6 +4,8 @@ import sys
 
 from os.path import expanduser
 home = expanduser("~")
+softwaredir = os.path.join(home, 'software')
+bindir = os.path.join(home, 'software', 'bin')
 
 if sys.version_info > (3, 0):
     pass
@@ -248,24 +250,13 @@ elif to_do == '8':
         else:
             sys.exit('Please answer yes or no. Quitting now because no fasta file.')
 
-        # Ask if they have genotype harmonizer.
-        print(Fore.GREEN)
-        harmonizer_exists = input('Have you already downloaded Genotype Harmonizer? (y/n): ').lower()
-        print(Style.RESET_ALL)
-        # If yes, then get path to genotype harmonizer.
-        if harmonizer_exists in ('y', 'yes'):
-            print(Fore.CYAN)
-            harmonizer_path = input('Please enter the pathname of where the GenotypeHarmonizer.jar file is '
-                                    '(i.e. C:\\Users\\Julie White\\Box Sync\\Software\\GenotypeHarmonizer-1.4.20\\): ')
-            print(Style.RESET_ALL)
-        # If no, then download genotype harmonizer
-        elif harmonizer_exists in ('n', 'no'):
+        # Determine if they have genotype harmonizer.
+        if os.path.exists(os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer.jar')):
+            harmonizer_path = os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20')
+        else:
             import genodownload
             genodownload.genotype_harmonizer()
-            # Harmonize path now that we've downloaded it.
-            harmonizer_path = os.path.join(os.getcwd(), 'GenotypeHarmonizer-1.4.20/GenotypeHarmonizer-1.4.20-SNAPSHOT/')
-        else:
-            sys.exit('Please write yes or no. Quitting now because no Genotype Harmonizer.')
+            harmonizer_path = os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.10')
 
         # Ask if the user is on the cluster right now to determine if we should submit the files for them
         print(Fore.BLUE + Style.BRIGHT)
@@ -452,7 +443,7 @@ elif to_do == '14':
 # Make plots of imputation quality scores.
 elif to_do == '15':
     print(Fore.BLUE + Style.BRIGHT)
-    info_path = input("Please tell me where your .INFO files produced by step #13 are. Make sure they are in a folder "
+    info_path = input("Please tell me where your .INFO files produced by step #14 are. Make sure they are in a folder "
                       "with no other .INFO files, as this part of the script looks for anything with the ending '.INFO'"
                       " (e.g C:\\Users\\Julie White\\Box Sync\\SangerImputation\\ etc.): ")
     print(Style.RESET_ALL)
