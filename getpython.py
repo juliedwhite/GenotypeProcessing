@@ -4,7 +4,6 @@ def python3():
     import os
     import sys
     import tarfile
-
     from os.path import expanduser
     home = expanduser("~")
 
@@ -14,28 +13,29 @@ def python3():
     if system_check == "Linux":
         if not os.path.exists(os.path.join(home, 'software')):
             os.makedirs(os.path.join(home, 'software'))
-        print("Downloading python3 to " + os.path.join(home, 'software') + " now.")
+        softwaredir = os.path.join(home, 'software')
+        print("Downloading python3 to " + softwaredir)
 
         f = urllib2.urlopen("https://www.python.org/ftp/python/3.6.3/Python-3.6.3.tgz")
-        with open(os.path.join(home, 'software/Python-3.6.3.tgz'), "wb") as code:
+        with open(os.path.join(softwaredir, 'Python-3.6.3.tgz'), "wb") as code:
             code.write(f.read())
 
         with open(os.path.join(home, 'software/InstallPython'), "w") as file:
-            file.write('cd ' + os.path.join(home, 'software/Python-3.6.3') + '\n'
-                       + './configure --prefix=' + os.path.join(home, 'software') + '\n'
+            file.write('cd ' + os.path.join(softwaredir, 'Python-3.6.3') + '\n'
+                       + './configure --prefix=' + softwaredir + '\n'
                        + 'make\n'
                          'make install\n'
                          'cd ' + home + '\n'
-                       + "echo 'export PATH=" + os.path.join(home, 'software/bin/') + ":$PATH' >> .bash_profile\n"
-                       + "echo 'export PATH=" + os.path.join(home, 'software/Python-3.6.3/') + ":$PATH' >> "
-                                                                                               ".bash_profile\n"
-                       + "echo 'export PYTHONPATH=" + os.path.join(home, 'software/Python-3.6.3/') + "' >> "
-                                                                                                     ".bash_profile\n"
+                       + "echo 'export PATH=" + os.path.join(softwaredir, 'bin/') + ":$PATH' >> .bash_profile\n"
+                       + "echo 'export PATH=" + os.path.join(softwaredir, 'Python-3.6.3/') + ":$PATH' >> "
+                                                                                             ".bash_profile\n"
+                       + "echo 'export PYTHONPATH=" + os.path.join(softwaredir, 'Python-3.6.3/') + "' >> "
+                                                                                                   ".bash_profile\n"
                        + 'source ' + os.path.join(home, '.bash_profile'))
 
         # Unpacking
-        tar = tarfile.open(os.path.join(home, 'software/Python-3.6.3.tgz'))
-        tar.extractall()
+        tar = tarfile.open(os.path.join(softwaredir, 'Python-3.6.3.tgz'))
+        tar.extractall(softwaredir)
         tar.close()
 
     # If the user is on a mac
