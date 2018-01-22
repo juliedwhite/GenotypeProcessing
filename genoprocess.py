@@ -2,6 +2,9 @@
 import os
 import sys
 
+from os.path import expanduser
+home = expanduser("~")
+
 if sys.version_info > (3, 0):
     pass
 else:
@@ -9,7 +12,8 @@ else:
           "download it (or ask you to download it) and exit. Then you should re-run this script.")
     import getpython
     getpython.python3()
-    sys.exit("Exiting now, please re-run the script now that we've downloaded python3.")
+    sys.exit("Exiting now, please move to " + os.path.join(home, 'software')
+             + " and type in 'source InstallPython'. Then re-run this script.")
 
 try:
     from colorama import init, Fore, Style
