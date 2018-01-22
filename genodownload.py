@@ -3,6 +3,7 @@ import subprocess
 import urllib.request
 import os
 import sys
+import tarfile
 from os.path import expanduser
 
 system_check = platform.system()
@@ -83,12 +84,12 @@ def todownload():
     print(Style.RESET_ALL)
 
     if item == '1':
-        plink()
-        vcf_1000g_phase3()
-        hls_1000g_phase3()
-        fasta_1000G_hg19()
+        # plink()
+        # vcf_1000g_phase3()
+        # hls_1000g_phase3()
+        # fasta_1000G_hg19()
         genotype_harmonizer()
-        snpflip()
+        # snpflip()
         admixture()
         shapeit()
         htslib()
@@ -358,14 +359,15 @@ def hls_1000g_phase3():
         # Change directory where tgz files are
         os.chdir('1000G_Phase3_HapLegendSample')
         # Unpack tar files
-        if system_check in ("Linux", "Darwin"):
-            subprocess.check_output(['tar', '-xvf', '1000GP_Phase3.tgz', '--strip-components', '1'])
-            subprocess.check_output(['tar', '-xvf', '1000GP_Phase3_chrX.tgz'])
-        elif system_check == "Windows":
-            print(Fore.RED + Style.BRIGHT + "Please use 7-Zip to unzip your .tgz file in the "
-                                            "1000G_Phase3_HapLegendSample folder, then use 7-Zip again to untar the "
-                                            ".tar file. Do this for both 1000GP_Phase3.tgz and 1000GP_Phase3_chrX.tgz")
-            print(Style.RESET_ALL)
+
+        tar = tarfile.open("1000GP_Phase3.tgz")
+        tar.extractall()
+        tar.close()
+
+        tar = tarfile.open("1000GP_Phase3_chrX.tgz")
+        tar.extractall()
+        tar.close()
+
         # Print when done.
         print('Done extracting 1000G_Phase3_HapLegendSample')
 
@@ -420,6 +422,7 @@ def fasta_1000G_hg19():
 def genotype_harmonizer():
     import zipfile
     from distutils.dir_util import copy_tree
+    import shutil
 
     print('Downloading genotype harmonizer now.')
     # Download genotype harmonizer zip file
@@ -432,9 +435,10 @@ def genotype_harmonizer():
     zip_ref.close()
 
     # copy subdirectory up
-    fromdir = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer_1.4.20-SNAPSHOT')
+    fromdir = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer-1.4.20-SNAPSHOT')
     todir = 'GenotypeHarmonizer-1.4.20'
     copy_tree(fromdir, todir)
+    shutil.rmtree(os.path.join('GenotyprHarmonizer-1.4.20', 'GenotypeHarmonizer-1.4.20-SHAPSHOT'))
 
     print("Done downloading genotype harmonizer")
 
@@ -459,10 +463,10 @@ def admixture():
         urllib.request.urlretrieve(
             'https://www.genetics.ucla.edu/software/admixture/binaries/admixture_linux-1.3.0.tar.gz',
             'admixture_linux-1.3.0.tar.gz')
-        # Making directory to store program
-        os.makedirs('Admixture_1.3.0_Linux')
         # Unpacking
-        subprocess.check_output(['tar', '-xzvf', 'admixture_linux-1.3.0.tar.gz', '-C', 'Admixture_1.3.0_Linux/'])
+        tar = tarfile.open("admixture_linux-1.3.0.tar.gz")
+        tar.extractall()
+        tar.close()
         print("Done downloading admixture")
 
     # If the user is on a mac
@@ -472,10 +476,9 @@ def admixture():
         urllib.request.urlretrieve(
             'https://www.genetics.ucla.edu/software/admixture/binaries/admixture_macosx-1.3.0.tar.gz',
             'admixture_macosx-1.3.0.tar.gz')
-        # Create directory for shapeit.
-        os.makedirs('Admixture_1.3.0_Mac')
-        # Untar shapeit to that directory.
-        subprocess.check_output(['tar', '-zxvf', 'admixture_macosx-1.3.0.tar.gz', '-C', 'Admixture_1.3.0_Mac/'])
+        tar = tarfile.open("admixture_macosx-1.3.0.tar.gz")
+        tar.extractall()
+        tar.close()
         print("Done downloading admixture")
 
     # If they are running this on a windows machine, they cannot proceed because admixture is *nix only.
@@ -496,11 +499,10 @@ def shapeit():
         urllib.request.urlretrieve(
             'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r900.glibcv2.12.linux.tar.gz',
             'shapeit.v2.r900.glibcv2.12.linux.tar.gz')
-        # Making directory to store program
-        os.makedirs('Shapeit_v2.r900_Linux_Static')
         # Unpacking
-        subprocess.check_output(['tar', '-xzvf', 'shapeit.v2.r900.glibcv2.12.linux.tar.gz', '-C',
-                                 'Shapeit_v2.r900_Linux_Static/'])
+        tar = tarfile.open("shapeit.v2.r900.glibcv2.12.linux.tar.gz")
+        tar.extractall()
+        tar.close()
 
         print("Done downloading shapeit")
 
@@ -511,10 +513,9 @@ def shapeit():
         urllib.request.urlretrieve(
             'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz',
             'shapeit.v2.r837.MacOSX.tgz')
-        # Create directory for shapeit.
-        os.makedirs('Shapeit_v2.20_Mac')
-        # Untar shapeit to that directory.
-        subprocess.check_output(['tar', '-zxvf', 'shapeit.v2.r837.MacOSX.tgz', '-C', 'Shapeit_v2.20_Mac/'])
+        tar = tarfile.open("shapeit.v2.r837.MacOSX.tgz")
+        tar.extractall()
+        tar.close()
 
         print("Done downloading shapeit")
 
@@ -538,9 +539,9 @@ def vcftools():
             os.makedirs(os.path.join(home, "software"))
         urllib.request.urlretrieve('https://github.com/vcftools/vcftools/tarball/master',
                                    os.path.join(home, 'software/vcftools.tgz'))
-        # Unpacking
-        subprocess.check_output(['tar', '-xvf', os.path.join(home, 'software/vcftools.tgz'), '-C',
-                                 os.path.join(home, 'software')])
+        tar = tarfile.open(os.path.join(home, 'software/vcftools.tgz'))
+        tar.extractall()
+        tar.close()
         # Moving into the vcftools folder
         os.chdir(os.path.join(home, 'software/vcftools-vcftools-ea875e2'))
         # Running configuration and installation steps
@@ -584,9 +585,9 @@ def bcftools():
             os.mkdir(os.path.join(home, 'software'))
         urllib.request.urlretrieve('https://github.com/samtools/bcftools/releases/download/1.6/bcftools-1.6.tar.bz2',
                                    os.path.join(home, 'software/bcftools-1.6.tar.bz2'))
-        # Unpacking
-        subprocess.check_output(['tar', '-xvjf', os.path.join(home, 'software/bcftools-1.6.tar.bz2'), '-C',
-                                 os.path.join(home, 'software')])
+        tar = tarfile.open(os.path.join(home, 'software/bcftools-1.6.tar.bz2'), "r:bz2")
+        tar.extractall()
+        tar.close()
         # Moving into the bcftools folder
         os.chdir(os.path.join(home, 'software/bcftools-1.6/'))
         # Running configuration and installation steps
@@ -624,11 +625,9 @@ def htslib():
             os.mkdir(os.path.join(home, 'software'))
         urllib.request.urlretrieve('https://github.com/samtools/htslib/releases/download/1.6/htslib-1.6.tar.bz2',
                                    os.path.join(home, 'software/htslib-1.6.tar.bz2'))
-        # Making directory to store program
-        # os.makedirs(os.path.join(home,'software/htslib_1.6'))
-        # Unpacking
-        subprocess.check_output(['tar', '-xvjf', os.path.join(home, 'software/htslib-1.6.tar.bz2'), '-C',
-                                 os.path.join(home, 'software')])
+        tar = tarfile.open(os.path.join(home, 'software/htslib-1.6.tar.bz2'), "r:bz2")
+        tar.extractall()
+        tar.close()
         # Moving into the htslib folder
         os.chdir(os.path.join(home, 'software/htslib-1.6/'))
         # Running configuration and installation steps
@@ -663,10 +662,9 @@ def samtools():
             os.mkdir(os.path.join(home, 'software'))
         urllib.request.urlretrieve('https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2',
                                    os.path.join(home, 'software/samtools-1.6.tar.bz2'))
-
-        # Unpacking
-        subprocess.check_output(['tar', '-xvjf', os.path.join(home, 'software/samtools-1.6.tar.bz2'), '-C',
-                                 os.path.join(home, 'software')])
+        tar = tarfile.open(os.path.join(home, 'software/samtools-1.6.tar.bz2'), "r:bz2")
+        tar.extractall()
+        tar.close()
         # Moving into the samtools folder
         os.chdir(os.path.join(home, 'software/samtools-1.6/'))
         # Running configuration and installation steps

@@ -3,6 +3,7 @@ def python3():
     import urllib2
     import os
     import sys
+    import tarfile
 
     from os.path import expanduser
     home = expanduser("~")
@@ -32,12 +33,10 @@ def python3():
                                                                                                      ".bash_profile\n"
                        + 'source ' + os.path.join(home, '.bash_profile'))
 
-        print("Once this process is done, move to " + os.path.join(home, 'software')
-              + " and type in 'source InstallPython'. Then re-run this script.")
-
         # Unpacking
-        os.system('tar -xzf ' + os.path.join(home, 'software/Python-3.6.3.tgz') + ' -C '
-                  + os.path.join(home, 'software'))
+        tar = tarfile.open(os.path.join(home, 'software/Python-3.6.3.tgz'))
+        tar.extractall()
+        tar.close()
 
     # If the user is on a mac
     elif system_check == "Darwin":
