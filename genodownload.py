@@ -4,10 +4,28 @@ import urllib.request
 import os
 import sys
 import tarfile
+import shutil
+import zipfile
 from os.path import expanduser
 
 system_check = platform.system()
 home = expanduser("~")
+
+# Make software directory to store everything in.
+if not os.path.exists(os.path.join(home, 'software')):
+    os.makedirs(os.path.join(home, 'software'))
+softwaredir = os.path.join(home, 'software')
+
+if not os.path.exists(os.path.join(home, 'software', 'bin')):
+    os.makedirs(os.path.join(home, 'software', 'bin'))
+bindir = os.path.join(home, 'software', 'bin')
+
+if not os.path.exists(os.path.join(home, 'software', 'include')):
+    os.makedirs(os.path.join(home, 'software', 'include'))
+if not os.path.exists(os.path.join(home, 'software', 'lib')):
+    os.makedirs(os.path.join(home, 'software', 'lib'))
+if not os.path.exists(os.path.join(home, 'software', 'share')):
+    os.makedirs(os.path.join(home, 'software', 'share'))
 
 
 # Define get pip
@@ -84,12 +102,12 @@ def todownload():
     print(Style.RESET_ALL)
 
     if item == '1':
-        # plink()
-        # vcf_1000g_phase3()
-        # hls_1000g_phase3()
-        # fasta_1000G_hg19()
+        plink()
+        vcf_1000g_phase3()
+        hls_1000g_phase3()
+        fasta_1000G_hg19()
         genotype_harmonizer()
-        # snpflip()
+        snpflip()
         admixture()
         shapeit()
         htslib()
@@ -97,7 +115,7 @@ def todownload():
         bcftools()
         samtools()
         if system_check == "Linux":
-            print(Fore.RED + Style.BRIGHT + "I installed several programs into " + os.path.join(home, 'software/bin')
+            print(Fore.RED + Style.BRIGHT + "I installed most programs into " + os.path.join(home, 'software/bin')
                   + ". You should type 'echo $PATH' to check that " + os.path.join(home, 'software/bin')
                   + " is in your $PATH variable. If it isn't, I highly recommend you add this path to your "
                     ".bash_profile. If you don't know how to do this, ask the internet or myself.")
@@ -157,9 +175,6 @@ def todownload():
 
 
 def plink():
-    import zipfile
-    import shutil
-
     try:
         import pip
     except ImportError:
@@ -219,71 +234,68 @@ def plink():
     if system_check == "Linux":
         if architecture_check == '64bit':
             # Download 64 bit Linux Plink 1.9
-            print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve(requests.compat.urljoin(base_url, linux_x86[0]), 'Plink_1.9_Linux64.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Linux64')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Linux64.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Linux64")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Linux64/plink', os.getcwd())
+            print("Downloading Linux Plink 1.9 to " + softwaredir)
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, linux_x86[0]),
+                                       os.path.join(softwaredir, 'Plink_1.9_Linux64.zip'))
+            with zipfile.ZipFile(os.path.join(softwaredir, "Plink_1.9_Linux64.zip"), "r") as zip_ref:
+                zip_ref.extractall(os.path.join(softwaredir, 'Plink_1.9_Linux64'))
+            # Copy plink from archive into bin folder, since this is on the path.
+            shutil.copy2(os.path.join(softwaredir, 'Plink_1.9_Linux64', 'plink'), bindir)
+            subprocess.call(['chmod', '775', os.path.join(bindir, 'plink')])
 
         elif architecture_check == '32bit':
             # Download 32 bit Linux Plink 1.9
-            print("Downloading Linux Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve(requests.compat.urljoin(base_url, linux_x32[0]), 'Plink_1.9_Linux32.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Linux32')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Linux32.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Linux32")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Linux32/plink', os.getcwd())
+            print("Downloading Linux Plink 1.9 to " + softwaredir)
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, linux_x32[0]),
+                                       os.path.join(softwaredir, 'Plink_1.9_Linux32.zip'))
+            with zipfile.ZipFile(os.path.join(softwaredir, "Plink_1.9_Linux32.zip"), "r") as zip_ref:
+                zip_ref.extractall(os.path.join(softwaredir, 'Plink_1.9_Linux32'))
+            # Copy plink from archive into bin folder, since this is on the path.
+            shutil.copy2(os.path.join(softwaredir, 'Plink_1.9_Linux32', 'plink'), bindir)
+            subprocess.call(['chmod', '775', os.path.join(bindir, 'plink')])
 
         else:
             print("I'm sorry, I could not determine what Linux Plink version to download.")
 
-        if os.path.exists('plink'):
-            subprocess.check_output(['chmod', '777', 'plink'])
-
     elif system_check == "Darwin":
         # Download Mac Plink 1.9
-        print("Downloading Mac Plink 1.9 to this directory now.")
-        urllib.request.urlretrieve(requests.compat.urljoin(base_url, mac[0]), 'Plink_1.9_Mac.zip')
-        # Making directory to store program
-        os.makedirs('Plink_1.9_Mac')
-        # Unpacking to this directory
-        with zipfile.ZipFile("Plink_1.9_Mac.zip", "r") as zip_ref:
-            zip_ref.extractall("Plink_1.9_Mac")
-        # Copy plink from archive folder to current working directory.
-        shutil.copy2('Plink_1.9_Mac/plink', os.getcwd())
+        print("Downloading Mac Plink 1.9 to " + softwaredir)
+        urllib.request.urlretrieve(requests.compat.urljoin(base_url, mac[0]),
+                                   os.path.join(softwaredir, 'Plink_1.9_Mac.zip'))
+        # Unpacking
+        with zipfile.ZipFile(os.path.join(softwaredir, "Plink_1.9_Mac.zip"), "r") as zip_ref:
+            zip_ref.extractall(os.path.join(softwaredir, 'Plink_1.9_Mac'))
+        # Copy plink from archive folder to bin folder
+        shutil.copy2(os.path.join(softwaredir, 'Plink_1.9_Mac', 'plink'), bindir)
 
     elif system_check == "Windows":
         if architecture_check == '64bit':
             # Download 64 bit Windows Plink 1.9
-            print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve(requests.compat.urljoin(base_url, win64[0]), 'Plink_1.9_Win64.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Win64')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Win64.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Win64")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Win64/plink.exe', os.getcwd())
+            print("Downloading Windows Plink 1.9 to " + softwaredir)
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, win64[0]),
+                                       os.path.join(softwaredir, 'Plink_1.9_Win64.zip'))
+            # Unpacking
+            with zipfile.ZipFile(os.path.join(softwaredir, "Plink_1.9_Win64.zip"), "r") as zip_ref:
+                zip_ref.extractall(os.path.join(softwaredir, 'Plink_1.9_Win64'))
+                # Copy plink from archive folder to bin folder
+            shutil.copy2(os.path.join(softwaredir, 'Plink_1.9_Win64', 'plink.exe'), bindir)
+            print("I have placed the plink.exe file in " + bindir +
+                  ". Please make sure this path is in your user environment variables. For more help on setting these, "
+                  "check out this website: https://www.java.com/en/download/help/path.xml or ask me.")
 
         elif architecture_check == '32bit':
             # Download 32 bit Windows Plink 1.9
-            print("Downloading Windows Plink 1.9 to this directory now.")
-            urllib.request.urlretrieve(requests.compat.urljoin(base_url, win32[0]), 'Plink_1.9_Win32.zip')
-            # Making directory to store program
-            os.makedirs('Plink_1.9_Win32')
-            # Unpacking to this directory
-            with zipfile.ZipFile("Plink_1.9_Win32.zip", "r") as zip_ref:
-                zip_ref.extractall("Plink_1.9_Win32")
-            # Copy plink from archive folder to current working directory.
-            shutil.copy2('Plink_1.9_Win32/plink.exe', os.getcwd())
-
+            print("Downloading Windows Plink 1.9 to " + softwaredir)
+            urllib.request.urlretrieve(requests.compat.urljoin(base_url, win32[0]),
+                                       os.path.join(softwaredir, 'Plink_1.9_Win32.zip'))
+            # Unpacking
+            with zipfile.ZipFile(os.path.join(softwaredir, "Plink_1.9_Win32.zip"), "r") as zip_ref:
+                zip_ref.extractall(os.path.join(softwaredir, 'Plink_1.9_Win32'))
+                # Copy plink from archive folder to bin folder
+            shutil.copy2(os.path.join(softwaredir, 'Plink_1.9_Win32', 'plink.exe'), bindir)
+            print("I have placed the plink.exe file in " + bindir +
+                  ". Please make sure this path is in your user environment variables. For more help on setting these, "
+                  "check out this website: https://www.java.com/en/download/help/path.xml or ask me.")
         else:
             print(Fore.RED + Style.BRIGHT + "I'm sorry, I could not determine what Windows Plink version to download.")
             print(Style.RESET_ALL)
@@ -292,7 +304,6 @@ def plink():
                                         "Please download the latest version of Plink at "
                                         "https://www.cog-genomics.org/plink2")
         print(Style.RESET_ALL)
-
     print("Done downloading plink")
 
 
@@ -380,7 +391,6 @@ def hls_1000g_phase3():
 def fasta_1000G_hg19():
     import ftplib
     import gzip
-    import shutil
 
     print('Downloading 1000G hg19 fasta file now, putting it in the "1000G_hg19_fasta" folder.')
 
@@ -420,26 +430,23 @@ def fasta_1000G_hg19():
 
 
 def genotype_harmonizer():
-    import zipfile
     from distutils.dir_util import copy_tree
-    import shutil
 
-    print('Downloading genotype harmonizer now.')
+    print('Downloading genotype harmonizer to ' + softwaredir)
     # Download genotype harmonizer zip file
     urllib.request.urlretrieve(
         'http://www.molgenis.org/downloads/GenotypeHarmonizer/GenotypeHarmonizer-1.4.20-dist.zip',
-        'GenotypeHarmonizer-1.4.20.zip')
+        os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20.zip'))
     # Unzip Genotype Harmonizer
-    zip_ref = zipfile.ZipFile('GenotypeHarmonizer-1.4.20.zip', 'r')
-    zip_ref.extractall('GenotypeHarmonizer-1.4.20')
+    zip_ref = zipfile.ZipFile(os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20.zip'), 'r')
+    zip_ref.extractall(os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20'))
     zip_ref.close()
 
     # copy subdirectory up
-    fromdir = os.path.join('GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer-1.4.20-SNAPSHOT')
-    todir = 'GenotypeHarmonizer-1.4.20'
+    fromdir = os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer-1.4.20-SNAPSHOT')
+    todir = os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20')
     copy_tree(fromdir, todir)
-    shutil.rmtree(os.path.join('GenotyprHarmonizer-1.4.20', 'GenotypeHarmonizer-1.4.20-SHAPSHOT'))
-
+    shutil.rmtree(os.path.join(softwaredir, 'GenotypeHarmonizer-1.4.20', 'GenotypeHarmonizer-1.4.20-SNAPSHOT'))
     print("Done downloading genotype harmonizer")
 
 
@@ -459,26 +466,33 @@ def snpflip():
 
 def admixture():
     if system_check == "Linux":
-        print('Downloading admixture now.')
+        print('Downloading admixture to ' + softwaredir)
         urllib.request.urlretrieve(
             'https://www.genetics.ucla.edu/software/admixture/binaries/admixture_linux-1.3.0.tar.gz',
-            'admixture_linux-1.3.0.tar.gz')
+            os.path.join(softwaredir, 'admixture_linux-1.3.0.tar.gz'))
         # Unpacking
-        tar = tarfile.open("admixture_linux-1.3.0.tar.gz")
-        tar.extractall()
+        tar = tarfile.open(os.path.join(softwaredir, "admixture_linux-1.3.0.tar.gz"))
+        tar.extractall(softwaredir)
         tar.close()
+        # Copy admixture into the bin
+        shutil.copy2(os.path.join(softwaredir, 'admixture_linux-1.3.0', 'admixture'), bindir)
+        subprocess.call(['chmod', '775', os.path.join(bindir, 'admixture')])
         print("Done downloading admixture")
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        print('Downloading admixture now.')
-        # Download shapeit
+        print('Downloading admixture to ' + softwaredir)
+        # Download admixture
         urllib.request.urlretrieve(
             'https://www.genetics.ucla.edu/software/admixture/binaries/admixture_macosx-1.3.0.tar.gz',
-            'admixture_macosx-1.3.0.tar.gz')
-        tar = tarfile.open("admixture_macosx-1.3.0.tar.gz")
-        tar.extractall()
+            os.path.join(softwaredir, 'admixture_macosx-1.3.0.tar.gz'))
+        # Unpacking
+        tar = tarfile.open(os.path.join(softwaredir, "admixture_macosx-1.3.0.tar.gz"))
+        tar.extractall(softwaredir)
         tar.close()
+        # Copy admixture into the bin
+        shutil.copy2(os.path.join(softwaredir, 'admixture_macosx-1.3.0', 'admixture'), bindir)
+        subprocess.call(['chmod', '775', os.path.join(bindir, 'admixture')])
         print("Done downloading admixture")
 
     # If they are running this on a windows machine, they cannot proceed because admixture is *nix only.
@@ -495,28 +509,31 @@ def admixture():
 
 def shapeit():
     if system_check == "Linux":
-        print('Downloading shapeit now.')
+        print('Downloading shapeit to ' + softwaredir)
+        # Download shapeit
         urllib.request.urlretrieve(
             'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r900.glibcv2.12.linux.tar.gz',
-            'shapeit.v2.r900.glibcv2.12.linux.tar.gz')
+            os.path.join(softwaredir, 'shapeit.v2.r900.glibcv2.12.linux.tar.gz'))
         # Unpacking
-        tar = tarfile.open("shapeit.v2.r900.glibcv2.12.linux.tar.gz")
-        tar.extractall()
+        tar = tarfile.open(os.path.join(softwaredir, 'shapeit.v2.r900.glibcv2.12.linux.tar.gz'))
+        tar.extractall(softwaredir)
         tar.close()
-
+        # Copy shapeit to into the bin
+        shutil.copy2(os.path.join(softwaredir, 'shapeit.v2.900.glibcv2.12.linux', 'bin', 'shapeit'), bindir)
         print("Done downloading shapeit")
 
     # If the user is on a mac
     elif system_check == "Darwin":
-        print('Downloading shapeit now.')
+        print('Downloading shapeit to ' + softwaredir)
         # Download shapeit
         urllib.request.urlretrieve(
             'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.MacOSX.tgz',
-            'shapeit.v2.r837.MacOSX.tgz')
-        tar = tarfile.open("shapeit.v2.r837.MacOSX.tgz")
-        tar.extractall()
+            os.path.join(softwaredir, 'shapeit.v2.r837.MacOSX.tgz'))
+        tar = tarfile.open(os.path.join(softwaredir, "shapeit.v2.r837.MacOSX.tgz"))
+        tar.extractall(os.path.join(softwaredir, "shapeit.v2.r837.MacOSX"))
         tar.close()
-
+        # Copy shapeit to into the bin
+        shutil.copy2(os.path.join(softwaredir, 'shapeit.v2.r837.MacOSX', 'bin', 'shapeit'), bindir)
         print("Done downloading shapeit")
 
     # If they are running this on a windows machine, they cannot proceed because shapeit is *nix only.
@@ -535,25 +552,23 @@ def shapeit():
 def vcftools():
     if system_check == "Linux":
         print('Downloading vcftools now.')
-        if not os.path.exists(os.path.join(home, 'software')):
-            os.makedirs(os.path.join(home, "software"))
         urllib.request.urlretrieve('https://github.com/vcftools/vcftools/tarball/master',
-                                   os.path.join(home, 'software/vcftools.tgz'))
-        tar = tarfile.open(os.path.join(home, 'software/vcftools.tgz'))
-        tar.extractall()
+                                   os.path.join(softwaredir, 'vcftools.tgz'))
+        tar = tarfile.open(os.path.join(softwaredir, 'vcftools.tgz'))
+        tar.extractall(softwaredir)
         tar.close()
         # Moving into the vcftools folder
-        os.chdir(os.path.join(home, 'software/vcftools-vcftools-ea875e2'))
+        os.chdir(os.path.join(softwaredir, 'vcftools-vcftools-ea875e2'))
         # Running configuration and installation steps
         subprocess.check_output('./autogen.sh')
-        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output(['./configure', '--prefix=' + softwaredir])
         subprocess.check_output('make')
         subprocess.check_output(['make', 'install'])
         # Tell the user that they should add the following folders to their PATH:
         print(Fore.RED + Style.BRIGHT + "For vcftools to work properly, you should set your PERL5LIB. I highly "
                                         "recommend that you add the following line to your .bash_profile: "
                                         "'export PERL5LIB="
-              + os.path.join(home, 'software/vcftools-vcftools-ea875e2/src/perl'))
+              + os.path.join(softwaredir, 'vcftools-vcftools-ea875e2/src/perl'))
         print(Style.RESET_ALL)
 
         print("Done downloading vcftools")
@@ -581,17 +596,15 @@ def vcftools():
 def bcftools():
     if system_check == "Linux":
         print('Downloading bcftools now.')
-        if not os.path.exists(os.path.join(home, 'software')):
-            os.mkdir(os.path.join(home, 'software'))
         urllib.request.urlretrieve('https://github.com/samtools/bcftools/releases/download/1.6/bcftools-1.6.tar.bz2',
-                                   os.path.join(home, 'software/bcftools-1.6.tar.bz2'))
-        tar = tarfile.open(os.path.join(home, 'software/bcftools-1.6.tar.bz2'), "r:bz2")
-        tar.extractall()
+                                   os.path.join(softwaredir, 'bcftools-1.6.tar.bz2'))
+        tar = tarfile.open(os.path.join(softwaredir, 'bcftools-1.6.tar.bz2'), "r:bz2")
+        tar.extractall(softwaredir)
         tar.close()
         # Moving into the bcftools folder
-        os.chdir(os.path.join(home, 'software/bcftools-1.6/'))
+        os.chdir(os.path.join(softwaredir, 'bcftools-1.6'))
         # Running configuration and installation steps
-        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output(['./configure', '--prefix=' + softwaredir])
         subprocess.check_output('make')
         subprocess.check_output(['make', 'install'])
 
@@ -621,17 +634,15 @@ def bcftools():
 def htslib():
     if system_check == "Linux":
         print('Downloading htslib now.')
-        if not os.path.exists(os.path.join(home, 'software')):
-            os.mkdir(os.path.join(home, 'software'))
         urllib.request.urlretrieve('https://github.com/samtools/htslib/releases/download/1.6/htslib-1.6.tar.bz2',
-                                   os.path.join(home, 'software/htslib-1.6.tar.bz2'))
-        tar = tarfile.open(os.path.join(home, 'software/htslib-1.6.tar.bz2'), "r:bz2")
-        tar.extractall()
+                                   os.path.join(softwaredir, 'htslib-1.6.tar.bz2'))
+        tar = tarfile.open(os.path.join(softwaredir, 'htslib-1.6.tar.bz2'), "r:bz2")
+        tar.extractall(softwaredir)
         tar.close()
         # Moving into the htslib folder
-        os.chdir(os.path.join(home, 'software/htslib-1.6/'))
+        os.chdir(os.path.join(softwaredir, 'htslib-1.6'))
         # Running configuration and installation steps
-        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output(['./configure', '--prefix=' + softwaredir])
         subprocess.check_output('make')
         subprocess.check_output(['make', 'install'])
         print("Done downloading htslib")
@@ -658,17 +669,15 @@ def htslib():
 def samtools():
     if system_check == "Linux":
         print('Downloading samtools now.')
-        if not os.path.exists(os.path.join(home, 'software')):
-            os.mkdir(os.path.join(home, 'software'))
         urllib.request.urlretrieve('https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2',
-                                   os.path.join(home, 'software/samtools-1.6.tar.bz2'))
-        tar = tarfile.open(os.path.join(home, 'software/samtools-1.6.tar.bz2'), "r:bz2")
-        tar.extractall()
+                                   os.path.join(softwaredir, 'samtools-1.6.tar.bz2'))
+        tar = tarfile.open(os.path.join(softwaredir, 'samtools-1.6.tar.bz2'), "r:bz2")
+        tar.extractall(softwaredir)
         tar.close()
         # Moving into the samtools folder
-        os.chdir(os.path.join(home, 'software/samtools-1.6/'))
+        os.chdir(os.path.join(softwaredir, 'samtools-1.6'))
         # Running configuration and installation steps
-        subprocess.check_output(['./configure', '--prefix=' + os.path.join(home, 'software')])
+        subprocess.check_output(['./configure', '--prefix=' + softwaredir])
         subprocess.check_output('make')
         subprocess.check_output(['make', 'install'])
 
