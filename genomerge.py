@@ -1,4 +1,5 @@
 import platform
+import os
 from os.path import expanduser
 try:
     import colorama

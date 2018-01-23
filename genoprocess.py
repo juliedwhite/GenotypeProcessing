@@ -1,7 +1,7 @@
 # Getting the needed modules.
 import os
 import sys
-
+import os
 from os.path import expanduser
 home = expanduser("~")
 softwaredir = os.path.join(home, 'software')

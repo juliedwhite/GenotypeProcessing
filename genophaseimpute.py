@@ -1,4 +1,7 @@
 import platform
+import os
+import sys
+import subprocess
 from os.path import expanduser
 try:
     import colorama
@@ -19,9 +22,6 @@ if system_check == "Windows":
     sys.exit("I'm sorry, you need access to a linux or mac system to make this part work. If you have "
              "access to the Penn State clusters, you should run this script from there (they are linux).")
     print(Style.RESET_ALL)
-# If I cannot detect what system they're on, force exit.
-else:
-    sys.exit("I cannot detect the system you are working on. Exiting now.")
 
 # Since we use plink a lot, I'm going to go ahead and set a plink variable with the system-specific plink name.
 plink = "plink"
@@ -36,10 +36,6 @@ else:
 
 
 def phase(geno_name, allocation_name):
-    import platform
-    import os
-    import sys
-    import subprocess
     try:
         import pandas as pd
     except (ImportError, ModuleNotFoundError):
@@ -577,12 +573,8 @@ def impute():
     # this, but in this script we will double check.
     # Valid VCF - this script.
 
-    import platform
-    import os
-    import sys
     import glob
     import urllib.request
-    import subprocess
     from subprocess import Popen, PIPE
     import shutil
     import re
@@ -796,10 +788,6 @@ def impute():
 
 # Extract the info quality scores from your imputed VCF files.
 def getinfo(imputed_path, geno_name):
-    import sys
-    import os
-    import subprocess
-
     # Determine if they have vcftools, if not download.
     if os.path.exists(os.path.join(bindir, 'vcftools')):
         pass
@@ -854,9 +842,7 @@ def getinfo(imputed_path, geno_name):
 
 # Make plots of imputation quality score.
 def qualscoreplot(info_path):
-    import os
     import glob
-    import sys
     import re
 
     try:
