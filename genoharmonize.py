@@ -75,19 +75,30 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
                      '#PBS -j oe\n'
                      'cd $PBS_O_WORKDIR\n'
                      'for i in {1..22}; do '
-                   + plink + ' --bfile ' + geno_name + ' --chr $i --hardy --hwe 0.01 --maf 0.05 --make-bed --out '
-                   + geno_name + '_MAF_HWE_Filter_chr$[i]\n'
-                   + 'java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input ' + geno_name
-                   + '_MAF_HWE_Filter_chr$[i] --ref '
-                   + os.path.join(vcf_path,
-                                  'ALL.chr$[i].phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz')
-                   + ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
+                   + plink + ' --bfile ' + geno_name + ' --chr $i --hardy --hwe 0.01 --maf 0.05 --make-bed --out ' +
+                   geno_name + '_MAF_HWE_Filter_chr$[i]\n'
+                   + 'java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input ' + geno_name +
+                   '_MAF_HWE_Filter_chr$[i] --ref ' +
+                   os.path.join(vcf_path,
+                                'ALL.chr$[i].phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz') +
+                   ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
                      ' --output ' + geno_name + '_chr$[i]_Harmonized\n'
                    + 'rm ' + geno_name + '_MAF_HWE_Filter_chr$[i].*; done\n'
-                   + plink + ' --bfile ' + geno_name + ' --chr X --hardy --hwe 0.01 --maf 0.05 --make-bed --out '
-                   + geno_name + '_MAF_HWE_Filter_chr23\n'
-                   + "awk '{gsub(\"23\",\"X\",$1)}1' " + geno_name + "_MAF_HWE_Filter_chr23.bim > " + geno_name
-                   + "_MAF_HWE_Filter_chr23.bim\n"
+                   # Special handling of chrX
+                   # Special handling for chrX: Make list of females
+                   + "awk -v OFS='\\t' '$5==2 {print $1, $2}' " + geno_name + '.fam > ' + geno_name +
+                   '_Females.txt\n'
+                   # Make hwe statistics just using the females
+                   + plink + ' --bfile ' + geno_name + ' --chr X --hardy --keep ' + geno_name + '_Females.txt --out ' +
+                   geno_name + '_chr23\n'
+                   # Get list of SNPs with HWE p-value < 0.01
+                   + 'awk \'$9<0.01 {print $2}\' ' + geno_name + '_chr23.hwe > ' + geno_name + '_chr23_RemHWE.txt\n'
+                   # Remove these from plink file
+                   + plink + ' --bfile ' + geno_name + ' --chr X --maf 0.05 --exclude ' + geno_name +
+                   '_chr23_RemHWE.txt --make-bed --out ' + geno_name + '_MAF_HWE_Filter_chr23\n'
+                   # Use awk to replace 23 with X
+                   + "awk -v OFS='\\t' '{gsub(\"23\", \"X\", $1)}1' " + geno_name +
+                   '_MAF_HWE_Filter_chr23.bim > chr23.tmp && mv chr23.tmp ' + geno_name + '_MAF_HWE_Filter_chr23.bim\n'
                    + 'java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input ' + geno_name
                    + '_MAF_HWE_Filter_chr23 --ref '
                    + os.path.join(vcf_path,
@@ -95,6 +106,8 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
                    + ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
                      ' --output ' + geno_name + '_chr23_Harmonized\n'
                    + 'rm ' + geno_name + '_MAF_HWE_Filter_chr23.*\n'
+                   + 'rm ' + geno_name + '_chr23.*\n'
+                   + 'rm ' + geno_name + '_chr23_RemHWE.txt\n'
                    + 'python harmonize_postprocess.py ' + geno_name + ' ' + legend_path + ' ' + fasta_path + '\n')
 
     # Submit this job
@@ -186,23 +199,37 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
                                                'message': str})
 
         elif i == 22:
-            # Since chr X is labeled as 23 in the plink files and X in the vcf files, we need to separate it out and
-            # convert the 23 to X before harmonizing.
+            # Special handling for chrX
+            # Make list of females
+            fam_file = pd.read_csv(geno_name + '.fam', sep='\t', header=None)
+            females = fam_file.loc[fam_file[4] == 2]
+            females[1].to_csv(geno_name + '_Females.txt', sep='\t', header=None, index=False)
+            # Make hwe statistics using just females
+            subprocess.check_output([plink, '--bfile', geno_name, '--chr', 'X', '--hardy', '--keep',
+                                     geno_name + '_Females.txt', '--out', geno_name + '_chr23'])
+            # Get list of SNPs with HWE p-values < 0.01
+            hwe = pd.read_csv(geno_name + '_chr23.hwe', sep='\t', header=None, skiprows=1)
+            hweremove = hwe.loc[hwe[8] <= 0.01]
+            hweremove[1].to_csv(geno_name + '_chr23_RemHWE.txt', sep='\t', header=None, index=False)
+            # Remove these from plink file
+            subprocess.check_output([plink, '--bfile', geno_name, '--chr', 'X', '--maf', '0.05', '--exclude',
+                                     geno_name + '_chr23_RemHWE.txt', '--make-bed', '--out',
+                                     geno_name + '_MAF_HWE_Filter_chr23'])
             # Read chrX file into pandas
-            subprocess.check_output([plink, '--bfile', geno_name + '_MAF_HWE_Filter', '--chr', 'X', '--make-bed',
-                                     '--out', geno_name + '_MAF_HWE_Filter_chr23'])
             bim_file = pd.read_csv(geno_name + '_MAF_HWE_Filter_chr23.bim', sep='\t', header=None)
             # Replace '23' with 'X', which is how genotype harmonizer calls X
             bim_file.iloc[:, 0].replace(23, 'X', inplace=True)
             # Write new genotype
             bim_file.to_csv(geno_name + '_MAF_HWE_Filter_chr23.bim', sep='\t', header=False, index=False, na_rep='NA')
-            # Call genotype harmonizer for X chromosome, .
+            # Call genotype harmonizer for X chromosome
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
                                     + geno_name + '_MAF_HWE_Filter_chr23 --ref "'
                                     + os.path.join(vcf_path, vcf_file_names[i])
                                     + '" --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele '
                                       '--outputType PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
             subprocess.call(rm + geno_name + '_MAF_HWE_Filter_chr23.*', shell=True)
+            subprocess.call(rm + geno_name + '_chr23*', shell=True)
+            subprocess.call(rm + geno_name + '_chr23_RemHWE.txt*', shell=True)
 
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
