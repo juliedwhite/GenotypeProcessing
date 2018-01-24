@@ -512,14 +512,14 @@ def shapeit():
         print('Downloading shapeit to ' + softwaredir)
         # Download shapeit
         urllib.request.urlretrieve(
-            'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r900.glibcv2.12.linux.tar.gz',
-            os.path.join(softwaredir, 'shapeit.v2.r900.glibcv2.12.linux.tar.gz'))
+            'https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz',
+            os.path.join(softwaredir, 'shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz'))
         # Unpacking
-        tar = tarfile.open(os.path.join(softwaredir, 'shapeit.v2.r900.glibcv2.12.linux.tar.gz'))
-        tar.extractall(softwaredir)
+        tar = tarfile.open(os.path.join(softwaredir, 'shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz'))
+        tar.extractall(os.path.join(softwaredir, 'shapeit.v2.r837.glibcv2.12.linux'))
         tar.close()
         # Copy shapeit to into the bin
-        shutil.copy2(os.path.join(softwaredir, 'shapeit.v2.900.glibcv2.12.linux', 'bin', 'shapeit'), bindir)
+        shutil.copy2(os.path.join(softwaredir, 'shapeit.v2.r837.glibcv2.12.linux', 'bin', 'shapeit'), bindir)
         print("Done downloading shapeit")
 
     # If the user is on a mac
