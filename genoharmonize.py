@@ -201,7 +201,7 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
         elif i == 22:
             # Special handling for chrX
             # Make list of females
-            fam_file = pd.read_csv(geno_name + '.fam', sep='\t', header=None)
+            fam_file = pd.read_csv(geno_name + '.fam', sep=' ', header=None)
             females = fam_file.loc[fam_file[4] == 2]
             females[1].to_csv(geno_name + '_Females.txt', sep='\t', header=None, index=False)
             # Make hwe statistics using just females
