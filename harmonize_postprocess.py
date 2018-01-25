@@ -356,9 +356,9 @@ else:
 
 snpflip_path = [os.path.join(bindir, 'snpflip')]
 # Perform flip check.
-subprocess.check_output('python ' + snpflip_path + ' --fasta-genome "'
-                        + os.path.join(fasta_path, 'human_g1k_v37.fasta')
-                        + '" --bim-file ' + geno_name + '_HarmonizedTo1000G.bim --output-prefix ' + geno_name
+subprocess.check_output('python ' + snpflip_path[0] + ' --fasta-genome "'
+                        + os.path.join(args.fasta_path, 'human_g1k_v37.fasta')
+                        + '" --bim-file ' + args.geno_name + '_HarmonizedTo1000G.bim --output-prefix ' + args.geno_name
                         + '_HarmonizedTo1000G', shell=True)
 
 # If SNPs exist that are on the reverse strand, then flip them.
