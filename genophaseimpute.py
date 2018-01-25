@@ -635,7 +635,7 @@ def impute():
 
     # hg19 fasta files.
     print(Fore.BLUE + Style.BRIGHT)
-    fasta_exists = input('Have you already downloaded the human_g1k_v37.fasta file? (y/n): ').lower()
+    fasta_exists = input('Have you already downloaded the human_g1k_v37.fasta.gz file? (y/n): ').lower()
     print(Style.RESET_ALL)
 
     if fasta_exists in ('y', 'yes'):
@@ -664,26 +664,15 @@ def impute():
         genodownload.htslib()
 
     # Need to add a contig tag to all of the vcf files for bcftools to use them.
-    # awk '{printf("##contig=<ID=%s,length=%d>\\n",$1,$2);}' ref.fai
+    # Must be zipped using bgzip, then indexed using samtools.
     awkstatement = str('{printf("##contig=<ID=%s,length=%d\\n",$1,$2);}')
-    # If the fasta file is already indexed, create the contig file from that, then add the contigs to the vcf files.
-    fai_name = glob.glob(os.path.join(fasta_path, '*.fai'))
-    if fai_name:
-        print(fai_name[0])
-        f = open(os.path.join(vcf_path, "Contigs.txt"), "w")
-        subprocess.call(['awk', awkstatement, fai_name[0]], stdout = f)
-        # Replace X with 23 in Contigs.txt file.
-        sedstatement = str('s/ID=X/ID=23/g')
-        subprocess.call(['sed', '-i', sedstatement, os.path.join(vcf_path, "Contigs.txt")])
-        # For each vcf, add header. Zip these files while we're at it.
-        for vcf in vcf_list:
-            subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf, '-Ov',
-                                     '-o', vcf + '.contigs'])
-    # If the fasta index file does't exist, need to use samtools to create it. First see if the command is going to
-    # work, then actually run it.
-    elif os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')):
-        p = Popen(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')], stdout = PIPE,
-                  stderr = PIPE)
+    if os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta')):
+        # zip using bgzip
+        print("Zipping with bgzip")
+        subprocess.check_output(['bgzip', os.path.join(fasta_path, 'human_g1k_v37.fasta')])
+        # See if command will run on our now re-zipped file.
+        p = Popen(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')], stdout=PIPE,
+                  stderr=PIPE)
         if p.returncode == None:
             subprocess.check_output(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
             # Write the contig file.
@@ -697,26 +686,27 @@ def impute():
                 subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf,
                                          '-Ov', '-o', vcf + '.contigs'])
         elif p.returncode != None:
-            print(p.returncode)
-            print("Unzipping with gunzip")
-            # Unzip human_g1k_v37 file because samtools cannot index things that were indexed using gzip
-            subprocess.check_output(['gunzip', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
-            # Rezip using bgzip
-            print("Rezipping with bgzip")
-            subprocess.check_output(['bgzip', os.path.join(fasta_path, 'human_g1k_v37.fasta')])
-            # Create fasta.fai file.
-            print("Create fasta.fai file")
-            subprocess.check_output(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
-            # Write the contig file.
-            f = open(os.path.join(vcf_path, "Contigs.txt"), "w")
-            subprocess.call(['awk', awkstatement, os.path.join(fasta_path, 'human_g1k_v37.fasta.gz.fai')], stdout=f)
-            # Replace X with 23 in Contigs.txt file.
-            sedstatement = str('s/ID=X/ID=23/g')
-            subprocess.call(['sed', '-i', sedstatement, os.path.join(vcf_path, "Contigs.txt")])
-            # Use bcftools to add contigs to each vcf.
-            for vcf in vcf_list:
-                subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf,
-                                         '-Ov', '-o', vcf + '.contigs'])
+            sys.exit(p.returncode)
+    elif os.path.exists(os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')):
+        print("Unzipping with gunzip")
+        # Unzip human_g1k_v37 file because samtools cannot index things that were indexed using gzip
+        subprocess.check_output(['gunzip', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+        # Rezip using bgzip
+        print("Rezipping with bgzip")
+        subprocess.check_output(['bgzip', os.path.join(fasta_path, 'human_g1k_v37.fasta')])
+        # Create fasta.fai file.
+        print("Create fasta.fai file")
+        subprocess.check_output(['samtools', 'faidx', os.path.join(fasta_path, 'human_g1k_v37.fasta.gz')])
+        # Write the contig file.
+        f = open(os.path.join(vcf_path, "Contigs.txt"), "w")
+        subprocess.call(['awk', awkstatement, os.path.join(fasta_path, 'human_g1k_v37.fasta.gz.fai')], stdout=f)
+        # Replace X with 23 in Contigs.txt file.
+        sedstatement = str('s/ID=X/ID=23/g')
+        subprocess.call(['sed', '-i', sedstatement, os.path.join(vcf_path, "Contigs.txt")])
+        # Use bcftools to add contigs to each vcf.
+        for vcf in vcf_list:
+            subprocess.check_output(['bcftools', 'annotate', '-h', os.path.join(vcf_path, 'Contigs.txt'), vcf,
+                                     '-Ov', '-o', vcf + '.contigs'])
 
     # Rename the .contigs vcf to be normal vcf names.
     for vcf in vcf_list:
