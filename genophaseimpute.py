@@ -775,7 +775,7 @@ def impute():
 
     # Check that our data matches the reference allele of 1000G Phase 3. Fix those that do not match.
     subprocess.check_output(['bcftools', 'norm', '--check-ref', 'ws', '--rm-dup', 'both', '--fasta-ref',
-                             os.path.join(fasta_path, 'human_g1k_v37.fasta.gz'), '-Oz', '-o',
+                             os.path.join(fasta_path, 'human_g1k_v37.fasta'), '-Oz', '-o',
                              os.path.join('SangerImputation', vcf_name + '_RefChecked.vcf.gz'),
                              os.path.join('SangerImputation', vcf_name + '.vcf.gz')])
     print("Done checking if reference allele matches 1000G Phase3 and fixing those that don't match")
