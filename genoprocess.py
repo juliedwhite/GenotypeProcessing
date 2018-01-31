@@ -307,14 +307,10 @@ elif to_do == '10':
                             '(without bed/bim/fam extension: ')
     print(Style.RESET_ALL)
 
-    # If there are genotype files with _HarmonizedTo1000G as ending in this working directory, then I know the path
-    if os.path.exists(harmonized_name + '.bed'):
-        harmonize_path = os.getcwd()
-    else:  # If I can't find the files in this working directory, ask the user where their harmonized files are.
-        print(Fore.MAGENTA + Style.BRIGHT)
-        harmonize_path = input('Please enter the path name where your harmonized genotype files are '
-                               '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): ')
-        print(Style.RESET_ALL)
+    print(Fore.MAGENTA + Style.BRIGHT)
+    harmonize_path = input('Please enter the path name where your harmonized genotype files are '
+                           '(i.e. C:\\Users\\Julie White\\Box Sync\\Harmonized\\ etc.): ')
+    print(Style.RESET_ALL)
 
     # Import module and run.
     import genomerge
