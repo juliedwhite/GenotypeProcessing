@@ -204,9 +204,9 @@ def merge1000g(harmonized_name, harmonized_path):
 
         # Merge of house data and 1000G #
         # Copying harmonized to 1000G files to this folder.
-        shutil.copy2(os.path.join(orig_wd, harmonized_name + '.bed'), os.getcwd())
-        shutil.copy2(os.path.join(orig_wd, harmonized_name + '.bim'), os.getcwd())
-        shutil.copy2(os.path.join(orig_wd, harmonized_name + '.fam'), os.getcwd())
+        shutil.copy2(os.path.join(harmonized_path, harmonized_name + '.bed'), os.getcwd())
+        shutil.copy2(os.path.join(harmonized_path, harmonized_name + '.bim'), os.getcwd())
+        shutil.copy2(os.path.join(harmonized_path, harmonized_name + '.fam'), os.getcwd())
 
         # Perform initial merge
         subprocess.check_output([plink, '--bfile', harmonized_name, '--bmerge', '1000G_Phase3', '--geno', '0.01',
