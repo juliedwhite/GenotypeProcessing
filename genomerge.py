@@ -62,15 +62,6 @@ def merge1000g(harmonized_name, harmonized_path):
         if not os.path.exists('Merged_With_1000G'):
             os.makedirs('Merged_With_1000G')
 
-        # Copy plink to new folder.
-        if not glob.glob(r'plink*'):
-            sys.exit("We need plink to run this part of the script. Please run step 1 if you do not have plink, or "
-                     "make sure that it is in this directory.")
-        else:
-            for file in glob.glob(r'plink*'):
-                print(file)
-                shutil.copy(file, 'Merged_With_1000G')
-
         # Making sure they still have the 1000G vcf files. They should if they have just harmonized, but they might
         # have deleted them or something.
         print(Fore.MAGENTA + Style.BRIGHT)
@@ -103,14 +94,14 @@ def merge1000g(harmonized_name, harmonized_path):
         # Merge 1000G chr data into one plink formatted file, need to convert from vcf files - but only taking the snps
         # that are in the house dataset
         # Read in SNPs_Kept file from harmonization process
-        if os.path.exists(os.path.join(harmonized_path, 'SNPs_Kept.txt')):
-            house_snps_kept = pd.read_csv(os.path.join(harmonized_path, 'SNPs_Kept.txt'), header=0, sep='\t')
+        if os.path.exists(os.path.join(harmonized_path, 'SNPs_Kept_AFCheck.txt')):
+            house_snps_kept = pd.read_csv(os.path.join(harmonized_path, 'SNPs_Kept_AFCheck.txt'), header=0, sep='\t')
             # Keep only the 'SNP' column
             house_snps_kept = house_snps_kept.loc[:, ['SNP']]
             # Write that column to a file to be used by plink
             house_snps_kept.to_csv('Merged_With_1000G/SNPs_Kept_List.txt', sep='\t', header=False, index=False)
         else:
-            sys.exit("Quitting because I cannot find a file called 'SNPs_Kept.txt' at "
+            sys.exit("Quitting because I cannot find a file called 'SNPs_Kept_AFCheck.txt' at "
                      + harmonized_path + ". This is a product of the harmonization process and is necessary for "
                                          "merging with 1000G.")
 
