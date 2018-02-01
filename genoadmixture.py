@@ -129,7 +129,7 @@ def prep(admix_name):
     if on_cluster in ("yes", "y"):
         # Submit the jobs
         for i in range(0, len(k_values)):
-            subprocess.call(['qsub', admix_name + '_Admixture_k' + str(k_values[i]) + '.pbs'], shell=True)
+            os.system('qsub ' + admix_name + '_Admixture_k' + str(k_values[i]) + '.pbs')
         print("Your admixture jobs have been submitted. You can check their status using qstat -u usrname. When "
               "you get your results, you should evaluate them to see which makes sense given your study population"
               "and which has the lowest CV value (located in the log)")
