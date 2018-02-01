@@ -81,7 +81,7 @@ def prep(admix_name):
 
     # Ask the user what k-values they would like to run
     print(Fore.GREEN + "Admixture will partition your genetic variation into K different groups. As K is user-defined, "
-                       "I'm going to ask you what values of K you would like me to run. Usually I start with K=3 and go"
+                       "I'm going to ask you what values of K you would like me to run. Usually I start with K=2 and go"
                        " to K=12.")
     k_start = input("What K value would you like to start at (i.e. 2)?: ")
     k_end = input("What K value would you like to end at (i.e. 12)?: ")
@@ -98,12 +98,6 @@ def prep(admix_name):
 
     k_values = list(range(int(k_start), int(k_end)+1))
 
-    # Ask if they have relatives in their sample.
-    print(Fore.MAGENTA + Style.BRIGHT)
-    relative_check = input('Do you have relatives in your sample? Perhaps those identified in an IBD analysis '
-                           '(y/n): ').lower()
-    print(Style.RESET_ALL)
-
     # Move files for running admixture to Admixture folder
     shutil.copy2(admix_name + '.bed', 'Admixture')
     shutil.copy2(admix_name + '.bim', 'Admixture')
@@ -118,94 +112,32 @@ def prep(admix_name):
     subprocess.check_output([plink, '--bfile', admix_name, '--extract', admix_name + '.prune.in', '--make-bed',
                              '--out', admix_name + '_LDPruned'])
 
-    if relative_check in ('y', 'yes'):
-        # If they have relatives in their sample, get a list of the filenames for each set of people.
-        print(Fore.GREEN + "Because you have relatives, I'm going to first split your dataset into unrelated and "
-                           "related people. Then I'll run admixture with the unrelated sample and project the related "
-                           "sample onto those values.")
-        print(Style.RESET_ALL)
-        # Use plink to make set of unrelated individuals from LD pruned dataset
-        subprocess.check_output([plink, '--bfile', admix_name + '_LDPruned', '--make-rel', '--rel-cutoff', '0.1825',
-                                 '--make-bed', '--out', admix_name + '_LDPruned_Unrelated'])
+    # Create pbs files for admixture
+    for i in range(0, len(k_values)):
+        with open(admix_name + '_Admixture_k' + str(k_values[i]) + '.pbs', 'w') as file:
+            file.write('#!/bin/bash\n'
+                       '#PBS -l walltime=' + walltime + '\n'
+                       '#PBS -l nodes=1:ppn=8\n'
+                       '#PBS -l pmem=8gb\n'
+                       '#PBS -A ' + allocation_name + '\n'
+                       '#PBS -j oe\n'
+                       'cd $PBS_O_WORKDIR\n'
+                       '\n'
+                       'admixture -j5 --cv ' + admix_name + '_LDPruned.bed ' + str(k_values[i]) + ' | tee '
+                       + admix_name + '_LDPruned.log' + str(k_values[i]) + '.out')
 
-        # Read in combined fam file
-        orig_fam = pd.read_csv(admix_name + '.fam', sep = ' ', header = None)
-        # Read in filtered fam fil
-        unrelated_fam = pd.read_csv(admix_name + '_LDPruned_Unrelated.fam', sep=' ', header=None)
-        # Merge the two datasets and create an indicator for where the ids are unique (left, right)
-        related_fam = orig_fam.merge(unrelated_fam, how='left', indicator=True)
-        # Write list for each person who is only present in the original dataset, meaning tha they were removed by the
-        # relationship cutoff
-        related_fam = related_fam[related_fam['_merge'] == 'left_only']
-        # Write ID file
-        related_fam[[0,1]].to_csv(admix_name + "_LDPruned_RelativesRemoved.txt", sep='\t', header=False, index=False)
-        # Create new plink file of related people
-        subprocess.check_output([plink, '--bfile', admix_name + '_LDPruned', '--keep',
-                                 admix_name + '_LDPruned_RelativesRemoved.txt', '--make-bed', '--out',
-                                 admix_name + '_LDPruned_Related'])
-
-        # For each K value, write a pbs script for admixture, projecting the values for the related people onto the
-        # unrelated values
-        for i in range(0,len(k_values)):
-            with open(admix_name + '_Admixture_k' + str(k_values[i]) + '.pbs', 'w') as file:
-                file.write('#!/bin/bash\n'
-                           '#PBS -l walltime=' + walltime + '\n'
-                           '#PBS -l nodes=1:ppn=8\n'
-                           '#PBS -l pmem=8gb\n'
-                           '#PBS -A ' + allocation_name + '\n'
-                           '#PBS -j oe\n'
-                           'cd $PBS_O_WORKDIR\n'
-                           '\n'
-                           'admixture -j2 --cv ' + admix_name + '_LDPruned_Unrelated.bed ' + str(k_values[i])
-                           + ' | tee ' + admix_name + '_LDPruned_Unrelated.log' + str(k_values[i]) + '.out\n'
-                           + 'cp ' + admix_name + '_LDPruned_Unrelated.' + str(k_values[i]) + '.P '
-                           + admix_name + '_LDPruned_Related.' + str(k_values[i]) + '.P.in\n'
-                           + 'admixture -j2 --cv -P ' + admix_name + '_LDPruned_Related.bed ' + str(k_values[i])
-                           + ' | tee ' + admix_name + '_LDPruned_Related.log' + str(k_values[i]) + '.out')
-
-        if on_cluster in ("yes", "y"):
-            # Submit the jobs
-            subprocess.call(['qsub', '*.pbs'], shell=True)
-            print("Your admixture jobs have been submitted. You can check their status using qstat -u usrname. When "
-                  "you get your results, you should evaluate them to see which makes sense given your study population"
-                  "and which has the lowest CV value (located in the logs)")
-
-        if on_cluster in ("no", "n"):
-            # Tell the user it's finished and give them directions.
-            print("Transfer the " + admix_name + "_LDPruned_Unrelated and _Related bed/bim/fam files, all of the .pbs "
-                                                 "files to the cluster Also make sure you have the admixture program in "
-                                                 "the same folder as these files on the cluster.\n"
-                                                 "Submit them using qsub " + admix_name + "_Admixture_k{N}.pbs\n"
-                  + "When you get your results, you should evaluate them to see which makes sense given your study "
-                    "population and which has the lowest CV value (located in the logs).")
-
-    # If there's no relatives, we can do all of this on the full genotype file.
-    elif relative_check in ('n', 'no'):
-        # Create pbs files for admixture
+    if on_cluster in ("yes", "y"):
+        # Submit the jobs
         for i in range(0, len(k_values)):
-            with open(admix_name + '_Admixture_k' + str(k_values[i]) + '.pbs', 'w') as file:
-                file.write('#!/bin/bash\n'
-                           '#PBS -l walltime=' + walltime + '\n'
-                           '#PBS -l nodes=1:ppn=8\n'
-                           '#PBS -l pmem=8gb\n'
-                           '#PBS -A ' + allocation_name + '\n'
-                           '#PBS -j oe\n'
-                           'cd $PBS_O_WORKDIR\n'
-                           '\n'
-                           'admixture -j2 --cv ' + admix_name + '_LDPruned.bed ' + str(k_values[i]) + ' | tee '
-                           + admix_name + '_LDPruned.log' + str(k_values[i]) + '.out')
+            subprocess.call(['qsub', admix_name + '_Admixture_k' + str(k_values[i]) + '.pbs'], shell=True)
+        print("Your admixture jobs have been submitted. You can check their status using qstat -u usrname. When "
+              "you get your results, you should evaluate them to see which makes sense given your study population"
+              "and which has the lowest CV value (located in the log)")
 
-        if on_cluster in ("yes", "y"):
-            # Submit the jobs
-            subprocess.call(['qsub', '*.pbs'], shell=True)
-            print("Your admixture jobs have been submitted. You can check their status using qstat -u usrname. When "
-                  "you get your results, you should evaluate them to see which makes sense given your study population"
-                  "and which has the lowest CV value (located in the log)")
-
-        if on_cluster in ("no", "n"):
-            print("Transfer " + admix_name + "_LDPruned bed/bim/fam files and all of the .pbs files to the cluster. "
-                                             "Also make sure you have the admixture program in the same location as "
-                                             "these files.\n"
-                  + "Submit them using qsub " + admix_name + "Admixture_k{N}.pbs\n"
-                  + "When you get your results, you should evaluate them to see which makes sense given your study "
-                    "population and which has the lowest CV value (located in the log).")
+    if on_cluster in ("no", "n"):
+        print("Transfer " + admix_name + "_LDPruned bed/bim/fam files and all of the .pbs files to the cluster. "
+                                         "Also make sure you have the admixture program in the same location as "
+                                         "these files or in your PATH.\n"
+              + "Submit them using qsub " + admix_name + "Admixture_k{N}.pbs\n"
+              + "When you get your results, you should evaluate them to see which makes sense given your study "
+                "population and which has the lowest CV value (located in the log).")
