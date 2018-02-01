@@ -1,5 +1,4 @@
 # Getting the needed modules.
-import os
 import sys
 import os
 from os.path import expanduser
@@ -323,16 +322,8 @@ elif to_do == '10':
 #   Prepare for ADMIXTURE with k = 3..9
 elif to_do == '11':
     # Make sure the reader knows what they're getting into.
-    print("This will merge your data with the 1000G data to and prepare files for an unsupervised ADMIXTURE analysis. "
-          "Some cautions/notes before you perform this step:\n"
-          "1) You should perform the steps 2-10 BEFORE this one (in roughly that order).\n"
-          "2) IT WILL TAKE A LONG TIME (~10 hrs) TO MERGE YOUR DATA WITH 1000G\n"
-          "3) There should not be related individuals when you perform admixture. If you have related individuals in "
-          "your sample, you should create set lists so that the people in each set are unrelated (using information "
-          "from the IBD analysis\n"
-          "4) This will prepare files to run ADMIXTURE from k = 3 - 9. If you'd like other admixture runs performed, "
-          "then you should (carefully) change the genoadmixture.py code, or the produced .pbs files, to reflect that.\n"
-          "5) You must have a Penn State ACI cluster allocation to perform this step. We are using the cluster because "
+    print("1) You should perform the steps 2-10 BEFORE this one (in roughly that order).\n"
+          "2) You must have a Penn State ACI cluster allocation to perform this step. We are using the cluster because "
           "ADMIXTURE takes a long time to run. I will ask you for your cluster name.\n")
     print(Fore.BLUE + Style.BRIGHT)
     admixture_proceed_check = input("Are you sure you want to proceed? (y/n): ").lower()
