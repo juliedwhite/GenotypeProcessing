@@ -70,8 +70,8 @@ def prep(admix_name):
     allocation_name = input('Please enter the name of your cluster allocation: ')
 
     if allocation_name == "open":
-        walltime = "24:00:00"
-        print("Since you are on the open queue, you have a walltime limit of 24hrs. I'm not sure if the admixture will"
+        walltime = "48:00:00"
+        print("Since you are on the open queue, you have a walltime limit of 48hrs. I'm not sure if the admixture will"
               "finish by then, so after the job is done or gets killed you should check your log files to see which "
               "finished. If any didn't finish, then modify the .pbs files to change the 'for K in {n..n}' part to "
               "reflect the K values that did not complete. Then use qsub filename.pbs to resubmit the jobs.")

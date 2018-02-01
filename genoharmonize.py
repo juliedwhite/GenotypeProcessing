@@ -67,7 +67,7 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
     # Write script to harmonize.
     with open(geno_name + '_HarmonizeTo1000G.pbs', 'w') as file:
         file.write('#!/bin/bash\n'
-                   '#PBS -l walltime=24:00:00\n'
+                   '#PBS -l walltime=48:00:00\n'
                    '#PBS -l nodes=1:ppn=8\n'
                    '#PBS -l pmem=8gb\n'
                    '#PBS -A ' + allocation_name

@@ -252,7 +252,7 @@ def phase(geno_name, allocation_name):
                 # Write pbs script
                 with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
-                               '#PBS -l walltime=30:00:00\n'
+                               '#PBS -l walltime=48:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
                                '#PBS -l pmem=7gb\n'
                                '#PBS -A ' + allocation_name +
@@ -277,7 +277,7 @@ def phase(geno_name, allocation_name):
                 # Write pbs file.
                 with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i+1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
-                               '#PBS -l walltime=30:00:00\n'
+                               '#PBS -l walltime=48:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
                                '#PBS -l pmem=7gb\n'
                                '#PBS -A ' + allocation_name +
@@ -454,7 +454,7 @@ def phase(geno_name, allocation_name):
                 # Write pbs script
                 with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
-                               '#PBS -l walltime=30:00:00\n'
+                               '#PBS -l walltime=48:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
                                '#PBS -l pmem=7gb\n'
                                '#PBS -A ' + allocation_name +
@@ -480,7 +480,7 @@ def phase(geno_name, allocation_name):
                 # Write pbs script
                 with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
-                               '#PBS -l walltime=30:00:00\n'
+                               '#PBS -l walltime=48:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
                                '#PBS -l pmem=7gb\n'
                                '#PBS -A ' + allocation_name +
@@ -505,7 +505,7 @@ def phase(geno_name, allocation_name):
                 # Write pbs script
                 with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
-                               '#PBS -l walltime=30:00:00\n'
+                               '#PBS -l walltime=48:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
                                '#PBS -l pmem=7gb\n'
                                '#PBS -A ' + allocation_name +
@@ -530,7 +530,7 @@ def phase(geno_name, allocation_name):
                 # Write pbs file.
                 with open('Phasing/' + geno_name + '_PhaseScript.chr' + str(i + 1) + '.pbs', 'w') as file:
                     file.write('#!/bin/bash\n'
-                               '#PBS -l walltime=30:00:00\n'
+                               '#PBS -l walltime=48:00:00\n'
                                '#PBS -l nodes=1:ppn=8\n'
                                '#PBS -l pmem=7gb\n'
                                '#PBS -A ' + allocation_name +
@@ -834,7 +834,7 @@ def getinfo(imputed_path, geno_name):
         # Write pbs file
         with open(os.path.join(imputed_path, 'GetImputationInfo.pbs'), 'w') as file:
             file.write('#!/bin/bash\n'
-                       '#PBS -l walltime=24:00:00\n'
+                       '#PBS -l walltime=48:00:00\n'
                        '#PBS -l nodes=1:ppn=8\n'
                        '#PBS -l pmem=7gb\n'
                        '#PBS -A ' + allocation_name +
