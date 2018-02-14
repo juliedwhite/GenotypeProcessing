@@ -112,7 +112,7 @@ def phase(geno_name, allocation_name):
     # Make list of people with unspecified sex.
     fam_file = pd.read_csv(geno_name + '.fam', sep=' ', header=None)
     unknownsex = fam_file.loc[fam_file[4] == 0]
-    unknownsex[1].to_csv(geno_name + '_SexUnknown.txt', sep='\t', header=None, index=False)
+    unknownsex[[0, 1]].to_csv(geno_name + '_SexUnknown.txt', sep='\t', header=None, index=False)
 
     # Use plink to set mendel errors to missing.
     if os.path.getsize(geno_name + '_SexUnknown.txt') > 0:
