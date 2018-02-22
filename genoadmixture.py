@@ -108,7 +108,7 @@ def prep(admix_name):
 
     # We want the LD correction to be the same for all sets, so do this on the full genotype file and put it in the
     # Admixture file.
-    subprocess.check_output([plink, '--bfile', admix_name, '--indep', '50', '10', '2', '--out', admix_name])
+    subprocess.check_output([plink, '--bfile', admix_name, '--indep-pairwise', '50', '5', '0.5', '--out', admix_name])
     subprocess.check_output([plink, '--bfile', admix_name, '--extract', admix_name + '.prune.in', '--make-bed',
                              '--out', admix_name + '_LDPruned'])
 
