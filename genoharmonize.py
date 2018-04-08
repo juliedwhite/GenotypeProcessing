@@ -59,7 +59,7 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
     shutil.copy2(geno_name + '.fam', 'Harmonized_To_1000G')
 
     # Copy post processing script to Harmonized_To_1000G folder
-    shutil.copy2('harmonize_postprocess.py', 'Harmonized_To_1000G')
+    shutil.copy2(os.path.join('harmonize_postprocess.py', 'Harmonized_To_1000G')
 
     # Switch to this directory.
     os.chdir('Harmonized_To_1000G')
@@ -81,8 +81,8 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
                    '_MAF_HWE_Filter_chr$[i] --ref ' +
                    os.path.join(vcf_path,
                                 'ALL.chr$[i].phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz') +
-                   ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
-                     ' --output ' + geno_name + '_chr$[i]_Harmonized\n'
+                   ' --refType VCF --update-id --debug --mafAlign 0.1 --check-ld --variants 200 --min-variants 10'
+                   ' --update-reference-allele --outputType PLINK_BED --output ' + geno_name + '_chr$[i]_Harmonized\n'
                    + 'rm ' + geno_name + '_MAF_HWE_Filter_chr$[i].*; done\n'
                    # Special handling of chrX
                    # Special handling for chrX: Make list of females
@@ -103,8 +103,8 @@ def cluster(geno_name, allocation_name, harmonizer_path, vcf_path, legend_path, 
                    + '_MAF_HWE_Filter_chr23 --ref '
                    + os.path.join(vcf_path,
                                   'ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz')
-                   + ' --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele --outputType PLINK_BED'
-                     ' --output ' + geno_name + '_chr23_Harmonized\n'
+                   + ' --refType VCF --update-id --debug --mafAlign 0.1 --check-ld --variants 200 --mind-variants 10'
+                     ' --update-reference-allele --outputType PLINK_BED --output ' + geno_name + '_chr23_Harmonized\n'
                    + 'rm ' + geno_name + '_MAF_HWE_Filter_chr23.*\n'
                    + 'rm ' + geno_name + '_chr23.*\n'
                    + 'rm ' + geno_name + '_chr23_RemHWE.txt\n'
@@ -189,8 +189,9 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
                                     + geno_name + '_MAF_HWE_Filter_chr' + str(i+1) + ' --ref "'
                                     + os.path.join(vcf_path, vcf_file_names[i])
-                                    + '" --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele '
-                                      '--outputType PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
+                                    + '" --refType VCF --update-id --debug --mafAlign 0.1 --check-ld --variants 200 '
+                                      '--min-variants 10 --update-reference-allele --outputType PLINK_BED --output '
+                                    + harmonized_geno_names[i], shell=True)
             subprocess.call(rm + geno_name + '_MAF_HWE_Filter_chr' + str(i + 1) + '.*', shell=True)
             id_updates[i] = pd.read_csv(id_update_names[i], sep='\t', header=0,
                                         dtype={'chr': str, 'pos': int, 'originalId': str, 'newId': str})
@@ -225,8 +226,9 @@ def local(geno_name, harmonizer_path, vcf_path, legend_path, fasta_path):
             subprocess.check_output('java -Xmx1g -jar "' + harmonizer_path + '/GenotypeHarmonizer.jar" $* --input '
                                     + geno_name + '_MAF_HWE_Filter_chr23 --ref "'
                                     + os.path.join(vcf_path, vcf_file_names[i])
-                                    + '" --refType VCF --update-id --debug --mafAlign 0 --update-reference-allele '
-                                      '--outputType PLINK_BED --output ' + harmonized_geno_names[i], shell=True)
+                                    + '" --refType VCF --update-id --debug --mafAlign 0.1 --check-ld --variants 200 '
+                                      '--min-variants 10 --update-reference-allele --outputType PLINK_BED --output '
+                                    + harmonized_geno_names[i], shell=True)
             subprocess.call(rm + geno_name + '_MAF_HWE_Filter_chr23.*', shell=True)
             subprocess.call(rm + geno_name + '_chr23*', shell=True)
             subprocess.call(rm + geno_name + '_chr23_RemHWE.txt*', shell=True)
