@@ -63,11 +63,12 @@ def missing_call_rate(geno_name):
     import subprocess
     subprocess.check_output([plink, '--bfile', geno_name, '--geno', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1'])
-    if file_len(geno_name + '.bim') < 400000:
-        sys.ext("After running --geno 0.1, you have less than 400,000 variants. This might mean that there are a lot "
-                "of people in your dataset that are missing information and you should run --mind 0.1, then --geno 0.1."
-                " Either way, you should investigate and perform this step on your own, as having too few variants will"
-                " ruin your imputation.")
+    if file_len(geno_name + '_geno0.1.bim') < 400000:
+        sys.exit("After running --geno 0.1, you have less than 400,000 variants. This might mean that there are a lot "
+                 "of people in your dataset that are missing information and you should run --mind 0.1, then --geno "
+                 "0.1. Either way, you should investigate and perform this step on your own, as having too few variants"
+                 " will ruin your imputation.")
+
     subprocess.check_output([plink, '--bfile', geno_name + '_geno0.1', '--mind', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1_mind0.1'])
 
