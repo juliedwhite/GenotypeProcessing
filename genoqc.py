@@ -27,6 +27,7 @@ def estimate_sex(geno_name):
     print("This can take a while, so sit back for a bit and don't worry.")
 
     # Checks the sex listed in the file against the chromosomal sex.
+    subprocess.check_output([plink, '--bfile', geno_name, '--split-x', 'hg19', 'no-fail', '--out', geno_name])
     subprocess.check_output([plink, '--bfile', geno_name, '--indep-pairphase', '20000', '2000', '0.5', '--out',
                              geno_name])
     subprocess.check_output([plink, '--bfile', geno_name, '--exclude', geno_name + '.prune.out', '--check-sex',
