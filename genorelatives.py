@@ -34,7 +34,7 @@ def ibd(geno_name):
     #   -Fourth-degree relative = 0.0625
     #   -Fifth-degree relative = 0.03125
 
-    # A good cutoff to use for Pi_Hat is 0.1875. This represents the halfway point between 2nd and 3rd degree relatives.
+    # A good cutoff to use for Pi_Hat is 0.125. This will capture 3rd degree relatives and above.
     import os
     import subprocess
 
@@ -45,10 +45,9 @@ def ibd(geno_name):
     # Use plink to prune for LD
     subprocess.check_output([plink, '--bfile', geno_name, '--indep', '50', '5', '2', '--out',
                              'IBD_Calculations/' + geno_name])
-    # Perform IBD calculation, filtering for a minimum of 0.1875. This is the halfway point between 2nd and 3rd degree
-    # relatives.
+    # Perform IBD calculation, filtering for a minimum of 0.125. 
     subprocess.check_output([plink, '--bfile', geno_name, '--exclude', 'IBD_Calculations/' + geno_name + '.prune.out',
-                             '--genome', '--min', '0.1875', '--out', 'IBD_Calculations/' + geno_name])
+                             '--genome', '--min', '0.125', '--out', 'IBD_Calculations/' + geno_name])
 
     # Finished
     print("Analysis finished. Your IBD results will have the name " + geno_name
