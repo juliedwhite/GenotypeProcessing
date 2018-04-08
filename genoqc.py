@@ -1,5 +1,6 @@
 import platform
 import os
+import sys
 from os.path import expanduser
 home = expanduser("~")
 bindir = os.path.join(home, 'software', 'bin')
@@ -50,16 +51,27 @@ def update_sex(geno_name, update_sex_filename):
     print("Finished. Your genotype files with sex updated will have the name " + geno_name + "_SexUpdated.")
 
 
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+
 def missing_call_rate(geno_name):
     # Exclude SNPs (geno) and people (mind) with missing call rates > 10%
     import subprocess
     subprocess.check_output([plink, '--bfile', geno_name, '--geno', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1'])
+    if file_len(geno_name + '.bim') < 400000:
+        sys.ext("After running --geno 0.1, you have less than 400,000 variants. This might mean that there are a lot "
+                "of people in your dataset that are missing information and you should run --mind 0.1, then --geno 0.1."
+                " Either way, you should investigate and perform this step on your own, as having too few variants will"
+                " ruin your imputation.")
     subprocess.check_output([plink, '--bfile', geno_name + '_geno0.1', '--mind', '0.1', '--make-bed', '--out',
                              geno_name + '_geno0.1_mind0.1'])
-    subprocess.call(rm + geno_name + '_geno0.1.*', shell=True)
 
-    print("Finished. Your pruned genotype files will have the name " + geno_name + "_geno0.01_mind0.01")
+    print("Finished. Your pruned genotype files will have the name " + geno_name + "_geno0.1_mind0.1")
 
 
 def het(geno_name):
